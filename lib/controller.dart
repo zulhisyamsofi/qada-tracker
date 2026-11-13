@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'database.dart';
 import 'model.dart';
+import 'reminders.dart';
 
 final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 final databaseProvider = FutureProvider<JournalDatabase>((ref) async {
@@ -18,9 +19,20 @@ final journalProvider = AsyncNotifierProvider<JournalController, Journal>(
 class JournalController extends AsyncNotifier<Journal> {
   Future<void> _queue = Future.value();
   @override
-  Future<Journal> build() async => (await ref.watch(
-    databaseProvider.future,
-  )).load(ref.read(clockProvider)());
+  Future<Journal> build() async {
+    final journal = await (await ref.watch(
+      databaseProvider.future,
+    )).load(ref.read(clockProvider)());
+    await ref.read(reminderServiceProvider).sync(journal.reminderEnabled);
+    return journal;
+  }
+
+  Future<void> refreshReminders() async {
+    final journal = state.asData?.value;
+    if (journal == null) return;
+    await ref.read(reminderServiceProvider).sync(journal.reminderEnabled);
+    if (ref.mounted) ref.invalidate(reminderAccessProvider);
+  }
 
   // Serialize rapid taps and restores; failed disk writes never update the UI.
   Future<void> change(Journal Function(Journal) update) {
@@ -29,6 +41,7 @@ class JournalController extends AsyncNotifier<Journal> {
       final next = update(current).checked();
       await (await ref.read(databaseProvider.future)).save(next);
       state = AsyncData(next);
+      await refreshReminders();
     });
     _queue = operation.catchError((Object _) {});
     return operation;

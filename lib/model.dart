@@ -52,6 +52,7 @@ class Journal {
     Map<Prayer, int>? starting,
     List<QadaEntry>? replacements,
     this.theme = AppTheme.system,
+    this.reminderEnabled = false,
   }) : records = Map.unmodifiable(
          (records ?? {}).map(
            (key, value) =>
@@ -67,6 +68,7 @@ class Journal {
   final Map<Prayer, int> starting;
   final List<QadaEntry> replacements;
   final AppTheme theme;
+  final bool reminderEnabled;
 
   PrayerStatus status(DateTime day, Prayer p) =>
       records[dateKey(day)]?[p] ?? PrayerStatus.unrecorded;
@@ -82,12 +84,14 @@ class Journal {
     Map<Prayer, int>? starting,
     List<QadaEntry>? replacements,
     AppTheme? theme,
+    bool? reminderEnabled,
   }) => Journal(
     startDate: startDate,
     records: records ?? this.records,
     starting: starting ?? this.starting,
     replacements: replacements ?? this.replacements,
     theme: theme ?? this.theme,
+    reminderEnabled: reminderEnabled ?? this.reminderEnabled,
   );
 
   Journal checked() {
@@ -165,6 +169,7 @@ class Journal {
     'version': 1,
     'startDate': dateKey(startDate),
     'theme': theme.name,
+    'reminderEnabled': reminderEnabled,
     'starting': {for (final p in Prayer.values) p.name: starting[p] ?? 0},
     'records': {
       for (final e in records.entries)
@@ -248,6 +253,7 @@ class Journal {
         starting: starting,
         replacements: replacements,
         theme: AppTheme.values.byName(root['theme'] as String),
+        reminderEnabled: (root['reminderEnabled'] ?? false) as bool,
       ).checked();
     } on FormatException {
       rethrow;

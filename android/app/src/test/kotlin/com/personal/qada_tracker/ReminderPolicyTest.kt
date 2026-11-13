@@ -1,0 +1,60 @@
+package com.personal.qada_tracker
+
+import java.util.Calendar
+import java.util.TimeZone
+import org.junit.Assert.*
+import org.junit.Test
+
+class ReminderPolicyTest {
+    private fun time(hour: Int, minute: Int = 0, day: Int = 13,
+                     zone: String = "Asia/Kuala_Lumpur"): Calendar = Calendar.getInstance(TimeZone.getTimeZone(zone)).apply {
+        clear(); set(2026, Calendar.NOVEMBER, day, hour, minute, 0)
+    }
+    @Test fun schedulesAtElevenInLocalTime() {
+        val next = ReminderPolicy.next(time(12), null)
+        assertEquals(23, next.get(Calendar.HOUR_OF_DAY))
+        assertEquals(0, next.get(Calendar.MINUTE))
+        assertEquals("2026-11-13", ReminderPolicy.day(next))
+    }
+    @Test fun optingInLateChecksOnceThenSchedulesTomorrow() {
+        val now = time(23, 30)
+        assertEquals(now.timeInMillis + 1000, ReminderPolicy.next(now, null).timeInMillis)
+        val next = ReminderPolicy.next(now, "2026-11-13")
+        assertEquals("2026-11-14", ReminderPolicy.day(next))
+        assertEquals(23, next.get(Calendar.HOUR_OF_DAY))
+    }
+    @Test fun emptyDayNotifiesButAnyRecordedPrayerSuppressesIt() {
+        val now = time(23)
+        assertTrue(ReminderPolicy.shouldNotify(true, "2026-11-13", now, null, false))
+        assertFalse(ReminderPolicy.shouldNotify(true, "2026-11-13", now, null, true))
+        assertFalse(ReminderPolicy.hasRecordedPrayer(List(5) { "unrecorded" }))
+        assertFalse(ReminderPolicy.hasRecordedPrayer(List(5) { null }))
+        assertTrue(ReminderPolicy.hasRecordedPrayer(listOf("performed", null, null)))
+        assertTrue(ReminderPolicy.hasRecordedPrayer(listOf("unrecorded", "missed")))
+    }
+    @Test fun disabledDuplicateAndEarlyChecksDoNotNotify() {
+        assertFalse(ReminderPolicy.shouldNotify(false, "2026-11-13", time(23), null, false))
+        assertFalse(ReminderPolicy.shouldNotify(true, "2026-11-13", time(23), "2026-11-13", false))
+        assertFalse(ReminderPolicy.shouldNotify(true, "2026-11-13", time(22), null, false))
+    }
+    @Test fun delayedAlarmIsNeverSentAfterMidnightOrOnAnotherDay() {
+        assertFalse(ReminderPolicy.shouldNotify(true, "2026-11-13", time(0, day = 14), null, false))
+        assertFalse(ReminderPolicy.shouldNotify(true, "2026-11-13", time(23, day = 14), null, false))
+    }
+    @Test fun timezoneChangeUsesTheNewLocalCalendar() {
+        val now = time(16, zone = "America/New_York")
+        val next = ReminderPolicy.next(now, null)
+        assertEquals(now.timeZone, next.timeZone)
+        assertEquals(23, next.get(Calendar.HOUR_OF_DAY))
+        assertEquals("2026-11-13", ReminderPolicy.day(next))
+    }
+    @Test fun daylightSavingUsesCalendarDaysInsteadOfTwentyFourHours() {
+        val now = Calendar.getInstance(TimeZone.getTimeZone("America/New_York")).apply {
+            clear(); set(2026, Calendar.OCTOBER, 31, 23, 0, 0)
+        }
+        val next = ReminderPolicy.next(now, "2026-10-31")
+        assertEquals(25L * 60 * 60 * 1000, next.timeInMillis - now.timeInMillis)
+        assertEquals(23, next.get(Calendar.HOUR_OF_DAY))
+        assertEquals("2026-11-01", ReminderPolicy.day(next))
+    }
+}

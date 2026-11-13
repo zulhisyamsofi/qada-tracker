@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'backup.dart';
 import 'controller.dart';
 import 'model.dart';
+import 'reminders.dart';
+import 'reminder_settings.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,6 +75,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   DateTime? selectedDay;
   Timer? midnight;
   bool fileBusy = false;
+  late final ReminderService reminders;
   final titles = const ['Today', 'History', 'Qada', 'Progress'];
   @override
   void initState() {
@@ -80,6 +83,13 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     WidgetsBinding.instance.addObserver(this);
     today = dayOnly(ref.read(clockProvider)());
     scheduleMidnight();
+    reminders = ref.read(reminderServiceProvider);
+    reminders.onOpenToday = () {
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        setState(() => tab = 0);
+      }
+    };
   }
 
   void scheduleMidnight() {
@@ -97,6 +107,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       today = dayOnly(ref.read(clockProvider)());
     });
     scheduleMidnight();
+    unawaited(controller.refreshReminders());
   }
 
   @override
@@ -107,6 +118,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   @override
   void dispose() {
     midnight?.cancel();
+    reminders.onOpenToday = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -768,6 +780,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   },
                 ),
                 const SizedBox(height: 24),
+                const ReminderSettings(),
+                const SizedBox(height: 24),
                 const Text(
                   'Manual backups',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -795,7 +809,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  'Qada Tracker · Personal edition\nPrayer times, reminders, and cloud sync are not enabled.',
+                  'Qada Tracker · Personal edition\nPrayer times and cloud sync are not enabled.',
                 ),
                 const SizedBox(height: 12),
               ],
