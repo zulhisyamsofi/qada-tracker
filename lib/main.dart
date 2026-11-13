@@ -880,8 +880,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         content: const Text(
           'Touch and hold an empty space on your home screen, choose Widgets, '
           'then find Qada Tracker. Drag the five-prayer widget onto your home '
-          'screen. Tap a prayer to mark it performed for today. '
-          'Make corrections inside the app.',
+          'screen. Tap a prayer to toggle between performed and unrecorded '
+          'for today. Tap the background to open the app.',
         ),
         actions: [
           TextButton(

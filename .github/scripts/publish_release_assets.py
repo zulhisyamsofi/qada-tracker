@@ -1,7 +1,7 @@
 """Transfer checked APKs into private GitHub drafts using the runner's token.
 
 No signing key or personal access token is stored. Refresh the temporary URLs
-in release-assets.json before rerunning after their 72-hour lifetime.
+in the dispatch manifest before rerunning after their 72-hour lifetime.
 """
 import hashlib
 import json
@@ -27,9 +27,12 @@ def main():
     repo = os.environ["GH_REPO"]
     if repo != "zulhisyamsofi/qada-tracker":
         raise ValueError("This publisher is scoped to the Qada Tracker repository.")
-    entries = json.loads(Path(".github/release-assets.json").read_text())
-    if {e["tag"] for e in entries} != {f"v1.{n}.0" for n in range(6)} or len(entries) != 6:
-        raise ValueError("Expected exactly the six checked feature editions.")
+    entries = json.loads(os.environ.get("QADA_RELEASE_MANIFEST") or Path(".github/release-assets.json").read_text())
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("Expected a nonempty list of checked feature editions.")
+    tags = [e["tag"] for e in entries]
+    if len(tags) != len(set(tags)) or any(not re.fullmatch(r"v\d+\.\d+\.\d+", tag) for tag in tags):
+        raise ValueError("Expected unique semantic-version app tags.")
     with tempfile.TemporaryDirectory(prefix="qada-release-") as temporary:
         for entry in entries:
             tag = entry["tag"]

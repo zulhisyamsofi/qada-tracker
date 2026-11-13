@@ -12,6 +12,7 @@ Each feature edition is represented by a separate commit and annotated tag. The 
 | v1.3.0 | Dark-mode toggles and glass UI | 42 / 12 | [v1.3.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.3.0) |
 | v1.4.0 | Native home-screen prayer widget | 48 / 23 | [v1.4.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.4.0) |
 | v1.5.0 | Integrated times and start-time validation | 56 / 25 | [v1.5.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.5.0) |
+| v1.6.0 | Compact 4 × 1 toggleable widget | 56 / 29 | [v1.6.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.6.0) |
 
 Every version passed formatting, static analysis, its Flutter tests, and an Android debug APK build. Versions with native test suites also passed those checks. Native widget tests use Robolectric. Actual launcher placement, GPS, notification delivery, reboot/Doze behavior, and OEM battery restrictions remain unverified on a physical phone.
 
@@ -23,4 +24,4 @@ No repository visibility change, Android store release, or cloud-environment pub
 
 The separately tagged publishing workflow handles the cloud credential's inability to authenticate to GitHub's dedicated asset-upload host. It uses a repository-scoped GitHub Actions token on a hosted runner to attach the already-built APKs; it does not rebuild or re-sign them. The pinned workflow verifies the annotated source tag, expected file size, local checksum, and uploaded asset digest before reporting success. It uploads into drafts; publication follows verification.
 
-The workflow runs manually or on `release-tools-v*` tags. Its transfer manifest uses checksum-pinned temporary HTTPS file links that expire after 72 hours. Refresh those links before a later retry. Copies attached to GitHub releases remain available through the private repository after transfer. No personal access token, signing keystore, or app records are committed or stored as workflow secrets.
+The workflow now runs manually. Supply a JSON `manifest` input for new checked draft assets; leaving it blank selects the original bootstrap manifest, which is retained for provenance. Published releases are never overwritten. Its transfer manifest uses checksum-pinned temporary HTTPS file links that expire after 72 hours. Refresh those links before a later retry. Copies attached to GitHub releases remain available through the private repository after transfer. No personal access token, signing keystore, or app records are committed or stored as workflow secrets.

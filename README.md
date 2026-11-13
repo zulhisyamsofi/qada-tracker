@@ -47,11 +47,11 @@ Use the sun/moon button beside Settings for a quick light/dark toggle, or **Sett
 
 The redesigned screens use mint/emerald colors, rounded glass panels, bordered pill buttons, circular outlined controls, and bundled Nunito typography. High contrast uses solid surfaces and stronger borders; large text remains scrollable. Glass blur is limited to summary/navigation panels. See the [design reference and render comparison](docs/design/glass-ui.md).
 
-## Home-screen widget (v1.4)
+## Home-screen widget (v1.6)
 
-Use **Settings → Home-screen widget** to open your launcher's Add widget prompt. You can also touch and hold an empty part of the home screen, choose **Widgets → Qada Tracker → Today’s prayers**, and drag it into place. Open the app once first so your journal is initialized. The widget uses a roughly 4 × 2 space and can be resized.
+Use **Settings → Home-screen widget** to open your launcher's Add widget prompt. You can also touch and hold an empty part of the home screen, choose **Widgets → Qada Tracker → Today’s prayers**, and drag it into place. Open the app once first so your journal is initialized. The compact widget uses a 4 × 1 space with only the five prayer boxes. Resize an existing older widget to one row, or remove and re-add it once; launchers retain existing widget dimensions.
 
-Five boxed buttons show Subuh, Zohor, Asar, Maghrib, and Isyak. Once its saved prayer time has started, tap a box to mark that prayer **performed for today**, even when the app is closed. An early tap or missing timetable shows a short message without changing the record. A check means performed, a circle means unrecorded, and an amber box with `!` means confirmed missed. Repeated taps keep a prayer performed; make corrections inside the app. Tapping the header/footer opens Today. All widget instances and the app share the same saved records and appearance preference.
+Five boxed buttons show Subuh, Zohor, Asar, Maghrib, and Isyak. Once its saved prayer time has started, tap a box to mark that prayer **performed for today**, even when the app is closed. An early tap or missing timetable shows a short message without changing the record. A check means performed, a circle means unrecorded, and an amber box with `!` means confirmed missed. Tap a performed prayer again to return it to unrecorded, even offline. Marking it performed again still checks its start time. Tap any padding or gap outside the prayer boxes to open Today. The header and progress/instruction footer are removed. All widget instances and the app share the same saved records and appearance preference.
 
 The date follows the phone's local calendar. A midnight alarm, periodic launcher updates, app changes, and clock/timezone/reboot events refresh the display without changing old records. Android may delay background refresh; a stale-date tap refreshes the widget and asks you to tap again, never writing yesterday's prayer or guessing a miss. No new permissions are needed. A correction that would make a qada balance negative is refused until you undo the conflicting replacement in the app.
 
@@ -95,7 +95,7 @@ Verified in the cloud instance:
 
 - Pinned Flutter/Dart and JDK setup, with checksum verification and TLS trust intact.
 - Frozen dependency resolution with `pubspec.lock`, and repeatable `scripts/setup.sh` execution.
-- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **56 passing Flutter tests and 25 passing Android tests**, and a successful Android debug APK build.
+- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **56 passing Flutter tests and 29 passing Android tests**, and a successful Android debug APK build.
 
 Prayer-time validation tests cover before/exactly-at/after start, checkboxes and menus, source/date mismatches, absent or malformed caches, atomic bulk changes, concurrent calendar refresh, notification routing, and historical/restore behavior.
 

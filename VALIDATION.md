@@ -1,4 +1,4 @@
-# Validation record — v1.5.0+6
+# Validation record — v1.6.0+7
 
 ## Automated checks
 
@@ -7,10 +7,18 @@ The final `scripts/validate.sh` completed successfully:
 - Formatting: 29 Dart files, 0 changes.
 - Flutter static analysis: no issues found.
 - Flutter tests: **56 passed, 0 failed**. Includes the previous daily tracking, qada, history, backup, and check-in tests, plus API parsing, official-source comparison, timezone/epoch handling, malformed API rejection, schema migration, backup defaults, stale-place response rejection, offline fallback, cache reuse, place switching, location denial, and offline/permission-denied notification controls.
-- Android JVM tests: **25 passed, 0 failures/errors/skips** (7 check-in tests, 5 prayer-time tests, and 13 native widget tests). Verified their current JUnit XML result files. Policy cases cover UNIX seconds conversion, exactly one upcoming occurrence per prayer, no replay of past events, and early/late broadcast suppression.
+- Android JVM tests: **29 passed, 0 failures/errors/skips** (7 check-in tests, 5 prayer-time tests, and 17 native widget tests). Verified their current JUnit XML result files. Policy cases cover UNIX seconds conversion, exactly one upcoming occurrence per prayer, no replay of past events, and early/late broadcast suppression.
 - Universal and per-architecture Android debug APK builds succeeded.
 
 The tests do not verify real AlarmManager delivery, location hardware, WorkManager execution, Doze, reboot broadcasts, or OEM battery management.
+
+## Compact widget — v1.6
+
+The widget now requests four columns by one row, with a 280 × 56 dp minimum. Its single horizontal row uses 4 dp root padding and five boxed toggles, with no header/date or progress/instruction footer. Background padding and inter-box gaps open Today; prayer-box taps toggle performed/unrecorded.
+
+Four new native cases cover offline/early/wrong-place clearing followed by revalidation on the next performed mark; rollback of failed clearing; real touch gestures on padding, gaps, and boxes in an attached Android test window; and minimum-size rendering with 1.6× system text. Existing tests now check repeated toggles, missed-to-performed-to-unrecorded ledger preservation, two-widget updates in both directions, and stale-date protection when the old view was performed. The Flutter reload test also confirms the app counter decreases after a native clear.
+
+Native previews in both themes were inspected at 360 × 64 and at a minimum 280 × 56. Names remain untruncated and prayer touch targets remain at least 48 × 48 dp. Existing placed widgets retain launcher dimensions: resize them to one row or remove and re-add the widget once. Actual 4 × 1 placement remains to be checked on the user's launcher.
 
 ## Integrated times and start validation
 
@@ -24,7 +32,7 @@ Updated Flutter raster captures were inspected in light/dark at 390 × 844, incl
 
 Six Flutter tests cover native-change events, resume reload, stale UI rebasing, compare-and-swap collision retries, write failures, launcher refresh, pinning fallback, and export of native marks before their UI event arrives. Existing prayer/history/qada/backup tests pass with disk-based mutations.
 
-Thirteen Robolectric tests exercise native SQLite and actual Android RemoteViews: all five prayers, duplicate taps, unchanged past records/settings/ledger, valid and conflicting miss corrections, missing/unsupported journals, invalid input, atomic rollback, stale dates, multi-day gaps, local midnight/DST, all-instance updates and restore, distinct PendingIntents, and rendering in both themes at 360 × 156 and 280 × 130 dp. A real PendingIntent click through the provider saves a prayer, updates two widget instances, sends the Flutter change event, and cancels a displayed check-in notification.
+Seventeen Robolectric tests exercise native SQLite and actual Android RemoteViews: all five prayers, repeated toggles, unchanged past records/settings/ledger, valid and conflicting miss corrections, missing/unsupported journals, invalid input, atomic rollback, stale dates, multi-day gaps, local midnight/DST, all-instance updates and restore, distinct PendingIntents, and rendering in both themes at 360 × 64 and 280 × 56 dp. A real PendingIntent click through the provider saves a prayer, updates two widget instances, sends the Flutter change event, and cancels a displayed check-in notification.
 
 The test runtime is pinned to Robolectric 4.16.1, Android API 35, native graphics and native SQLite. The native-rendered light/dark previews and architecture/phone checklist are in [docs/home-widget.md](docs/home-widget.md). The minimum-size render was inspected and repaired so Maghrib's full name fits. Widget work introduces no database schema, backup version, production dependency, permission, or network API change.
 
@@ -56,9 +64,9 @@ Device location is requested only from the location button, at medium accuracy, 
 
 ## APK compatibility
 
-- Package: `com.personal.qada_tracker`; version **1.5.0** (code **6**); minimum API 24; target API 36.
+- Package: `com.personal.qada_tracker`; version **1.6.0** (code **7**); minimum API 24; target API 36.
 - Universal APK: `build/app/outputs/flutter-apk/app-debug.apk`.
-- SHA-256: `aad4115240f816bbfc0e8c9a7a07f98ec249e5acd40dba26b72418d9929e7a96`.
+- SHA-256: `1e4e1d32dfc9d2ffb6efa44c1719166880c2213133290b04bd5903a9c25da4ef`.
 - Signing certificate matches the previous debug APKs, allowing an in-place update that retains the private journal.
 - Smaller ARM64, ARM32, and x86-64 variants are in the same output directory.
 
@@ -72,20 +80,4 @@ On a phone: install as an update; open Today’s prayer-time settings; select a 
 
 The feature editions are published through annotated Git tags and private GitHub releases; see [RELEASES.md](RELEASES.md). No Android store or environment publication is part of this release.
 
-## Versioned release build
-
-The tagged source passed `scripts/validate.sh` during release packaging:
-
-- Dart formatting check: no changes required.
-- Flutter analysis: no issues found.
-- Flutter tests: **56 passed**.
-- Android JVM tests: **25 passed**, with no failures, errors, or skips.
-- Android universal debug APK build: successful.
-- Package: `com.personal.qada_tracker`; version **1.5.0**; minimum API 24; target API 36.
-- APK SHA-256: `aad4115240f816bbfc0e8c9a7a07f98ec249e5acd40dba26b72418d9929e7a96`.
-- Debug signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`, matching the previous builds for in-place updates.
-
-Flutter 3.38.5, Dart 3.10.4, JDK 17, and the repository's pinned Android tooling were used. The private GitHub release contains the APK and `SHA256SUMS`.
-
-
-No connected phone or usable accelerated emulator was available. Actual launcher placement, physical GPS, real notification delivery, reboot/Doze behavior, and OEM battery restrictions remain outside these automated checks.
+The private v1.6.0 release contains the checked APK and SHA256SUMS. App source and release tooling changes are recorded under the v1.6.0 feature tag.

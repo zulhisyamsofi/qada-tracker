@@ -17,9 +17,7 @@ import android.util.Log
 import android.widget.RemoteViews
 import android.widget.Toast
 import org.json.JSONObject
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Locale
 import java.util.concurrent.Executors
 
 /** Native launcher widget: works without starting a Flutter engine. */
@@ -39,12 +37,12 @@ class PrayerHomeWidget : AppWidgetProvider() {
                         val expectedDay = intent.getStringExtra("date")
                         val id = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
                         if (prayer !in PrayerWidgetPolicy.prayers || expectedDay == null || id !in ids(context)) return@execute
-                        val result = try { PrayerWidgetStore.perform(context, prayer!!, expectedDay) }
+                        val result = try { PrayerWidgetStore.toggle(context, prayer!!, expectedDay) }
                             catch (error: Exception) {
                                 Log.w("PrayerWidget", "Could not save prayer", error)
                                 WidgetWriteResult.UNAVAILABLE
                             }
-                        if (result == WidgetWriteResult.SAVED) {
+                        if (result == WidgetWriteResult.SAVED || result == WidgetWriteResult.CLEARED) {
                             context.sendBroadcast(Intent(JOURNAL_CHANGED).setPackage(context.packageName))
                             try {
                                 PrayerWidgetStore.read(context)?.let { PrayerReminders.sync(context, it.optBoolean("reminderEnabled", false)) }
@@ -53,7 +51,7 @@ class PrayerHomeWidget : AppWidgetProvider() {
                         val label = PrayerWidgetPolicy.labels[PrayerWidgetPolicy.prayers.indexOf(prayer)]
                         val message = when (result) {
                             WidgetWriteResult.SAVED -> "$label recorded for today"
-                            WidgetWriteResult.ALREADY_DONE -> "$label is already performed"
+                            WidgetWriteResult.CLEARED -> "$label returned to unrecorded"
                             WidgetWriteResult.STALE_DAY -> "New day. Tap again to record today's prayer."
                             WidgetWriteResult.BALANCE_CONFLICT -> "Undo the matching qada replacement in the app first."
                             WidgetWriteResult.UNAVAILABLE -> "Could not save. Open Qada Tracker and try again."
@@ -82,6 +80,7 @@ class PrayerHomeWidget : AppWidgetProvider() {
     }
 
     companion object {
+        // Keep the action stable for widgets placed before toggling was added.
         const val MARK = "com.personal.qada_tracker.WIDGET_PERFORM"
         const val ROLLOVER = "com.personal.qada_tracker.WIDGET_MIDNIGHT"
         const val JOURNAL_CHANGED = "com.personal.qada_tracker.WIDGET_JOURNAL_CHANGED"
@@ -125,15 +124,10 @@ class PrayerHomeWidget : AppWidgetProvider() {
             }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             return RemoteViews(context.packageName, R.layout.prayer_widget).apply {
                 setInt(R.id.widget_root, "setBackgroundResource", if (dark) R.drawable.widget_panel_dark else R.drawable.widget_panel_light)
-                setTextViewText(R.id.widget_date, SimpleDateFormat("EEE, d MMM", Locale.ENGLISH).apply { timeZone = now.timeZone }.format(now.time))
-                setTextColor(R.id.widget_title, ink); setTextColor(R.id.widget_date, muted); setTextColor(R.id.widget_footer, muted)
-                setOnClickPendingIntent(R.id.widget_header, open)
-                setOnClickPendingIntent(R.id.widget_footer, open)
-                var count = 0
+                setOnClickPendingIntent(R.id.widget_root, open)
                 for ((index, prayer) in PrayerWidgetPolicy.prayers.withIndex()) {
                     val status = if (root != null) PrayerWidgetPolicy.status(root, date, prayer) else "unrecorded"
                     val performed = status == "performed"
-                    if (performed) count++
                     val background = when {
                         performed -> R.drawable.widget_box_done
                         status == "missed" && dark -> R.drawable.widget_box_missed_dark
@@ -146,7 +140,7 @@ class PrayerHomeWidget : AppWidgetProvider() {
                     setTextColor(symbols[index], if (performed) doneInk else muted)
                     setTextViewText(symbols[index], when (status) { "performed" -> "✓"; "missed" -> "!"; else -> "○" })
                     val label = PrayerWidgetPolicy.labels[index]
-                    setContentDescription(boxes[index], "$label, $status. ${if (performed) "Already recorded for today." else "Tap to mark performed for today."}")
+                    setContentDescription(boxes[index], if (root == null) "$label. Open Qada Tracker to start or refresh." else "$label, $status. ${if (performed) "Tap to leave unrecorded." else "Tap to mark performed for today."}")
                     val action = if (root == null) open else PendingIntent.getBroadcast(context, 0,
                         Intent(context, PrayerHomeWidget::class.java).apply {
                             this.action = MARK
@@ -156,11 +150,6 @@ class PrayerHomeWidget : AppWidgetProvider() {
                         }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
                     setOnClickPendingIntent(boxes[index], action)
                 }
-                setTextViewText(R.id.widget_footer, when {
-                    root == null -> "Open Qada Tracker to start or refresh"
-                    count == 5 -> "All 5 performed · Open journal"
-                    else -> "$count of 5 performed · Tap a box to record"
-                })
             }
         }
 

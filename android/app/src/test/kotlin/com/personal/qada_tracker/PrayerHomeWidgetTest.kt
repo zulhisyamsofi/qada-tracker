@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.view.View
+import android.view.MotionEvent
 import android.widget.FrameLayout
 import android.widget.TextView
 import org.json.JSONArray
@@ -66,12 +67,14 @@ class PrayerHomeWidgetTest {
     }
     @After fun cleanup() { file.delete() }
 
-    @Test fun fiveBoxesWriteSharedJournalWithoutFlutterAndRepeatedTapsAreIdempotent() {
+    @Test fun fiveBoxesToggleSharedJournalWithoutFlutter() {
         val original = journal()
         save(original)
         for (prayer in PrayerWidgetPolicy.prayers) {
-            assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.perform(context, prayer, today) { clock() })
-            assertEquals(WidgetWriteResult.ALREADY_DONE, PrayerWidgetStore.perform(context, prayer, today) { clock() })
+            assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.toggle(context, prayer, today) { clock() })
+            assertEquals(WidgetWriteResult.CLEARED, PrayerWidgetStore.toggle(context, prayer, today) { clock() })
+            assertEquals("unrecorded", PrayerWidgetPolicy.status(PrayerWidgetStore.read(context)!!, today, prayer))
+            assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.toggle(context, prayer, today) { clock() })
         }
         val stored = PrayerWidgetStore.read(context)!!
         assertTrue(PrayerWidgetPolicy.prayers.all { PrayerWidgetPolicy.status(stored, today, it) == "performed" })
@@ -89,25 +92,29 @@ class PrayerHomeWidgetTest {
         root.getJSONArray("replacements").put(JSONObject().put("id", "one").put("prayer", "subuh").put("quantity", 1).put("completedAt", "2026-11-13T10:00:00"))
         save(root)
         val previous = PrayerWidgetStore.read(context)!!.toString()
-        assertEquals(WidgetWriteResult.BALANCE_CONFLICT, PrayerWidgetStore.perform(context, "subuh", today) { clock() })
+        assertEquals(WidgetWriteResult.BALANCE_CONFLICT, PrayerWidgetStore.toggle(context, "subuh", today) { clock() })
         assertEquals(previous, PrayerWidgetStore.read(context)!!.toString())
         // A starting balance makes the correction valid without changing any replacement.
         root.getJSONObject("starting").put("subuh", 1)
         save(root)
-        assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.perform(context, "subuh", today) { clock() })
+        assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.toggle(context, "subuh", today) { clock() })
         val stored = PrayerWidgetStore.read(context)!!
         assertEquals(1, stored.getJSONObject("starting").getInt("subuh"))
         assertEquals(root.getJSONArray("replacements").toString(), stored.getJSONArray("replacements").toString())
         assertEquals("performed", PrayerWidgetPolicy.status(stored, today, "subuh"))
+        assertEquals(WidgetWriteResult.CLEARED, PrayerWidgetStore.toggle(context, "subuh", today) { clock() })
+        val cleared = PrayerWidgetStore.read(context)!!
+        assertEquals("unrecorded", PrayerWidgetPolicy.status(cleared, today, "subuh"))
+        assertEquals(root.getJSONArray("replacements").toString(), cleared.getJSONArray("replacements").toString())
     }
 
     @Test fun midnightAndDelayedTapsNeverWriteYesterdayOrSilentlyMissElapsedDays() {
         save(PrayerWidgetPolicy.perform(journal(), today, "subuh"))
         val tomorrow = clock(day = 14, hour = 0)
-        assertEquals(WidgetWriteResult.STALE_DAY, PrayerWidgetStore.perform(context, "zohor", today) { tomorrow })
-        assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.perform(context, "zohor", "2026-11-14") { tomorrow })
+        assertEquals(WidgetWriteResult.STALE_DAY, PrayerWidgetStore.toggle(context, "subuh", today) { tomorrow })
+        assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.toggle(context, "zohor", "2026-11-14") { tomorrow })
         val nextWeek = clock(day = 18)
-        assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.perform(context, "asar", "2026-11-18") { nextWeek })
+        assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.toggle(context, "asar", "2026-11-18") { nextWeek })
         val stored = PrayerWidgetStore.read(context)!!
         assertEquals("performed", PrayerWidgetPolicy.status(stored, today, "subuh"))
         assertEquals("unrecorded", PrayerWidgetPolicy.status(stored, today, "zohor"))
@@ -123,32 +130,33 @@ class PrayerHomeWidgetTest {
         SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use {
             it.execSQL("CREATE TRIGGER reject_write BEFORE UPDATE ON journal BEGIN SELECT RAISE(ABORT, 'write failure'); END")
         }
-        try { PrayerWidgetStore.perform(context, "subuh", today) { clock() }; fail("Accepted failed write") }
+        try { PrayerWidgetStore.toggle(context, "subuh", today) { clock() }; fail("Accepted failed write") }
         catch (_: android.database.sqlite.SQLiteException) { }
         assertEquals(original, PrayerWidgetStore.read(context)!!.toString())
     }
 
     @Test fun unavailableOrUnsupportedJournalIsNeverInitializedOrReplacedByWidget() {
         assertNull(PrayerWidgetStore.read(context))
-        assertEquals(WidgetWriteResult.UNAVAILABLE, PrayerWidgetStore.perform(context, "subuh", today) { clock() })
+        assertEquals(WidgetWriteResult.UNAVAILABLE, PrayerWidgetStore.toggle(context, "subuh", today) { clock() })
         assertFalse(file.exists())
         val root = journal().put("version", 999)
         save(root)
-        try { PrayerWidgetStore.perform(context, "subuh", today) { clock() }; fail("Accepted unsupported version") }
+        try { PrayerWidgetStore.toggle(context, "subuh", today) { clock() }; fail("Accepted unsupported version") }
         catch (_: IllegalArgumentException) { }
         assertEquals(root.toString(), PrayerWidgetStore.read(context)!!.toString())
         val view = PrayerHomeWidget.views(context, 1, root, clock()).apply(context, FrameLayout(context))
-        assertEquals("Open Qada Tracker to start or refresh", view.findViewById<TextView>(R.id.widget_footer).text.toString())
+        assertTrue(view.findViewById<View>(R.id.widget_root).performClick())
+        assertTrue(shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity.getBooleanExtra(PrayerReminders.OPEN_TODAY, false))
     }
 
     @Test fun invalidPrayerOrTrackingDateCannotModifyJournal() {
         val root = journal()
         save(root)
-        try { PrayerWidgetStore.perform(context, "invalid", today) { clock() }; fail("Accepted invalid prayer") }
+        try { PrayerWidgetStore.toggle(context, "invalid", today) { clock() }; fail("Accepted invalid prayer") }
         catch (_: IllegalArgumentException) { }
         root.put("startDate", "2026-11-14")
         save(root)
-        try { PrayerWidgetStore.perform(context, "subuh", today) { clock() }; fail("Wrote before tracking start") }
+        try { PrayerWidgetStore.toggle(context, "subuh", today) { clock() }; fail("Wrote before tracking start") }
         catch (_: IllegalArgumentException) { }
         assertEquals(root.toString(), PrayerWidgetStore.read(context)!!.toString())
     }
@@ -173,7 +181,6 @@ class PrayerHomeWidgetTest {
         for (id in listOf(41, 42)) {
             val view = manager.getViewFor(id)
             assertEquals("✓", view.findViewById<TextView>(R.id.widget_subuh_status).text.toString())
-            assertEquals("1 of 5 performed · Tap a box to record", view.findViewById<TextView>(R.id.widget_footer).text.toString())
         }
         assertTrue(shadowOf(context.getSystemService(android.app.AlarmManager::class.java)).scheduledAlarms.isNotEmpty())
         // A restore/app correction clears both views on the next sync.
@@ -183,6 +190,10 @@ class PrayerHomeWidgetTest {
     }
 
     @Test fun remoteViewsRenderFiveAccessibleButtonsInBothThemes() {
+        val metadata = context.resources.getXml(R.xml.prayer_widget_info)
+        while (metadata.eventType != org.xmlpull.v1.XmlPullParser.START_TAG) metadata.next()
+        assertEquals(1, metadata.getAttributeIntValue("http://schemas.android.com/apk/res/android", "targetCellHeight", 0))
+        metadata.close()
         var root = PrayerWidgetPolicy.perform(journal(), today, "subuh")
         root = PrayerWidgetPolicy.perform(root, today, "zohor")
         for (theme in listOf("light", "dark")) {
@@ -190,14 +201,15 @@ class PrayerHomeWidgetTest {
             val view = PrayerHomeWidget.views(context, 77, root, clock()).apply(context, FrameLayout(context))
             assertEquals("✓", view.findViewById<TextView>(R.id.widget_subuh_status).text.toString())
             assertEquals("○", view.findViewById<TextView>(R.id.widget_asar_status).text.toString())
+            assertEquals("Subuh, performed. Tap to leave unrecorded.", view.findViewById<View>(R.id.widget_subuh).contentDescription.toString())
             assertEquals("Maghrib, unrecorded. Tap to mark performed for today.", view.findViewById<View>(R.id.widget_maghrib).contentDescription.toString())
-            assertEquals("2 of 5 performed · Tap a box to record", view.findViewById<TextView>(R.id.widget_footer).text.toString())
-            capture(view, "widget-$theme", 360, 156)
+            capture(view, "widget-$theme", 360, 64)
+            assertCompact(view, 64)
         }
         val narrow = PrayerHomeWidget.views(context, 78, root, clock()).apply(context, FrameLayout(context))
-        capture(narrow, "widget-narrow", 280, 130)
+        capture(narrow, "widget-narrow", 280, 56)
+        assertCompact(narrow, 56)
         assertTrue(narrow.findViewById<View>(R.id.widget_isyak).right <= 280)
-        assertTrue(narrow.findViewById<View>(R.id.widget_footer).bottom <= 130)
         assertEquals(0, narrow.findViewById<TextView>(R.id.widget_maghrib_name).layout.getEllipsisCount(0))
     }
 
@@ -238,6 +250,14 @@ class PrayerHomeWidgetTest {
         for (id in listOf(91, 92)) assertEquals("✓", manager.getViewFor(id).findViewById<TextView>(R.id.widget_subuh_status).text.toString())
         assertTrue(notifications.activeNotifications.isEmpty())
         assertTrue(shadowOf(RuntimeEnvironment.getApplication()).broadcastIntents.any { it.action == PrayerHomeWidget.JOURNAL_CHANGED })
+        assertTrue(manager.getViewFor(92).findViewById<View>(R.id.widget_subuh).performClick())
+        shadowOf(android.os.Looper.getMainLooper()).idle()
+        val cleared = CountDownLatch(1)
+        PrayerHomeWidget.execute { cleared.countDown() }
+        assertTrue(cleared.await(5, TimeUnit.SECONDS))
+        shadowOf(android.os.Looper.getMainLooper()).idle()
+        assertEquals("unrecorded", PrayerWidgetPolicy.status(PrayerWidgetStore.read(context)!!, date, "subuh"))
+        for (id in listOf(91, 92)) assertEquals("○", manager.getViewFor(id).findViewById<TextView>(R.id.widget_subuh_status).text.toString())
     }
 
     @Test fun midnightUsesLocalCalendarAcrossDstAndTimezoneChanges() {
@@ -261,9 +281,9 @@ class PrayerHomeWidgetTest {
             it.execSQL("UPDATE prayer_calendar SET document = ? WHERE id = 1", arrayOf(SavedPrayerCalendar("widget-test-place", "Asia/Kuala_Lumpur", 0, slots).json().toString()))
         }
         val previous = PrayerWidgetStore.read(context)!!.toString()
-        assertEquals(WidgetWriteResult.NOT_STARTED, PrayerWidgetStore.perform(context, "asar", today) { clock(hour = 15).apply { set(Calendar.MINUTE, 59); set(Calendar.SECOND, 59); set(Calendar.MILLISECOND, 999) } })
+        assertEquals(WidgetWriteResult.NOT_STARTED, PrayerWidgetStore.toggle(context, "asar", today) { clock(hour = 15).apply { set(Calendar.MINUTE, 59); set(Calendar.SECOND, 59); set(Calendar.MILLISECOND, 999) } })
         assertEquals(previous, PrayerWidgetStore.read(context)!!.toString())
-        assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.perform(context, "asar", today) { clock(hour = 16) })
+        assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.toggle(context, "asar", today) { clock(hour = 16) })
         assertEquals("performed", PrayerWidgetPolicy.status(PrayerWidgetStore.read(context)!!, today, "asar"))
     }
 
@@ -280,8 +300,95 @@ class PrayerHomeWidgetTest {
                 }
             }
             val previous = PrayerWidgetStore.read(context)!!.toString()
-            assertEquals(kind, WidgetWriteResult.TIMES_UNAVAILABLE, PrayerWidgetStore.perform(context, "subuh", today) { clock(hour = 23) })
+            assertEquals(kind, WidgetWriteResult.TIMES_UNAVAILABLE, PrayerWidgetStore.toggle(context, "subuh", today) { clock(hour = 23) })
             assertEquals(previous, PrayerWidgetStore.read(context)!!.toString())
+        }
+    }
+
+    @Test fun clearingPerformedNeedsNoTimetableAndCannotBypassTheNextPerformedCheck() {
+        for (kind in listOf("early", "missing", "place")) {
+            save(PrayerWidgetPolicy.perform(journal(), today, "subuh"))
+            SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+                val calendar = PrayerTimeStore.calendar(db)!!
+                when (kind) {
+                    "missing" -> db.execSQL("DELETE FROM prayer_calendar")
+                    "place" -> db.execSQL("UPDATE prayer_calendar SET document = ? WHERE id = 1", arrayOf(calendar.copy(key = "other-place").json().toString()))
+                    "early" -> {
+                        val entries = calendar.entries.map { if (it.date == today && it.prayer == "subuh") it.copy(at = clock(hour = 5).timeInMillis, time = "05:00") else it }
+                        db.execSQL("UPDATE prayer_calendar SET document = ? WHERE id = 1", arrayOf(calendar.copy(entries = entries).json().toString()))
+                    }
+                }
+            }
+            assertEquals(WidgetWriteResult.CLEARED, PrayerWidgetStore.toggle(context, "subuh", today) { clock(hour = 0) })
+            assertEquals("unrecorded", PrayerWidgetPolicy.status(PrayerWidgetStore.read(context)!!, today, "subuh"))
+            assertEquals(if (kind == "early") WidgetWriteResult.NOT_STARTED else WidgetWriteResult.TIMES_UNAVAILABLE,
+                PrayerWidgetStore.toggle(context, "subuh", today) { clock(hour = 0) })
+            assertEquals("unrecorded", PrayerWidgetPolicy.status(PrayerWidgetStore.read(context)!!, today, "subuh"))
+        }
+    }
+
+    @Test fun failedClearLeavesPerformedRecordSaved() {
+        save(PrayerWidgetPolicy.perform(journal(), today, "subuh"))
+        val original = PrayerWidgetStore.read(context)!!.toString()
+        SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use {
+            it.execSQL("CREATE TRIGGER reject_clear BEFORE UPDATE ON journal BEGIN SELECT RAISE(ABORT, 'write failure'); END")
+        }
+        try { PrayerWidgetStore.toggle(context, "subuh", today) { clock() }; fail("Accepted failed clear") }
+        catch (_: android.database.sqlite.SQLiteException) { }
+        assertEquals(original, PrayerWidgetStore.read(context)!!.toString())
+    }
+
+    @Test fun backgroundPaddingAndGapsOpenTodayWhilePrayerBoxesOnlyToggle() {
+        val activity = org.robolectric.Robolectric.buildActivity(android.app.Activity::class.java).setup().get()
+        val host = FrameLayout(activity)
+        activity.setContentView(host)
+        val view = PrayerHomeWidget.views(activity, 7, journal(), clock()).apply(activity, host)
+        host.addView(view, FrameLayout.LayoutParams(360, 64))
+        shadowOf(android.os.Looper.getMainLooper()).idle()
+        capture(view, "widget-background", 360, 64)
+        val app = shadowOf(RuntimeEnvironment.getApplication())
+        val first = view.findViewById<View>(R.id.widget_subuh)
+        val second = view.findViewById<View>(R.id.widget_zohor)
+        for (x in listOf(2f, (first.right + second.left) / 2f)) {
+            tap(view, x, 32f)
+            val intent = app.nextStartedActivity
+            assertEquals(MainActivity::class.java.name, intent.component!!.className)
+            assertTrue(intent.getBooleanExtra(PrayerReminders.OPEN_TODAY, false))
+        }
+        assertFalse(app.broadcastIntents.any { it.action == PrayerHomeWidget.MARK })
+        tap(view, (first.left + first.right) / 2f, 32f)
+        assertNull(app.nextStartedActivity)
+        assertEquals(1, app.broadcastIntents.count { it.action == PrayerHomeWidget.MARK })
+        activity.finish()
+    }
+
+    @Test fun oneRowAtMinimumSizeKeepsNamesReadableWithLargeSystemText() {
+        RuntimeEnvironment.setFontScale(1.6f)
+        val view = PrayerHomeWidget.views(context, 8, journal(), clock()).apply(context, FrameLayout(context))
+        capture(view, "widget-large-text", 280, 56)
+        assertCompact(view, 56)
+    }
+
+    private fun tap(view: View, x: Float, y: Float) {
+        val now = android.os.SystemClock.uptimeMillis()
+        for (action in listOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP)) {
+            val event = MotionEvent.obtain(now, now, action, x, y, 0)
+            view.dispatchTouchEvent(event)
+            event.recycle()
+        }
+        shadowOf(android.os.Looper.getMainLooper()).idle()
+    }
+
+    private fun assertCompact(view: View, height: Int) {
+        for (id in listOf(R.id.widget_subuh, R.id.widget_zohor, R.id.widget_asar, R.id.widget_maghrib, R.id.widget_isyak)) {
+            val box = view.findViewById<View>(id)
+            assertTrue("Prayer target too small", box.width >= 48 && box.height >= 48)
+            assertTrue("Prayer box exceeds one-row height", box.top >= 0 && box.bottom <= height)
+        }
+        for (id in listOf(R.id.widget_subuh_name, R.id.widget_zohor_name, R.id.widget_asar_name, R.id.widget_maghrib_name, R.id.widget_isyak_name)) {
+            val name = view.findViewById<TextView>(id)
+            assertEquals("Prayer name truncated", 0, name.layout.getEllipsisCount(0))
+            assertEquals(1, name.lineCount)
         }
     }
 

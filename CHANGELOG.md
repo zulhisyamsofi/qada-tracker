@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.6.0 — Compact toggleable widget
+
+Changes the home-screen widget from 4 × 2 to 4 × 1, removes the header/footer, and opens Today when its padding or gaps are tapped. Repeated prayer taps toggle performed/unrecorded, with offline clearing and existing time/qada checks preserved. Release uploads accept a supplied checked manifest for new feature editions.
+
 ## release-tools-v1.0.1 — Draft asset addressing
 
 Uses explicit release IDs and the official asset-upload API so the hosted runner can attach files to drafts created by the publishing integration.

@@ -172,6 +172,17 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, 500));
     await tester.pumpAndSettle();
     expect(find.text('3 of 5 prayers recorded today'), findsOneWidget);
+    journal = await db.load(now);
+    await db.save(
+      journal.setStatuses(now, {Prayer.subuh: PrayerStatus.unrecorded}, now),
+    );
+    await widget.onJournalChanged!();
+    await tester.pumpAndSettle();
+    expect(find.text('2 of 5 prayers recorded today'), findsOneWidget);
+    expect(
+      (await db.load(now)).status(now, Prayer.asar),
+      PrayerStatus.performed,
+    );
     await tester.pumpWidget(const SizedBox());
     expect(widget.onJournalChanged, isNull);
     await db.close();

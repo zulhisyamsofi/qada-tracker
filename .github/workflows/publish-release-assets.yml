@@ -2,9 +2,11 @@ name: Upload checked Android releases
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - 'release-tools-v*'
+    inputs:
+      manifest:
+        description: 'Checked draft assets as JSON; blank uses the bootstrap manifest'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -26,4 +28,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          QADA_RELEASE_MANIFEST: ${{ inputs.manifest }}
         run: python3 .github/scripts/publish_release_assets.py

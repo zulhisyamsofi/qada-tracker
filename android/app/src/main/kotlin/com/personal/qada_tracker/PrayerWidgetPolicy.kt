@@ -42,6 +42,14 @@ internal object PrayerWidgetPolicy {
     }
 
     /** Copy before editing so rejection cannot change even the caller's object. */
+    fun toggle(root: JSONObject, date: String, prayer: String): JSONObject {
+        validate(root, date)
+        if (status(root, date, prayer) != "performed") return perform(root, date, prayer)
+        return JSONObject(root.toString()).apply {
+            getJSONObject("records").getJSONObject(date).put(prayer, "unrecorded")
+        }
+    }
+
     fun perform(root: JSONObject, date: String, prayer: String): JSONObject {
         validate(root, date)
         val status = status(root, date, prayer)
