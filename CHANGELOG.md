@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## release-tools-v1.0.1 — Draft asset addressing
+
+Uses explicit release IDs and the official asset-upload API so the hosted runner can attach files to drafts created by the publishing integration.
+
 ## release-tools-v1.0.0 — Private release uploads
 
 Adds a pinned GitHub workflow that transfers the already-checked APKs into draft releases, verifying the source tag, size, and SHA-256. Uses GitHub's repository-scoped runner token, with no personal token or signing key stored. App versions and application sources are unchanged.

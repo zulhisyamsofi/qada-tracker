@@ -4,41 +4,47 @@
     "commit": "d5b08f3242c6ff68f3693cb18fc49dcc084710f1",
     "url": "https://litter.catbox.moe/s8nwiw5s8irjrq14.apk",
     "sha256": "6bdf58b884e7fa1e45732d9eaf5e999ad541dc777cae2af591a01cb347cf8e59",
-    "size": 158349866
+    "size": 158349866,
+    "release_id": 444185802
   },
   {
     "tag": "v1.1.0",
     "commit": "e2cf27b1c1f7b2e8583184d2e4bfd427db89070e",
     "url": "https://litter.catbox.moe/iwtcre055fvg7ew1.apk",
     "sha256": "5e866dddccbf55a15ea4e82eab3c6e72ad259f0d15ddce7cbeed0c8ade786b0c",
-    "size": 158376026
+    "size": 158376026,
+    "release_id": 444194264
   },
   {
     "tag": "v1.2.0",
     "commit": "99a7808c2b4e958aa933c7f6049e8f8f6283815e",
     "url": "https://litter.catbox.moe/aiy82rldy3uyvzxt.apk",
     "sha256": "186d801ba6912098efe3ca2435a8939c0c5f82019cc6181e497fa40a16fd1fcb",
-    "size": 160513503
+    "size": 160513503,
+    "release_id": 444194290
   },
   {
     "tag": "v1.3.0",
     "commit": "c4d0d42cb6ee1226db7c365427180eaff3fff021",
     "url": "https://litter.catbox.moe/t67rioctb7m38ayf.apk",
     "sha256": "96c6c8e0d72d2caf3d27c75013327d98eaecf14478dd294134eab6bf85779fbd",
-    "size": 160800027
+    "size": 160800027,
+    "release_id": 444194321
   },
   {
     "tag": "v1.4.0",
     "commit": "19774dcd5732382d7680804e37e6c5d80ed17ffc",
     "url": "https://litter.catbox.moe/rqid13ijhl90oi4p.apk",
     "sha256": "a42528b6bb7da463079d35edf432e9d5d5f9e401e116181357a3e09a3f53035f",
-    "size": 160831768
+    "size": 160831768,
+    "release_id": 444194350
   },
   {
     "tag": "v1.5.0",
     "commit": "32c23244f0b98ca62954fce5dd316a752f11b303",
     "url": "https://litter.catbox.moe/mbor5dhbs4rwsmgb.apk",
     "sha256": "aad4115240f816bbfc0e8c9a7a07f98ec249e5acd40dba26b72418d9929e7a96",
-    "size": 160839808
+    "size": 160839808,
+    "release_id": 444194387
   }
 ]

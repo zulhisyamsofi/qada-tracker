@@ -44,7 +44,10 @@ def main():
             target = api(f"repos/{repo}/git/tags/{ref['sha']}")["object"]
             if target["type"] != "commit" or target["sha"] != entry["commit"]:
                 raise ValueError(f"The source commit for {tag} changed.")
-            release = api(f"repos/{repo}/releases/tags/{tag}")
+            release_path = f"repos/{repo}/releases/{entry['release_id']}"
+            release = api(release_path)
+            if release["tag_name"] != tag:
+                raise ValueError(f"Release ID does not match {tag}.")
             if not release["draft"]:
                 raise ValueError(f"Refusing to replace assets on published release {tag}.")
             folder = Path(temporary, tag)
@@ -60,8 +63,20 @@ def main():
                 raise ValueError(f"Checksum/size mismatch for {tag}.")
             checksum = folder / "SHA256SUMS"
             checksum.write_text(f"{entry['sha256']}  {apk.name}\n")
-            subprocess.run(["gh", "release", "upload", tag, str(apk), str(checksum), "--repo", repo, "--clobber"], check=True)
-            assets = {a["name"]: a for a in api(f"repos/{repo}/releases/tags/{tag}")["assets"]}
+            assets = {a["name"]: a for a in release["assets"]}
+            for file in [apk, checksum]:
+                if file.name not in assets:
+                    endpoint = f"https://uploads.github.com/{release_path}/assets?name={urllib.parse.quote(file.name)}"
+                    request = urllib.request.Request(endpoint, data=file.read_bytes(), method="POST", headers={
+                        "Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                        "Content-Type": "application/octet-stream",
+                        "Accept": "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                        "User-Agent": "Qada-Tracker-Release",
+                    })
+                    with urllib.request.urlopen(request, timeout=180) as response:
+                        assets[file.name] = json.load(response)
+            assets = {a["name"]: a for a in api(release_path)["assets"]}
             for file in [apk, checksum]:
                 asset = assets[file.name]
                 if asset["size"] != file.stat().st_size:
@@ -73,7 +88,8 @@ def main():
                 else:
                     verify = folder / "download-check"
                     verify.mkdir(exist_ok=True)
-                    subprocess.run(["gh", "release", "download", tag, "--repo", repo, "--pattern", file.name, "--dir", str(verify)], check=True)
+                    with (verify / file.name).open("wb") as destination:
+                        subprocess.run(["gh", "api", f"repos/{repo}/releases/assets/{asset['id']}", "--header", "Accept: application/octet-stream"], stdout=destination, check=True)
                     if sha256(verify / file.name) != sha256(file):
                         raise ValueError(f"Downloaded digest mismatch for {file.name}.")
             print(f"Verified private draft assets for {tag}", flush=True)
