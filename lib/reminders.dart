@@ -7,10 +7,12 @@ class ReminderAccess {
     required this.notifications,
     required this.exactAlarms,
     this.error,
+    this.prayerTimesNotifications,
   });
   final bool notifications;
   final bool exactAlarms;
   final String? error;
+  final bool? prayerTimesNotifications;
 }
 
 /// Android owns the alarms and checks SQLite at delivery, even without Flutter.
@@ -22,6 +24,7 @@ class ReminderService {
     if (this.supported) {
       this.channel.setMethodCallHandler((call) async {
         if (call.method == 'openToday') onOpenToday?.call();
+        if (call.method == 'openPrayerTimes') onOpenPrayerTimes?.call();
       });
     }
   }
@@ -29,6 +32,29 @@ class ReminderService {
   final bool supported;
   String? _error;
   void Function()? onOpenToday;
+  void Function()? onOpenPrayerTimes;
+  Future<bool> initialPrayerTimesTap() async {
+    if (!supported) return false;
+    try {
+      return await channel.invokeMethod<bool>('initialPrayerTimesTap') == true;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  Future<void> syncPrayerTimes() async {
+    if (!supported) return;
+    try {
+      await channel.invokeMethod<void>('syncPrayerTimes');
+      _error = null;
+    } on PlatformException {
+      _error = 'Android could not schedule prayer-time alerts.';
+    } on MissingPluginException {
+      _error = 'Prayer-time alerts are unavailable in this build.';
+    }
+  }
 
   Future<void> sync(bool enabled) async {
     if (!supported) return;
@@ -52,6 +78,7 @@ class ReminderService {
       return ReminderAccess(
         notifications: result?['notifications'] == true,
         exactAlarms: result?['exactAlarms'] == true,
+        prayerTimesNotifications: result?['prayerNotifications'] as bool?,
         error: _error,
       );
     } on PlatformException {

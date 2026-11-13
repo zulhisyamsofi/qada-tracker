@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'prayer_times_models.dart';
 
 enum Prayer { subuh, zohor, asar, maghrib, isyak }
 
@@ -53,6 +54,7 @@ class Journal {
     List<QadaEntry>? replacements,
     this.theme = AppTheme.system,
     this.reminderEnabled = false,
+    this.prayerTimes = const PrayerTimeSettings(),
   }) : records = Map.unmodifiable(
          (records ?? {}).map(
            (key, value) =>
@@ -69,6 +71,7 @@ class Journal {
   final List<QadaEntry> replacements;
   final AppTheme theme;
   final bool reminderEnabled;
+  final PrayerTimeSettings prayerTimes;
 
   PrayerStatus status(DateTime day, Prayer p) =>
       records[dateKey(day)]?[p] ?? PrayerStatus.unrecorded;
@@ -85,6 +88,7 @@ class Journal {
     List<QadaEntry>? replacements,
     AppTheme? theme,
     bool? reminderEnabled,
+    PrayerTimeSettings? prayerTimes,
   }) => Journal(
     startDate: startDate,
     records: records ?? this.records,
@@ -92,6 +96,7 @@ class Journal {
     replacements: replacements ?? this.replacements,
     theme: theme ?? this.theme,
     reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+    prayerTimes: prayerTimes ?? this.prayerTimes,
   );
 
   Journal checked() {
@@ -170,6 +175,7 @@ class Journal {
     'startDate': dateKey(startDate),
     'theme': theme.name,
     'reminderEnabled': reminderEnabled,
+    'prayerTimes': prayerTimes.toJson(),
     'starting': {for (final p in Prayer.values) p.name: starting[p] ?? 0},
     'records': {
       for (final e in records.entries)
@@ -254,6 +260,11 @@ class Journal {
         replacements: replacements,
         theme: AppTheme.values.byName(root['theme'] as String),
         reminderEnabled: (root['reminderEnabled'] ?? false) as bool,
+        prayerTimes: root['prayerTimes'] == null
+            ? const PrayerTimeSettings()
+            : PrayerTimeSettings.fromJson(
+                root['prayerTimes'] as Map<String, dynamic>,
+              ),
       ).checked();
     } on FormatException {
       rethrow;

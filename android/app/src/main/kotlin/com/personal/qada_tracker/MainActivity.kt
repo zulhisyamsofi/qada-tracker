@@ -18,13 +18,20 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         PrayerReminders.createChannel(this)
+        try { PrayerTimeAlarms.configure(this, force = true) } catch (error: Exception) { android.util.Log.w("PrayerTimes", "Unable to initialize prayer alerts", error) }
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "qada_tracker/reminders").apply {
             setMethodCallHandler { call, result ->
                 try {
                     when (call.method) {
                         "sync" -> {
                             PrayerReminders.sync(this@MainActivity, call.argument<Boolean>("enabled") == true)
+                            PrayerTimeAlarms.configure(this@MainActivity)
                             result.success(null)
+                        }
+                        "syncPrayerTimes" -> { PrayerTimeAlarms.configure(this@MainActivity, force = true); result.success(null) }
+                        "initialPrayerTimesTap" -> {
+                            result.success(intent.getBooleanExtra(PrayerTimeAlarms.OPEN, false))
+                            intent.removeExtra(PrayerTimeAlarms.OPEN)
                         }
                         "access" -> result.success(PrayerReminders.access(this@MainActivity))
                         "requestNotifications" -> {
@@ -62,6 +69,7 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        if (intent.getBooleanExtra(PrayerTimeAlarms.OPEN, false)) channel?.invokeMethod("openPrayerTimes", null)
         if (intent.getBooleanExtra(PrayerReminders.OPEN_TODAY, false)) channel?.invokeMethod("openToday", null)
     }
     override fun onDestroy() {

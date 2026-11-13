@@ -46,5 +46,6 @@ flutter {
 }
 
 dependencies {
+    implementation("androidx.work:work-runtime:2.10.1")
     testImplementation("junit:junit:4.13.2")
 }

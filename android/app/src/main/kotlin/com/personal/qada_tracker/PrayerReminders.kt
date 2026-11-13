@@ -45,7 +45,8 @@ internal object PrayerReminders {
         (Build.VERSION.SDK_INT < 26 || manager(context).getNotificationChannel(CHANNEL)?.importance != NotificationManager.IMPORTANCE_NONE)
     fun exactAllowed(context: Context): Boolean = Build.VERSION.SDK_INT < 31 || alarms(context).canScheduleExactAlarms()
     fun access(context: Context): Map<String, Boolean> = mapOf(
-        "notifications" to notificationsAllowed(context), "exactAlarms" to exactAllowed(context)
+        "notifications" to notificationsAllowed(context), "exactAlarms" to exactAllowed(context),
+        "prayerNotifications" to PrayerTimeAlarms.notificationsAllowed(context)
     )
 
     private fun pending(context: Context, date: String = ""): PendingIntent = PendingIntent.getBroadcast(

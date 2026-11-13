@@ -7,6 +7,8 @@ import 'controller.dart';
 import 'model.dart';
 import 'reminders.dart';
 import 'reminder_settings.dart';
+import 'prayer_times_page.dart';
+import 'prayer_times_controller.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -76,7 +78,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   Timer? midnight;
   bool fileBusy = false;
   late final ReminderService reminders;
-  final titles = const ['Today', 'History', 'Qada', 'Progress'];
+  final titles = const ['Today', 'History', 'Qada', 'Progress', 'Prayer Times'];
   @override
   void initState() {
     super.initState();
@@ -90,6 +92,17 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         setState(() => tab = 0);
       }
     };
+    reminders.onOpenPrayerTimes = () {
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        setState(() => tab = 4);
+      }
+    };
+    unawaited(
+      reminders.initialPrayerTimesTap().then((open) {
+        if (mounted && open) setState(() => tab = 4);
+      }),
+    );
   }
 
   void scheduleMidnight() {
@@ -108,6 +121,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     });
     scheduleMidnight();
     unawaited(controller.refreshReminders());
+    ref.invalidate(prayerTimesProvider);
   }
 
   @override
@@ -119,6 +133,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   void dispose() {
     midnight?.cancel();
     reminders.onOpenToday = null;
+    reminders.onOpenPrayerTimes = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -221,7 +236,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               0 => todayPage(j),
               1 => historyPage(j),
               2 => qadaPage(j),
-              _ => progressPage(j),
+              3 => progressPage(j),
+              _ => const PrayerTimesPage(),
             },
           ),
         ),
@@ -244,6 +260,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             icon: Icon(Icons.insights_outlined),
             label: 'Progress',
           ),
+          NavigationDestination(icon: Icon(Icons.schedule), label: 'Times'),
         ],
       ),
     );
@@ -809,7 +826,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  'Qada Tracker · Personal edition\nPrayer times and cloud sync are not enabled.',
+                  'Qada Tracker · Personal edition\nPrayer times from WaktuSolat / JAKIM. Cloud sync is not enabled.',
                 ),
                 const SizedBox(height: 12),
               ],

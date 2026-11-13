@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:convert';
+import 'prayer_times_models.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as path;
@@ -19,7 +21,7 @@ class JournalDatabase extends GeneratedDatabase {
   }
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
   @override
@@ -30,8 +32,41 @@ class JournalDatabase extends GeneratedDatabase {
       await customStatement(
         'CREATE TABLE journal (id INTEGER PRIMARY KEY CHECK (id = 1), document TEXT NOT NULL)',
       );
+      await _createCalendar();
+    },
+    onUpgrade: (_, from, to) async {
+      if (from < 2) await _createCalendar();
     },
   );
+  Future<void> _createCalendar() => customStatement(
+    'CREATE TABLE prayer_calendar (id INTEGER PRIMARY KEY CHECK (id = 1), document TEXT NOT NULL)',
+  );
+
+  Future<PrayerCalendar?> loadCalendar() async {
+    final row = await customSelect(
+      'SELECT document FROM prayer_calendar WHERE id = 1',
+    ).getSingleOrNull();
+    if (row == null) return null;
+    try {
+      return PrayerCalendar.fromJson(
+        jsonDecode(row.read<String>('document')) as Map<String, dynamic>,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> saveCalendar(PrayerCalendar calendar, DateTime now) =>
+      transaction(() async {
+        final current = await load(now);
+        if (current.prayerTimes.place.key != calendar.sourceKey) return false;
+        await customStatement(
+          'INSERT OR REPLACE INTO prayer_calendar(id, document) VALUES (1, ?)',
+          [jsonEncode(calendar.toJson())],
+        );
+        return true;
+      });
+
   Future<Journal> load(DateTime now) async {
     final row = await customSelect(
       'SELECT document FROM journal WHERE id = 1',
