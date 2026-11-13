@@ -18,3 +18,9 @@ Every version passed formatting, static analysis, its Flutter tests, and an Andr
 Each release contains `qada-tracker-v<version>.apk` and `SHA256SUMS`. All APKs retain package `com.personal.qada_tracker`, minimum API 24, target API 36, and the same debug signing certificate (`ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`). Install the latest APK as an update to retain the journal.
 
 No repository visibility change, Android store release, or cloud-environment publication is performed by this GitHub release process.
+
+## Upload automation — release-tools-v1.0.0
+
+The separately tagged publishing workflow handles the cloud credential's inability to authenticate to GitHub's dedicated asset-upload host. It uses a repository-scoped GitHub Actions token on a hosted runner to attach the already-built APKs; it does not rebuild or re-sign them. The pinned workflow verifies the annotated source tag, expected file size, local checksum, and uploaded asset digest before reporting success. It uploads into drafts; publication follows verification.
+
+The workflow runs manually or on `release-tools-v*` tags. Its transfer manifest uses checksum-pinned temporary HTTPS file links that expire after 72 hours. Refresh those links before a later retry. Copies attached to GitHub releases remain available through the private repository after transfer. No personal access token, signing keystore, or app records are committed or stored as workflow secrets.

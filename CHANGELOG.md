@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## release-tools-v1.0.0 — Private release uploads
+
+Adds a pinned GitHub workflow that transfers the already-checked APKs into draft releases, verifying the source tag, size, and SHA-256. Uses GitHub's repository-scoped runner token, with no personal token or signing key stored. App versions and application sources are unchanged.
+
 ## v1.5.0 — Integrated times and recording validation
 
 Times beside Today prayer labels, four-tab navigation, and start-time checks in the app and widget.

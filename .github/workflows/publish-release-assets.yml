@@ -1,0 +1,29 @@
+name: Upload checked Android releases
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'release-tools-v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: qada-release-assets
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the release manifest
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Upload verified APKs and checksums to draft releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python3 .github/scripts/publish_release_assets.py
