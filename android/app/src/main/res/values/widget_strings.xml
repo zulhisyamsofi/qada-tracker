@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="prayer_widget_label">Today’s prayers</string>
+    <string name="prayer_widget_description">Five prayer buttons. Tap a box to mark a prayer performed for today.</string>
+</resources>

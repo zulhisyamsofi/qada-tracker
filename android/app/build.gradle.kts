@@ -38,7 +38,18 @@ android {
         }
     }
 
-
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all { test ->
+            // Robolectric downloads its pinned Android runtime from Maven
+            // Central through the same JVM proxy/CA settings as Gradle.
+            test.systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
+            test.systemProperty("qada.widget.capture.dir", rootProject.projectDir.parentFile.resolve("build/widget-qa").absolutePath)
+            listOf("https.proxyHost", "https.proxyPort", "http.proxyHost", "http.proxyPort", "http.nonProxyHosts").forEach { name ->
+                System.getProperty(name)?.let { test.systemProperty(name, it) }
+            }
+        }
+    }
 }
 
 flutter {
@@ -48,4 +59,5 @@ flutter {
 dependencies {
     implementation("androidx.work:work-runtime:2.10.1")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.16.1")
 }

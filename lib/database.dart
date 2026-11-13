@@ -28,6 +28,7 @@ class JournalDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => const [];
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    beforeOpen: (_) => customStatement('PRAGMA busy_timeout = 3000'),
     onCreate: (_) async {
       await customStatement(
         'CREATE TABLE journal (id INTEGER PRIMARY KEY CHECK (id = 1), document TEXT NOT NULL)',
@@ -73,8 +74,33 @@ class JournalDatabase extends GeneratedDatabase {
     ).getSingleOrNull();
     if (row != null) return Journal.decode(row.read<String>('document'), now);
     final initial = Journal(startDate: dayOnly(now));
-    await save(initial);
-    return initial;
+    // Another connection (the home widget) may initialize/read concurrently.
+    await customStatement(
+      'INSERT OR IGNORE INTO journal(id, document) VALUES(1, ?)',
+      [initial.export()],
+    );
+    return load(now);
+  }
+
+  /// Rebase each mutation on disk and compare-and-swap the complete document.
+  /// Android widgets use a separate SQLite connection, so a cached UI snapshot
+  /// must never overwrite a more recent tap. No read transaction is held while
+  /// waiting for the native writer; a conflict retries the domain operation.
+  Future<Journal> change(DateTime now, Journal Function(Journal) update) async {
+    await load(now);
+    for (var attempt = 0; attempt < 20; attempt++) {
+      final row = await customSelect(
+        'SELECT document FROM journal WHERE id = 1',
+      ).getSingle();
+      final previous = row.read<String>('document');
+      final next = update(Journal.decode(previous, now)).checked();
+      final changed = await customUpdate(
+        'UPDATE journal SET document = ? WHERE id = 1 AND document = ?',
+        variables: [Variable(next.export()), Variable(previous)],
+      );
+      if (changed == 1) return next;
+    }
+    throw StateError('Your journal changed. Please try again.');
   }
 
   Future<void> save(Journal journal) => transaction(() async {

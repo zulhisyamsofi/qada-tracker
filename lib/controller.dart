@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'database.dart';
 import 'model.dart';
 import 'reminders.dart';
+import 'home_widget.dart';
 
 final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 final databaseProvider = FutureProvider<JournalDatabase>((ref) async {
@@ -24,6 +25,7 @@ class JournalController extends AsyncNotifier<Journal> {
       databaseProvider.future,
     )).load(ref.read(clockProvider)());
     await ref.read(reminderServiceProvider).sync(journal.reminderEnabled);
+    await ref.read(homeWidgetServiceProvider).sync();
     return journal;
   }
 
@@ -37,11 +39,32 @@ class JournalController extends AsyncNotifier<Journal> {
   // Serialize rapid taps and restores; failed disk writes never update the UI.
   Future<void> change(Journal Function(Journal) update) {
     final operation = _queue.then((_) async {
-      final current = state.requireValue;
-      final next = update(current).checked();
-      await (await ref.read(databaseProvider.future)).save(next);
+      final next = await (await ref.read(
+        databaseProvider.future,
+      )).change(ref.read(clockProvider)(), update);
+      if (!ref.mounted) return;
       state = AsyncData(next);
       await refreshReminders();
+      await ref.read(homeWidgetServiceProvider).sync();
+    });
+    _queue = operation.catchError((Object _) {});
+    return operation;
+  }
+
+  // Native widget changes do not pass through Riverpod. Queue reloads with
+  // app writes so a slow resume read cannot publish an older UI snapshot.
+  Future<void> reload() {
+    final operation = _queue.then((_) async {
+      if (!ref.mounted) return;
+      if (!state.hasValue) await future;
+      if (!ref.mounted) return;
+      final next = await (await ref.read(
+        databaseProvider.future,
+      )).load(ref.read(clockProvider)());
+      if (!ref.mounted) return;
+      state = AsyncData(next);
+      await refreshReminders();
+      await ref.read(homeWidgetServiceProvider).sync();
     });
     _queue = operation.catchError((Object _) {});
     return operation;

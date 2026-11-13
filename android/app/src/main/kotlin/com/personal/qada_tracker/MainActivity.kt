@@ -2,6 +2,11 @@ package com.personal.qada_tracker
 
 import android.Manifest
 import android.content.Intent
+import android.content.BroadcastReceiver
+import android.content.ComponentName
+import android.content.Context
+import android.content.IntentFilter
+import android.appwidget.AppWidgetManager
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -12,11 +17,46 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private var channel: MethodChannel? = null
+    private var widgetChannel: MethodChannel? = null
+    private var widgetReceiverRegistered = false
+    private val widgetReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == PrayerHomeWidget.JOURNAL_CHANGED) widgetChannel?.invokeMethod("journalChanged", null)
+        }
+    }
     private var permissionResult: MethodChannel.Result? = null
     private val requestCode = 2301
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        widgetChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "qada_tracker/home_widget").apply {
+            setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "sync" -> PrayerHomeWidget.execute {
+                        try {
+                            PrayerHomeWidget.refreshAll(applicationContext)
+                            runOnUiThread { result.success(null) }
+                        } catch (_: Exception) { runOnUiThread { result.error("widget", "Unable to refresh the home-screen widget.", null) } }
+                    }
+                    "requestPin" -> {
+                        val requested = try {
+                            val manager = AppWidgetManager.getInstance(this@MainActivity)
+                            Build.VERSION.SDK_INT >= 26 && manager.isRequestPinAppWidgetSupported &&
+                                manager.requestPinAppWidget(ComponentName(this@MainActivity, PrayerHomeWidget::class.java), null, null)
+                        } catch (_: Exception) { false }
+                        result.success(requested)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        }
+        val filter = IntentFilter(PrayerHomeWidget.JOURNAL_CHANGED)
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(widgetReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        else {
+            @Suppress("DEPRECATION")
+            registerReceiver(widgetReceiver, filter)
+        }
+        widgetReceiverRegistered = true
         PrayerReminders.createChannel(this)
         try { PrayerTimeAlarms.configure(this, force = true) } catch (error: Exception) { android.util.Log.w("PrayerTimes", "Unable to initialize prayer alerts", error) }
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "qada_tracker/reminders").apply {
@@ -76,6 +116,9 @@ class MainActivity : FlutterActivity() {
         permissionResult?.success(false)
         permissionResult = null
         channel?.setMethodCallHandler(null)
+        widgetChannel?.setMethodCallHandler(null)
+        if (widgetReceiverRegistered) unregisterReceiver(widgetReceiver)
+        widgetReceiverRegistered = false
         super.onDestroy()
     }
 }

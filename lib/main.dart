@@ -14,6 +14,7 @@ import 'prayer_times_page.dart';
 import 'prayer_times_controller.dart';
 import 'ui/app_theme.dart';
 import 'ui/glass.dart';
+import 'home_widget.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,6 +69,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   Timer? midnight;
   bool fileBusy = false;
   late final ReminderService reminders;
+  late final HomeWidgetService homeWidget;
   final titles = const ['Today', 'History', 'Qada', 'Progress', 'Prayer Times'];
   @override
   void initState() {
@@ -76,6 +78,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     today = dayOnly(ref.read(clockProvider)());
     scheduleMidnight();
     reminders = ref.read(reminderServiceProvider);
+    homeWidget = ref.read(homeWidgetServiceProvider);
+    homeWidget.onJournalChanged = () => act(controller.reload);
     reminders.onOpenToday = () {
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
@@ -110,7 +114,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       today = dayOnly(ref.read(clockProvider)());
     });
     scheduleMidnight();
-    unawaited(controller.refreshReminders());
+    unawaited(act(controller.reload));
     ref.invalidate(prayerTimesProvider);
   }
 
@@ -124,6 +128,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     midnight?.cancel();
     reminders.onOpenToday = null;
     reminders.onOpenPrayerTimes = null;
+    homeWidget.onJournalChanged = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -828,6 +833,28 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     );
   }
 
+  Future<void> addHomeWidget() async {
+    if (await homeWidget.requestPin() || !mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add your prayer widget'),
+        content: const Text(
+          'Touch and hold an empty space on your home screen, choose Widgets, '
+          'then find Qada Tracker. Drag the five-prayer widget onto your home '
+          'screen. Tap a prayer to mark it performed for today. '
+          'Make corrections inside the app.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> settings() => showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -856,6 +883,19 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   onTap: startingBalances,
                 ),
                 const SizedBox(height: 16),
+                if (homeWidget.supported) ...[
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.widgets_outlined),
+                    title: const Text('Home-screen widget'),
+                    subtitle: const Text(
+                      'Five prayer buttons. Tap to mark done.',
+                    ),
+                    trailing: const Icon(Icons.add_circle_outline),
+                    onTap: addHomeWidget,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Dark mode'),
@@ -1024,6 +1064,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     if (fileBusy) return;
     setState(() => fileBusy = true);
     await act(() async {
+      // Include native widget marks even if its UI-change event is still queued.
+      await controller.reload();
+      if (!mounted) return;
       final saved = await ref
           .read(backupFilesProvider)
           .write(

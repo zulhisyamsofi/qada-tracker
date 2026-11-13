@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.4.0 — Home-screen prayer widget
+
+Five native launcher buttons, shared SQLite records, rollover, and safe app/widget edits.
+
 ## v1.3.0 — Dark mode and glass UI
 
 Persistent theme toggles, rounded glass panels, bordered controls, and bundled Nunito.
