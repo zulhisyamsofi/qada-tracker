@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.5.0 — Integrated times and recording validation
+
+Times beside Today prayer labels, four-tab navigation, and start-time checks in the app and widget.
+
 ## v1.4.0 — Home-screen prayer widget
 
 Five native launcher buttons, shared SQLite records, rollover, and safe app/widget edits.

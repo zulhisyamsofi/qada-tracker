@@ -6,7 +6,7 @@ import org.json.JSONObject
 import java.io.File
 import java.util.Calendar
 
-internal enum class WidgetWriteResult { SAVED, ALREADY_DONE, STALE_DAY, BALANCE_CONFLICT, UNAVAILABLE }
+internal enum class WidgetWriteResult { SAVED, ALREADY_DONE, STALE_DAY, BALANCE_CONFLICT, UNAVAILABLE, NOT_STARTED, TIMES_UNAVAILABLE }
 
 internal object PrayerWidgetStore {
     private fun database(context: Context, writable: Boolean): SQLiteDatabase? {
@@ -33,11 +33,20 @@ internal object PrayerWidgetStore {
             try {
                 // Resolve the local day after obtaining the write lock. A stale
                 // launcher view must refresh before recording a different day.
-                val date = ReminderPolicy.day(clock())
+                val now = clock()
+                val date = ReminderPolicy.day(now)
                 if (date != expectedDay) return WidgetWriteResult.STALE_DAY
                 val root = read(db) ?: return WidgetWriteResult.UNAVAILABLE
                 PrayerWidgetPolicy.validate(root, date)
                 if (PrayerWidgetPolicy.status(root, date, prayer) == "performed") return WidgetWriteResult.ALREADY_DONE
+                // Check the saved source and dated timetable under the same
+                // write lock as the journal. No network or Flutter is needed.
+                val calendar = try { PrayerTimeStore.calendar(db) } catch (_: Exception) { null }
+                val key = root.optJSONObject("prayerTimes")?.optJSONObject("place")?.optString("key")
+                val times = calendar?.entries?.filter { it.date == date }
+                if (calendar == null || key != calendar.key || times?.size != 5) return WidgetWriteResult.TIMES_UNAVAILABLE
+                val time = times.firstOrNull { it.prayer == prayer } ?: return WidgetWriteResult.TIMES_UNAVAILABLE
+                if (now.timeInMillis < time.at) return WidgetWriteResult.NOT_STARTED
                 val next = try { PrayerWidgetPolicy.perform(root, date, prayer) }
                     catch (_: WidgetBalanceConflict) { return WidgetWriteResult.BALANCE_CONFLICT }
                 db.execSQL("UPDATE journal SET document = ? WHERE id = 1", arrayOf(next.toString()))

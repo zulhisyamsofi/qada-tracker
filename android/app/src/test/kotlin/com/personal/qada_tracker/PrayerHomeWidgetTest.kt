@@ -51,6 +51,12 @@ class PrayerHomeWidgetTest {
         SQLiteDatabase.openOrCreateDatabase(file, null).use { db ->
             db.execSQL("CREATE TABLE IF NOT EXISTS journal (id INTEGER PRIMARY KEY CHECK (id = 1), document TEXT NOT NULL)")
             db.execSQL("INSERT OR REPLACE INTO journal(id,document) VALUES(1,?)", arrayOf(root.toString()))
+            db.execSQL("CREATE TABLE IF NOT EXISTS prayer_calendar (id INTEGER PRIMARY KEY CHECK (id = 1), document TEXT NOT NULL)")
+            // Unrelated widget cases use an already-started saved timetable.
+            val dates = listOf(today, "2026-11-14", "2026-11-18", ReminderPolicy.day(Calendar.getInstance())).distinct()
+            val formatter = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US).apply { timeZone = TimeZone.getTimeZone("Asia/Kuala_Lumpur") }
+            val slots = dates.flatMap { date -> PrayerWidgetPolicy.prayers.map { p -> PrayerSlot(p, formatter.parse("$date 00:00")!!.time, date, "00:00") } }.sortedBy { it.at }
+            db.execSQL("INSERT OR REPLACE INTO prayer_calendar(id,document) VALUES(1,?)", arrayOf(SavedPrayerCalendar("widget-test-place", "Asia/Kuala_Lumpur", 0, slots).json().toString()))
         }
     }
     @Before fun setup() {
@@ -242,6 +248,40 @@ class PrayerHomeWidgetTest {
             assertEquals(0, next.get(Calendar.HOUR_OF_DAY))
             assertEquals(0, next.get(Calendar.MINUTE))
             assertEquals(zone, next.timeZone.id)
+        }
+    }
+
+    @Test fun widgetRejectsEarlyTapAndAllowsItAtTheExactPrayerInstant() {
+        save(journal())
+        val slots = PrayerWidgetPolicy.prayers.mapIndexed { i, p ->
+            val hour = listOf(5, 13, 16, 19, 20)[i]
+            PrayerSlot(p, clock(hour = hour).timeInMillis, today, "%02d:00".format(java.util.Locale.US, hour))
+        }
+        SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use {
+            it.execSQL("UPDATE prayer_calendar SET document = ? WHERE id = 1", arrayOf(SavedPrayerCalendar("widget-test-place", "Asia/Kuala_Lumpur", 0, slots).json().toString()))
+        }
+        val previous = PrayerWidgetStore.read(context)!!.toString()
+        assertEquals(WidgetWriteResult.NOT_STARTED, PrayerWidgetStore.perform(context, "asar", today) { clock(hour = 15).apply { set(Calendar.MINUTE, 59); set(Calendar.SECOND, 59); set(Calendar.MILLISECOND, 999) } })
+        assertEquals(previous, PrayerWidgetStore.read(context)!!.toString())
+        assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.perform(context, "asar", today) { clock(hour = 16) })
+        assertEquals("performed", PrayerWidgetPolicy.status(PrayerWidgetStore.read(context)!!, today, "asar"))
+    }
+
+    @Test fun missingWrongPlaceWrongDateAndMalformedTimesCannotBypassWidgetGate() {
+        for (kind in listOf("missing", "place", "date", "malformed")) {
+            save(journal())
+            SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+                val original = PrayerTimeStore.calendar(db)!!
+                when (kind) {
+                    "missing" -> db.execSQL("DELETE FROM prayer_calendar")
+                    "place" -> db.execSQL("UPDATE prayer_calendar SET document = ? WHERE id = 1", arrayOf(original.copy(key = "other-place").json().toString()))
+                    "date" -> db.execSQL("UPDATE prayer_calendar SET document = ? WHERE id = 1", arrayOf(original.copy(entries = original.entries.filter { it.date != today }).json().toString()))
+                    "malformed" -> db.execSQL("UPDATE prayer_calendar SET document = '{bad' WHERE id = 1")
+                }
+            }
+            val previous = PrayerWidgetStore.read(context)!!.toString()
+            assertEquals(kind, WidgetWriteResult.TIMES_UNAVAILABLE, PrayerWidgetStore.perform(context, "subuh", today) { clock(hour = 23) })
+            assertEquals(previous, PrayerWidgetStore.read(context)!!.toString())
         }
     }
 

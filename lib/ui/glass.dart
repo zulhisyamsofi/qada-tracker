@@ -182,13 +182,12 @@ class GlassNavigationBar extends StatelessWidget {
   });
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
-  static const labels = ['Today', 'History', 'Qada', 'Progress', 'Times'];
+  static const labels = ['Today', 'History', 'Qada', 'Progress'];
   static const icons = [
     Icons.wb_sunny_outlined,
     Icons.calendar_month_outlined,
     Icons.restart_alt_rounded,
     Icons.bar_chart_rounded,
-    Icons.schedule_rounded,
   ];
   @override
   Widget build(BuildContext context) {
@@ -245,7 +244,7 @@ class GlassNavigationBar extends StatelessWidget {
                                   : theme.colorScheme.onSurface,
                             ),
                             const SizedBox(height: 4),
-                            // Fit full destination names in the fixed five-tab
+                            // Fit full destination names in the fixed tab
                             // bar; tooltips and semantics retain their labels.
                             FittedBox(
                               fit: BoxFit.scaleDown,

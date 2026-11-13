@@ -22,7 +22,7 @@ class DeniedLocation extends PrayerLocation {
 
 void main() {
   testWidgets(
-    'Times tab displays saved times and preserves selection on GPS denial',
+    'Today displays five inline times and preserves selection on GPS denial',
     (tester) async {
       final now = DateTime.utc(2026, 11, 13, 2);
       final db = JournalDatabase(NativeDatabase.memory());
@@ -39,9 +39,22 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Times'));
+      expect(find.text('Times'), findsNothing);
+      for (final label in [
+        'Subuh (05:48)',
+        'Zohor (13:00)',
+        'Asar (16:22)',
+        'Maghrib (18:58)',
+        'Isyak (20:11)',
+      ]) {
+        await tester.scrollUntilVisible(find.text(label), 120);
+        expect(find.text(label), findsOneWidget);
+      }
+      await tester.drag(find.byType(ListView), const Offset(0, 1000));
       await tester.pumpAndSettle();
-      expect(find.text('Prayer Times'), findsOneWidget);
+      await tester.tap(find.byTooltip('Prayer times & location'));
+      await tester.pumpAndSettle();
+      expect(find.text('Prayer times & location'), findsOneWidget);
       expect(
         find.text('Zone WLY01 · Times shown in Asia/Kuala_Lumpur'),
         findsOneWidget,
@@ -97,7 +110,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: Scaffold(body: PrayerTimesPage())),
+          child: const MaterialApp(home: Scaffold(body: PrayerTimesSettings())),
         ),
       );
       await tester.pumpAndSettle();
@@ -121,6 +134,104 @@ void main() {
       await db.close();
     });
   }
+
+  testWidgets(
+    'early checkbox and menu actions explain the restriction and unlock at start',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var now = DateTime.utc(2026, 11, 13, 2);
+      final db = JournalDatabase(NativeDatabase.memory());
+      final api = FakeTimesApi();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWith((ref) async => db),
+            clockProvider.overrideWithValue(() => now),
+            prayerTimesApiProvider.overrideWithValue(api),
+          ],
+          child: const QadaApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final zohor = find.byWidgetPredicate(
+        (w) => w is Checkbox && w.semanticLabel == 'Zohor performed',
+      );
+      await tester.scrollUntilVisible(zohor, 150);
+      await tester.pumpAndSettle();
+      await tester.tap(zohor);
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Zohor starts at 13:00 (Asia/Kuala_Lumpur). You can mark it performed then.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        (await db.load(now)).status(now, Prayer.zohor),
+        PrayerStatus.unrecorded,
+      );
+      await tester.scrollUntilVisible(find.byTooltip('Update Isyak'), 150);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Update Isyak'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Mark performed'));
+      await tester.pumpAndSettle();
+      expect(
+        (await db.load(now)).status(now, Prayer.isyak),
+        PrayerStatus.unrecorded,
+      );
+      // No reopen is necessary; the write rechecks the real clock at the boundary.
+      now = DateTime.utc(2026, 11, 13, 5);
+      await tester.drag(find.byType(ListView), const Offset(0, 1000));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(zohor, 150);
+      await tester.pumpAndSettle();
+      await tester.tap(zohor);
+      await tester.pumpAndSettle();
+      expect(
+        (await db.load(now)).status(now, Prayer.zohor),
+        PrayerStatus.performed,
+      );
+      await tester.pumpWidget(const SizedBox());
+      api.client.close();
+      await db.close();
+    },
+  );
+
+  testWidgets(
+    'prayer notification taps open Today after leaving the first tab',
+    (tester) async {
+      final now = DateTime.utc(2026, 11, 13, 2);
+      final db = JournalDatabase(NativeDatabase.memory());
+      final api = FakeTimesApi();
+      final service = _TimesReminders();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWith((ref) async => db),
+            clockProvider.overrideWithValue(() => now),
+            prayerTimesApiProvider.overrideWithValue(api),
+            reminderServiceProvider.overrideWithValue(service),
+          ],
+          child: const QadaApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Progress').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Every step counts'), findsOneWidget);
+      service.onOpenPrayerTimes!();
+      await tester.pumpAndSettle();
+      expect(find.text('One prayer at a time.'), findsOneWidget);
+      expect(find.text('Times'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      api.client.close();
+      await db.close();
+    },
+  );
 }
 
 class _TimesReminders extends ReminderService {

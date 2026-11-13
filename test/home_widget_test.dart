@@ -1,3 +1,4 @@
+import 'support/prayer_times.dart';
 import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -37,10 +38,11 @@ void main() {
     'app mutation rebases on widget records and refreshes the launcher',
     () async {
       final db = JournalDatabase(NativeDatabase.memory());
-
+      await seedPrayerCalendar(db, now);
       final widget = TestHomeWidget();
       final container = ProviderContainer(
         overrides: [
+          fakePrayerTimes,
           databaseProvider.overrideWith((ref) async => db),
           clockProvider.overrideWithValue(() => now),
           homeWidgetServiceProvider.overrideWithValue(widget),
@@ -120,11 +122,12 @@ void main() {
     tester,
   ) async {
     final db = JournalDatabase(NativeDatabase.memory());
-
+    await seedPrayerCalendar(db, now);
     final widget = TestHomeWidget();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          fakePrayerTimes,
           databaseProvider.overrideWith((ref) async => db),
           clockProvider.overrideWithValue(() => now),
           homeWidgetServiceProvider.overrideWithValue(widget),
@@ -225,6 +228,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            fakePrayerTimes,
             databaseProvider.overrideWith((ref) async => db),
             clockProvider.overrideWithValue(() => now),
             homeWidgetServiceProvider.overrideWithValue(widget),
@@ -262,6 +266,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          fakePrayerTimes,
           databaseProvider.overrideWith((ref) async => db),
           clockProvider.overrideWithValue(() => now),
           backupFilesProvider.overrideWithValue(files),

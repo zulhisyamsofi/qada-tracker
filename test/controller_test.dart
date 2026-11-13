@@ -1,3 +1,4 @@
+import 'support/prayer_times.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,7 +11,8 @@ void main() {
     'rapid changes serialize and failed changes do not poison the queue',
     () async {
       final db = JournalDatabase(NativeDatabase.memory());
-      final now = DateTime(2026, 11, 13);
+      final now = DateTime(2026, 11, 13, 12);
+      await seedPrayerCalendar(db, now);
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWith((ref) async => db),

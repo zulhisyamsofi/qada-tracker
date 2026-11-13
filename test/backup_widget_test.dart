@@ -1,3 +1,4 @@
+import 'support/prayer_times.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,6 +47,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            fakePrayerTimes,
             databaseProvider.overrideWith((ref) async => db),
             clockProvider.overrideWithValue(() => now),
             backupFilesProvider.overrideWithValue(files),

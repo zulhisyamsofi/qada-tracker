@@ -48,9 +48,14 @@ class JournalDatabase extends GeneratedDatabase {
       'SELECT document FROM prayer_calendar WHERE id = 1',
     ).getSingleOrNull();
     if (row == null) return null;
+    return _decodeCalendar(row.read<String>('document'));
+  }
+
+  PrayerCalendar? _decodeCalendar(String? document) {
+    if (document == null) return null;
     try {
       return PrayerCalendar.fromJson(
-        jsonDecode(row.read<String>('document')) as Map<String, dynamic>,
+        jsonDecode(document) as Map<String, dynamic>,
       );
     } catch (_) {
       return null;
@@ -86,17 +91,29 @@ class JournalDatabase extends GeneratedDatabase {
   /// Android widgets use a separate SQLite connection, so a cached UI snapshot
   /// must never overwrite a more recent tap. No read transaction is held while
   /// waiting for the native writer; a conflict retries the domain operation.
-  Future<Journal> change(DateTime now, Journal Function(Journal) update) async {
+  Future<Journal> change(
+    DateTime now,
+    Journal Function(Journal) update, {
+    void Function(Journal before, Journal after, PrayerCalendar? calendar)?
+    validate,
+  }) async {
     await load(now);
     for (var attempt = 0; attempt < 20; attempt++) {
       final row = await customSelect(
-        'SELECT document FROM journal WHERE id = 1',
+        'SELECT document, (SELECT document FROM prayer_calendar WHERE id = 1) AS calendar_document FROM journal WHERE id = 1',
       ).getSingle();
       final previous = row.read<String>('document');
-      final next = update(Journal.decode(previous, now)).checked();
+      final calendarDocument = row.readNullable<String>('calendar_document');
+      final current = Journal.decode(previous, now);
+      final next = update(current).checked();
+      validate?.call(current, next, _decodeCalendar(calendarDocument));
       final changed = await customUpdate(
-        'UPDATE journal SET document = ? WHERE id = 1 AND document = ?',
-        variables: [Variable(next.export()), Variable(previous)],
+        'UPDATE journal SET document = ? WHERE id = 1 AND document = ? AND (SELECT document FROM prayer_calendar WHERE id = 1) IS ?',
+        variables: [
+          Variable(next.export()),
+          Variable(previous),
+          Variable<String>(calendarDocument),
+        ],
       );
       if (changed == 1) return next;
     }

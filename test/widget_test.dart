@@ -1,3 +1,4 @@
+import 'support/prayer_times.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,12 +12,17 @@ void main() {
   testWidgets(
     'tick prayer, review yesterday, confirm miss and record replacement',
     (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       final now = DateTime(2026, 11, 13, 12);
       final db = JournalDatabase(NativeDatabase.memory());
       await db.save(Journal(startDate: DateTime(2026, 11, 12)));
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            fakePrayerTimes,
             databaseProvider.overrideWith((ref) async => db),
             clockProvider.overrideWithValue(() => now),
           ],
@@ -79,6 +85,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          fakePrayerTimes,
           databaseProvider.overrideWith((ref) async => db),
           clockProvider.overrideWithValue(() => now),
         ],

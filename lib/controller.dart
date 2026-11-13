@@ -4,6 +4,7 @@ import 'database.dart';
 import 'model.dart';
 import 'reminders.dart';
 import 'home_widget.dart';
+import 'prayer_recording_policy.dart';
 
 final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 final databaseProvider = FutureProvider<JournalDatabase>((ref) async {
@@ -37,11 +38,26 @@ class JournalController extends AsyncNotifier<Journal> {
   }
 
   // Serialize rapid taps and restores; failed disk writes never update the UI.
-  Future<void> change(Journal Function(Journal) update) {
+  Future<void> change(Journal Function(Journal) update) => _change(update);
+
+  Future<void> _change(
+    Journal Function(Journal) update, {
+    bool restoring = false,
+  }) {
     final operation = _queue.then((_) async {
-      final next = await (await ref.read(
-        databaseProvider.future,
-      )).change(ref.read(clockProvider)(), update);
+      final db = await ref.read(databaseProvider.future);
+      final next = await db.change(
+        ref.read(clockProvider)(),
+        update,
+        validate: restoring
+            ? null
+            : (current, next, calendar) => PrayerRecordingPolicy.validate(
+                current,
+                next,
+                calendar,
+                ref.read(clockProvider)(),
+              ),
+      );
       if (!ref.mounted) return;
       state = AsyncData(next);
       await refreshReminders();
@@ -81,5 +97,7 @@ class JournalController extends AsyncNotifier<Journal> {
       '${now.microsecondsSinceEpoch}-${j.replacements.length}',
     );
   });
-  Future<void> restore(Journal validated) => change((_) => validated);
+  // Restores preserve already confirmed records; they are not new check-ins.
+  Future<void> restore(Journal validated) =>
+      _change((_) => validated, restoring: true);
 }

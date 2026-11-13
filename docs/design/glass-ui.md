@@ -51,3 +51,7 @@ QADA_CAPTURE_UI=1 flutter test test/theme_ui_test.dart
 ```
 
 Captures are written to ignored `build/visual-qa`; temporary QA captures are removed after inspection. The permanent design reference is retained here for review.
+
+## v1.5 integration update
+
+The user requested combining times with Today. Navigation now has four destinations; each Today prayer label includes its time. A compact glass location/next-prayer card opens a settings sheet instead of a standalone Times screen. This intentionally updates the original five-tab concept while retaining its typography, mint/emerald palette, outlined controls, and rounded surfaces. [Current light/dark previews and recording behavior](../prayer-recording.md) document the final result. Updated raster checks include the prayer settings sheet in both themes and the narrow high-contrast layout.

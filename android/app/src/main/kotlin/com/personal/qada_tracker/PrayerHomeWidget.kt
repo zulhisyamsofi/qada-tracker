@@ -57,6 +57,8 @@ class PrayerHomeWidget : AppWidgetProvider() {
                             WidgetWriteResult.STALE_DAY -> "New day. Tap again to record today's prayer."
                             WidgetWriteResult.BALANCE_CONFLICT -> "Undo the matching qada replacement in the app first."
                             WidgetWriteResult.UNAVAILABLE -> "Could not save. Open Qada Tracker and try again."
+                            WidgetWriteResult.NOT_STARTED -> "$label hasn't started yet. Check Today for its time."
+                            WidgetWriteResult.TIMES_UNAVAILABLE -> "Refresh today's prayer times in the app first."
                         }
                         Handler(Looper.getMainLooper()).post { Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
                         refreshAll(context)

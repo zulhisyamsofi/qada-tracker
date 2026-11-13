@@ -37,10 +37,12 @@ internal object PrayerTimeStore {
     }
     fun config(context: Context): PrayerTimeConfig? = try { database(context)?.use { config(it) } } catch (_: Exception) { null }
     fun calendar(context: Context): SavedPrayerCalendar? = try {
-        database(context)?.use { db -> db.rawQuery("SELECT document FROM prayer_calendar WHERE id = 1", null).use { cursor ->
-            if (!cursor.moveToFirst()) null else parse(JSONObject(cursor.getString(0)))
-        } }
+        database(context)?.use { calendar(it) }
     } catch (_: Exception) { null }
+
+    internal fun calendar(db: SQLiteDatabase): SavedPrayerCalendar? = db.rawQuery("SELECT document FROM prayer_calendar WHERE id = 1", null).use { cursor ->
+        if (!cursor.moveToFirst()) null else parse(JSONObject(cursor.getString(0)))
+    }
 
     fun parse(root: JSONObject): SavedPrayerCalendar {
         require(root.getInt("version") == 1)

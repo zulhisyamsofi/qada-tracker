@@ -15,6 +15,7 @@ import 'prayer_times_controller.dart';
 import 'ui/app_theme.dart';
 import 'ui/glass.dart';
 import 'home_widget.dart';
+import 'prayer_recording_policy.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,16 +68,20 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   late DateTime today;
   DateTime? selectedDay;
   Timer? midnight;
+  Timer? prayerClock;
   bool fileBusy = false;
   late final ReminderService reminders;
   late final HomeWidgetService homeWidget;
-  final titles = const ['Today', 'History', 'Qada', 'Progress', 'Prayer Times'];
+  final titles = const ['Today', 'History', 'Qada', 'Progress'];
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     today = dayOnly(ref.read(clockProvider)());
     scheduleMidnight();
+    prayerClock = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted && tab == 0) setState(() {});
+    });
     reminders = ref.read(reminderServiceProvider);
     homeWidget = ref.read(homeWidgetServiceProvider);
     homeWidget.onJournalChanged = () => act(controller.reload);
@@ -89,12 +94,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     reminders.onOpenPrayerTimes = () {
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
-        setState(() => tab = 4);
+        setState(() => tab = 0);
       }
     };
     unawaited(
       reminders.initialPrayerTimesTap().then((open) {
-        if (mounted && open) setState(() => tab = 4);
+        if (mounted && open) setState(() => tab = 0);
       }),
     );
   }
@@ -126,6 +131,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   @override
   void dispose() {
     midnight?.cancel();
+    prayerClock?.cancel();
     reminders.onOpenToday = null;
     reminders.onOpenPrayerTimes = null;
     homeWidget.onJournalChanged = null;
@@ -140,7 +146,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       await action();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.clearSnackBars();
+        messenger.showSnackBar(
           SnackBar(
             content: Text(error.toString().replaceFirst('Bad state: ', '')),
           ),
@@ -270,8 +278,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               0 => todayPage(j),
               1 => historyPage(j),
               2 => qadaPage(j),
-              3 => progressPage(j),
-              _ => const PrayerTimesPage(),
+              _ => progressPage(j),
             },
           ),
         ),
@@ -332,108 +339,139 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         .where((p) => j.status(today, p) == PrayerStatus.performed)
         .length;
     final pending = j.unresolvedDays(today);
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        heading(
-          'One prayer at a time.',
-          DateFormat('EEEE, d MMMM yyyy').format(today),
-        ),
-        GlassCard(
-          frosted: true,
-          color: Theme.of(context).colorScheme.primaryContainer,
-          radius: 30,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '$count of 5 prayers recorded today',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          height: 1.25,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'A small moment to reflect and keep track.',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.copyWith(fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                SizedBox(
-                  width: 72,
-                  height: 72,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox.expand(
-                        child: CircularProgressIndicator(
-                          value: count / 5,
-                          strokeWidth: 7,
-                          strokeCap: StrokeCap.round,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: .14),
-                          semanticsLabel: 'Daily prayer progress',
-                          semanticsValue: '$count of 5 performed',
-                        ),
-                      ),
-                      Text(
-                        '$count/5',
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+    return RefreshIndicator(
+      onRefresh: () => ref.read(prayerTimesProvider.notifier).refresh(),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        children: [
+          heading(
+            'One prayer at a time.',
+            DateFormat('EEEE, d MMMM yyyy').format(today),
           ),
-        ),
-        if (pending.isNotEmpty)
           GlassCard(
-            child: ListTile(
-              leading: const Icon(Icons.fact_check_outlined),
-              title: Text(
-                '${pending.length} ${pending.length == 1 ? 'day needs' : 'days need'} review',
+            frosted: true,
+            color: Theme.of(context).colorScheme.primaryContainer,
+            radius: 30,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$count of 5 prayers recorded today',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            height: 1.25,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'A small moment to reflect and keep track.',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox.expand(
+                          child: CircularProgressIndicator(
+                            value: count / 5,
+                            strokeWidth: 7,
+                            strokeCap: StrokeCap.round,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: .14),
+                            semanticsLabel: 'Daily prayer progress',
+                            semanticsValue: '$count of 5 performed',
+                          ),
+                        ),
+                        Text(
+                          '$count/5',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              subtitle: const Text('Unrecorded prayers are not qada debt.'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: review,
             ),
           ),
-        const SizedBox(height: 10),
-        for (final p in Prayer.values) prayerCard(j, today, p),
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: Text(
-            'A fresh page at midnight. Your history stays saved.',
-            style: TextStyle(fontSize: 12),
-            textAlign: TextAlign.center,
+          TodayPrayerTimesCard(day: today, onSettings: prayerTimeSettings),
+          if (pending.isNotEmpty)
+            GlassCard(
+              child: ListTile(
+                leading: const Icon(Icons.fact_check_outlined),
+                title: Text(
+                  '${pending.length} ${pending.length == 1 ? 'day needs' : 'days need'} review',
+                ),
+                subtitle: const Text('Unrecorded prayers are not qada debt.'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: review,
+              ),
+            ),
+          const SizedBox(height: 10),
+          for (final p in Prayer.values) prayerCard(j, today, p),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'A fresh page at midnight. Your history stays saved.',
+              style: TextStyle(fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
+  Future<void> prayerTimeSettings() => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * .82,
+        child: const PrayerTimesSettings(),
+      ),
+    ),
+  );
+
   Widget prayerCard(Journal j, DateTime date, Prayer p) {
     final status = j.status(date, p);
+    final isToday = dateKey(date) == dateKey(today);
+    final calendar = isToday
+        ? ref.watch(prayerTimesProvider).asData?.value.calendar
+        : null;
+    final time = PrayerRecordingPolicy.timeFor(
+      calendar,
+      j.prayerTimes.place.key,
+      date,
+      p,
+    );
+    final early = time != null && ref.read(clockProvider)().isBefore(time.at);
     final (icon, label) = switch (status) {
       PrayerStatus.performed => (Icons.check_circle_outline, 'Performed'),
       PrayerStatus.missed => (Icons.history, 'Missed · added to qada'),
-      PrayerStatus.unrecorded => (Icons.radio_button_unchecked, 'Unrecorded'),
+      PrayerStatus.unrecorded => (
+        early ? Icons.schedule : Icons.radio_button_unchecked,
+        early ? 'Starts at ${time.time} · Unrecorded' : 'Unrecorded',
+      ),
     };
     final statusColor = status == PrayerStatus.missed
         ? (Theme.of(context).brightness == Brightness.dark
@@ -466,7 +504,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    p.label,
+                    '${p.label}${isToday ? ' (${time?.time ?? '--:--'})' : ''}',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,

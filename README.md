@@ -1,15 +1,18 @@
 # Qada Tracker
 
-A personal Android prayer journal built with Flutter, Riverpod, and SQLite through Drift. English interface; Malay prayer names. Prayer records stay on the phone unless you export them. The optional Times tab sends the saved place coordinates to WaktuSolat for JAKIM zone timetables.
+A personal Android prayer journal built with Flutter, Riverpod, and SQLite through Drift. English interface; Malay prayer names. Prayer records stay on the phone unless you export them. Today loads JAKIM prayer times from the free WaktuSolat API using the saved place coordinates (Kuala Lumpur by default).
+
+## Downloads and versions
+
+[Download the latest private Android release](https://github.com/zulhisyamsofi/qada-tracker/releases/latest). Sign in with a GitHub account that has repository access to download its APK. Each feature edition has a separate commit, annotated version tag, release notes, APK, and checksum file. See [RELEASES.md](RELEASES.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## Daily use
 
-- **Today:** tick a performed prayer. Untick to leave it unrecorded. Use the prayer's menu to confirm a miss.
+- **Today:** each prayer shows its time, e.g. `Subuh (05:48)`. Tick it once its time has started; early taps explain when you can record it. Untick to leave it unrecorded, or use the menu to confirm a miss. The location card opens place and notification settings; pull down to refresh times.
 - **Review:** previous unrecorded days appear for review; mark prayers individually or confirm all remaining prayers for a day.
 - **History:** select a date and correct its records. Earlier days remain saved when Today rolls over at local midnight or the app resumes.
 - **Qada:** enter optional old balances in Settings, record replacements by prayer and quantity, or undo entries. Replacements never tick today's obligatory prayers.
 - **Progress:** weekly/monthly performed totals, fully completed days, replacements, and unrecorded prayer totals.
-- **Times:** choose a Malaysian place or device location, view prayer times, and enable prayer alerts.
 - **Settings:** add a home-screen widget, enable the daily check-in reminder, change appearance, or export/restore a versioned JSON backup using Android's document picker.
 
 **Unticked does not mean missed.** Only confirmed misses add to qada. Balance = starting count + confirmed misses − replacements. Corrections cannot make balances negative; undo the conflicting replacement first. There is no “Not required” status.
@@ -22,21 +25,21 @@ The Android alarm receiver reads the saved SQLite journal at delivery, so it wor
 
 Reminders are off until enabled. Without alarm access, Android's inexact fallback may be delayed or skipped; it cannot guarantee 11 PM delivery. Force-stopping the app in Android settings suppresses alarms until you reopen it. Battery restrictions may also affect delivery. This is a local notification: no server, account, or network connection is used. The preference is included in backups; backups from v1.0 default to reminders off. A notification tap opens Today.
 
+## Prayer times on Today (v1.5)
 
-## Prayer Times (v1.2)
+The first tab integrates the five daily records and their times; navigation now contains Today, History, Qada, and Progress. It uses the free [WaktuSolat API](https://api.waktusolat.app) without an API key. Coordinates resolve to a Malaysian prayer zone, then previous/current/next months are downloaded from its JAKIM timetable. The selected zone and `Asia/Kuala_Lumpur` timezone are visible on Today and in **Prayer times & location**. All 150 sample times for WLY01 in November 2026 matched the official e-Solat sample; zone lookup should still be checked near boundaries.
 
-The **Times** tab uses the free [WaktuSolat API](https://api.waktusolat.app) without an API key. Coordinates resolve to a Malaysian prayer zone, then previous/current/next months are downloaded from its JAKIM timetable. The selected zone and `Asia/Kuala_Lumpur` timezone are visible in the tab. All 150 sample times for WLY01 in November 2026 matched the official e-Solat sample; zone lookup should still be checked near boundaries.
+Tap the sliders button on Today’s location card. Select a place from the Malaysia dropdown or tap **Use device location**. Location is requested only on that action, at medium accuracy, rounded to three decimals. No background GPS or location history is collected. The saved point is reused for refreshes; tap the button again after travelling. Coordinates are sent to WaktuSolat and included in the plaintext journal backup along with the selected place and notification preference.
 
-Select a place from the Malaysia dropdown or tap **Use device location**. Location is requested only on that action, at medium accuracy, rounded to three decimals. No background GPS or location history is collected. The saved point is reused for refreshes; tap the button again after travelling. Coordinates are sent to WaktuSolat and included in the plaintext journal backup along with the selected place and notification preference.
-
-Enable **Prayer-time notifications** in the Times tab and grant notifications plus **alarms & reminders** access for on-time alerts. These alerts use a separate Android channel from the 11 PM check-in; neither feature ticks prayers or adds qada. Notification taps open the Times tab. Disabling is possible even while offline or when the API is unavailable.
+Enable **Prayer-time notifications** in **Prayer times & location** and grant notifications plus **alarms & reminders** access for on-time alerts. These alerts use a separate Android channel from the 11 PM check-in; neither feature ticks prayers or adds qada. Notification taps open Today. Disabling is possible even while offline or when the API is unavailable.
 
 Downloaded times are cached in SQLite and remain available offline. Android keeps only the next occurrence of each of the five prayers scheduled, then schedules successors after each alarm. WorkManager checks for refreshes every 12 hours when connected and downloads new months when fewer than 14 days remain. Refreshes use the last selected location, not a new GPS fix. Reboot, app updates, clock/timezone changes, and alarm-access grants reschedule alerts. Delayed broadcasts over 15 minutes old are discarded rather than replayed.
 
 A network outage preserves an existing matching-place cache. Changing place immediately cancels the old place’s alarms; old responses cannot overwrite the new selection. Cached times for another place are never presented as the current result. When downloaded coverage runs out, alerts stop until a refresh succeeds; the app does not invent times. Android battery restrictions, denied permissions, or force-stop can delay/suppress delivery. Foreground refresh and background retry recover when access returns.
 
-The database migrates from schema 1 to 2 by adding a separate calendar cache table. Existing prayer records are retained. Older backups default to Kuala Lumpur with prayer-time alerts off. Calendar downloads are regenerable and excluded from backups; restoring a different place reschedules its alerts.
+New **performed** marks for today are allowed only at or after the matching prayer's exact saved start instant. This applies to checkboxes, the prayer menu, today's History records, and the home-screen widget. An early tap shows a message and changes nothing. Past-day corrections, qada entries, existing performed records, and confirmed backup restores remain available. With no valid timetable for the selected place/date, the app asks you to refresh first. Saved times work offline, remain visible during refresh, and are never substituted from another place. Journal days use the phone's local calendar; matching timetable dates use the displayed zone and are compared as absolute instants. See [recording rules and previews](docs/prayer-recording.md).
 
+The database migrates from schema 1 to 2 by adding a separate calendar cache table. Existing prayer records are retained. Older backups default to Kuala Lumpur with prayer-time alerts off. Calendar downloads are regenerable and excluded from backups; restoring a different place reschedules its alerts.
 
 ## Appearance (v1.3)
 
@@ -44,17 +47,15 @@ Use the sun/moon button beside Settings for a quick light/dark toggle, or **Sett
 
 The redesigned screens use mint/emerald colors, rounded glass panels, bordered pill buttons, circular outlined controls, and bundled Nunito typography. High contrast uses solid surfaces and stronger borders; large text remains scrollable. Glass blur is limited to summary/navigation panels. See the [design reference and render comparison](docs/design/glass-ui.md).
 
-
 ## Home-screen widget (v1.4)
 
 Use **Settings → Home-screen widget** to open your launcher's Add widget prompt. You can also touch and hold an empty part of the home screen, choose **Widgets → Qada Tracker → Today’s prayers**, and drag it into place. Open the app once first so your journal is initialized. The widget uses a roughly 4 × 2 space and can be resized.
 
-Five boxed buttons show Subuh, Zohor, Asar, Maghrib, and Isyak. Tap a box to mark that prayer **performed for today**, even when the app is closed. A check means performed, a circle means unrecorded, and an amber box with `!` means confirmed missed. Repeated taps keep a prayer performed; make corrections inside the app. Tapping the header/footer opens Today. All widget instances and the app share the same saved records and appearance preference.
+Five boxed buttons show Subuh, Zohor, Asar, Maghrib, and Isyak. Once its saved prayer time has started, tap a box to mark that prayer **performed for today**, even when the app is closed. An early tap or missing timetable shows a short message without changing the record. A check means performed, a circle means unrecorded, and an amber box with `!` means confirmed missed. Repeated taps keep a prayer performed; make corrections inside the app. Tapping the header/footer opens Today. All widget instances and the app share the same saved records and appearance preference.
 
 The date follows the phone's local calendar. A midnight alarm, periodic launcher updates, app changes, and clock/timezone/reboot events refresh the display without changing old records. Android may delay background refresh; a stale-date tap refreshes the widget and asks you to tap again, never writing yesterday's prayer or guessing a miss. No new permissions are needed. A correction that would make a qada balance negative is refused until you undo the conflicting replacement in the app.
 
 See [widget previews, implementation, and phone checks](docs/home-widget.md).
-
 
 ## Development
 
@@ -76,24 +77,30 @@ flutter run -d <android-device-id>
 
 `QADA_TOOLS` can override `/workspace/toolchains`. Scripts retain the session proxy and TLS verification, verify the JDK checksum, and add the environment’s supplied public CA to that JDK when present. The Linux test runner reuses the image’s system SQLite library through a local soname alias. Dart and ADB also use their standard user-home caches; in a restricted sandbox these commands may need approved execution outside it. Downloads need GitHub, `storage.googleapis.com`, `pub.dev`, `dl.google.com`, Gradle distribution hosts, and Google/Maven Central artifact repositories (including redirects). Configure these in environment settings when network access is restricted.
 
-The universal debug APK is generated at `build/app/outputs/flutter-apk/app-debug.apk`. Smaller architecture-specific builds are also available as `app-arm64-v8a-debug.apk`, `app-armeabi-v7a-debug.apk`, and `app-x86_64-debug.apk` in the same directory. Use the universal build if unsure. It is for personal installation, not store publication. Uninstalling the app deletes local records: export a backup first. Debug builds have the Internet permission for Flutter's development VM service; the main manifest has no network permission. Platform automatic cloud backup is disabled; backups are explicitly user initiated.
+The universal debug APK is generated at `build/app/outputs/flutter-apk/app-debug.apk`. Smaller architecture-specific builds are also available as `app-arm64-v8a-debug.apk`, `app-armeabi-v7a-debug.apk`, and `app-x86_64-debug.apk` in the same directory. Use the universal build if unsure. It is for personal installation, not store publication. Uninstalling the app deletes local records: export a backup first. The main manifest now includes Internet access for prayer-time downloads and foreground location permissions for the optional location button. No background location permission is declared. Platform automatic cloud backup is disabled; backups are explicitly user initiated.
 
 ## Storage and backups
 
-`lib/model.dart` owns calendar-date records, confirmation rules, starting balances, and the qada ledger. `lib/controller.dart` serializes mutations and publishes state only after disk writes succeed. `lib/database.dart` stores a versioned journal document in a single-row SQLite table, committed transactionally. The initial schema needs no code generation.
+`lib/model.dart` owns calendar-date records, confirmation rules, starting balances, and the qada ledger. `lib/controller.dart` serializes mutations and publishes state only after disk writes succeed. `lib/database.dart` stores a versioned journal document in a single-row SQLite table, committed atomically. App mutations read the latest document and use compare-and-swap updates with conflict retries against both the journal and timetable, so a native widget tap cannot be overwritten by a stale UI snapshot and a concurrent timetable refresh is revalidated. The schema needs no code generation. Schema 2 adds the regenerable prayer calendar cache; a background Android worker can refresh it transactionally after checking the selected source is still current.
 
 Backups include every record, setting, starting balance, and replacement entry. Imports validate dates, enums, counts, unique replacement IDs, version, and resulting balances before asking for confirmation. Restore replaces rather than merges data; SQLite commits it atomically. Cancelling either picker or confirmation preserves current data. Backup files are plain text, not encrypted; keep them private. The picker accepts files up to 10 MB (the plugin loads selected bytes into memory before validation).
 
-Tracking begins on first launch. Elapsed days are derived from calendar dates, so missed app launches do not require a background process. Old unticked prayers never silently become debt. A local midnight timer and resume observer refresh Today; recording itself needs no permissions; the optional reminder uses notification/alarm access.
+Tracking begins on first launch. Elapsed days are derived from calendar dates, so missed app launches do not require a background process. Old unticked prayers never silently become debt. A local midnight timer and resume observer refresh Today. Both optional notification features use notification/alarm access. The location button on Today’s prayer-time settings requests foreground location access only.
 
 ## Tests and current validation status
 
-Tests cover the qada ledger and corrections, unrecorded gaps, backup validation and round trips, SQLite persistence and write-failure rollback, rapid serialized mutations, restore cancellation and confirmation, midnight/resume, and the main review-to-replacement UI flow.
+Tests cover the qada ledger and corrections, unrecorded gaps, backup validation and round trips, SQLite persistence and write-failure rollback, rapid serialized mutations, restore cancellation and confirmation, midnight/resume, and the main review-to-replacement UI flow. Reminder tests cover permission/opt-in settings, backup compatibility, the platform bridge, duplicate and late suppression, timezone changes, and daylight-saving transitions.
 
 Verified in the cloud instance:
 
 - Pinned Flutter/Dart and JDK setup, with checksum verification and TLS trust intact.
 - Frozen dependency resolution with `pubspec.lock`, and repeatable `scripts/setup.sh` execution.
-- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **48 passing Flutter tests and 23 passing Android tests**, and a successful Android debug APK build.
+- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **56 passing Flutter tests and 25 passing Android tests**, and a successful Android debug APK build.
+
+Prayer-time validation tests cover before/exactly-at/after start, checkboxes and menus, source/date mismatches, absent or malformed caches, atomic bulk changes, concurrent calendar refresh, notification routing, and historical/restore behavior.
+
+Widget tests cover native RemoteViews, actual pending-intent clicks, SQLite writes, app/launcher synchronization, duplicate taps, date rollover, qada conflicts, write rollback, and launcher fallback instructions. Native widget tests use pinned Robolectric **4.16.1** on Android API **35**, with native graphics/SQLite; the test runtime is downloaded from Maven Central on first use.
+
+Theme tests also check persistent toggling, system-theme behavior, both themes across all tabs, and a narrow-screen/high-contrast/large-text layout. To regenerate ignored Flutter raster captures, run `QADA_CAPTURE_UI=1 flutter test test/theme_ui_test.dart`.
 
 The original Flutter download restriction has been resolved. The debug APK is available at the path above. Android runtime validation uses a separate disposable software emulator; see [VALIDATION.md](VALIDATION.md) for its result and limitations. No real phone has been tested. Chrome and Linux desktop doctor warnings are outside this Android app’s target.

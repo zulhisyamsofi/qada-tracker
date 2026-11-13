@@ -121,7 +121,13 @@ void main() {
       await tester.pumpWidget(app(db, api));
       await tester.pumpAndSettle();
       await capture(tester, 'today-${mode.name}');
-      for (final tab in ['History', 'Qada', 'Progress', 'Times']) {
+      await tester.tap(find.byTooltip('Prayer times & location'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await capture(tester, 'prayer-settings-${mode.name}');
+      Navigator.of(tester.element(find.text('Prayer times & location'))).pop();
+      await tester.pumpAndSettle();
+      for (final tab in ['History', 'Qada', 'Progress']) {
         await tester.tap(find.text(tab).last);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);

@@ -63,7 +63,16 @@ void main() {
       expect(api.requests, 1);
       expect((await db.loadCalendar())!.sourceKey, initial.calendar.sourceKey);
       api.fail = true;
-      await container.read(prayerTimesProvider.notifier).refresh();
+      final refresh = container.read(prayerTimesProvider.notifier).refresh();
+      expect(
+        container.read(prayerTimesProvider).requireValue.refreshing,
+        isTrue,
+      );
+      expect(
+        container.read(prayerTimesProvider).requireValue.calendar,
+        initial.calendar,
+      );
+      await refresh;
       final fallback = container.read(prayerTimesProvider).requireValue;
       expect(fallback.warning, isNotNull);
       expect(fallback.calendar.toJson(), initial.calendar.toJson());
