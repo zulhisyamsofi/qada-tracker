@@ -38,6 +38,13 @@ A network outage preserves an existing matching-place cache. Changing place imme
 The database migrates from schema 1 to 2 by adding a separate calendar cache table. Existing prayer records are retained. Older backups default to Kuala Lumpur with prayer-time alerts off. Calendar downloads are regenerable and excluded from backups; restoring a different place reschedules its alerts.
 
 
+## Appearance (v1.3)
+
+Use the sun/moon button beside Settings for a quick light/dark toggle, or **Settings → Dark mode**. The selection is saved across restarts and included in backups. **Appearance → Follow system** restores automatic switching with the phone's theme.
+
+The redesigned screens use mint/emerald colors, rounded glass panels, bordered pill buttons, circular outlined controls, and bundled Nunito typography. High contrast uses solid surfaces and stronger borders; large text remains scrollable. Glass blur is limited to summary/navigation panels. See the [design reference and render comparison](docs/design/glass-ui.md).
+
+
 ## Development
 
 Use the existing checkout; each cloud task is isolated. Do not create a worktree unless explicitly requested.
@@ -76,6 +83,6 @@ Verified in the cloud instance:
 
 - Pinned Flutter/Dart and JDK setup, with checksum verification and TLS trust intact.
 - Frozen dependency resolution with `pubspec.lock`, and repeatable `scripts/setup.sh` execution.
-- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **38 passing Flutter tests and 12 passing Android tests**, and a successful Android debug APK build.
+- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **42 passing Flutter tests and 12 passing Android tests**, and a successful Android debug APK build.
 
 The original Flutter download restriction has been resolved. The debug APK is available at the path above. Android runtime validation uses a separate disposable software emulator; see [VALIDATION.md](VALIDATION.md) for its result and limitations. No real phone has been tested. Chrome and Linux desktop doctor warnings are outside this Android app’s target.

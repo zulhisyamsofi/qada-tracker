@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.3.0 — Dark mode and glass UI
+
+Persistent theme toggles, rounded glass panels, bordered controls, and bundled Nunito.
+
 ## v1.2.0 — Malaysian prayer times
 
 Place/GPS selection, JAKIM zone times, offline cache, and prayer alerts.

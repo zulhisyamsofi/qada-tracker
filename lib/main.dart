@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart'
+    show LicenseRegistry, LicenseEntryWithLineBreaks;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -9,9 +12,16 @@ import 'reminders.dart';
 import 'reminder_settings.dart';
 import 'prayer_times_page.dart';
 import 'prayer_times_controller.dart';
+import 'ui/app_theme.dart';
+import 'ui/glass.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks([
+      'Nunito',
+    ], await rootBundle.loadString('assets/fonts/OFL.txt'));
+  });
   runApp(const ProviderScope(child: QadaApp()));
 }
 
@@ -20,40 +30,20 @@ class QadaApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final journal = ref.watch(journalProvider).asData?.value;
-    ThemeData theme(Brightness brightness) {
-      final dark = brightness == Brightness.dark;
-      return ThemeData(
-        useMaterial3: true,
-        brightness: brightness,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xff175c46),
-          brightness: brightness,
-        ),
-        scaffoldBackgroundColor: dark
-            ? const Color(0xff121b17)
-            : const Color(0xfff7f5ef),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          centerTitle: false,
-        ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
-        ),
-      );
-    }
 
     return MaterialApp(
       title: 'Qada Tracker',
       debugShowCheckedModeBanner: false,
-      theme: theme(Brightness.light),
-      darkTheme: theme(Brightness.dark),
+      theme: QadaTheme.build(Brightness.light),
+      darkTheme: QadaTheme.build(Brightness.dark),
+      highContrastTheme: QadaTheme.build(Brightness.light, highContrast: true),
+      highContrastDarkTheme: QadaTheme.build(
+        Brightness.dark,
+        highContrast: true,
+      ),
+      themeAnimationDuration: const Duration(milliseconds: 220),
+      builder: (context, child) =>
+          GlassBackdrop(child: child ?? const SizedBox()),
       themeMode: switch (journal?.theme ?? AppTheme.system) {
         AppTheme.system => ThemeMode.system,
         AppTheme.light => ThemeMode.light,
@@ -154,6 +144,22 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     }
   }
 
+  Future<void> toggleTheme() {
+    final platformDark =
+        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    return act(
+      () => controller.change(
+        (j) => j.copy(
+          theme:
+              j.theme == AppTheme.dark ||
+                  (j.theme == AppTheme.system && platformDark)
+              ? AppTheme.light
+              : AppTheme.dark,
+        ),
+      ),
+    );
+  }
+
   Future<bool> confirm(
     String title,
     String message, {
@@ -183,25 +189,48 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     final data = ref.watch(journalProvider);
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: MediaQuery.textScalerOf(context).scale(44) + 20 < 72
+            ? 72
+            : MediaQuery.textScalerOf(context).scale(44) + 20,
         title: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               titles[tab],
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 23,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -.4,
+              ),
             ),
             const Text(
-              'QADA TRACKER · YOUR PRIVATE JOURNAL',
-              style: TextStyle(fontSize: 10, letterSpacing: 1.3),
+              'Qada Tracker',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
           ],
         ),
         actions: [
           IconButton(
+            tooltip: Theme.of(context).brightness == Brightness.dark
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
+            onPressed: data.hasValue ? toggleTheme : null,
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_outlined,
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
             tooltip: 'Settings',
             onPressed: data.hasValue ? () => settings() : null,
             icon: const Icon(Icons.settings_outlined),
           ),
+          const SizedBox(width: 14),
         ],
       ),
       body: data.when(
@@ -242,26 +271,18 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           ),
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: tab,
-        onDestinationSelected: (index) => setState(() => tab = index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.wb_sunny_outlined),
-            selectedIcon: Icon(Icons.wb_sunny),
-            label: 'Today',
+      bottomNavigationBar: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+        child: GlassCard(
+          frosted: true,
+          radius: 36,
+          margin: EdgeInsets.zero,
+          child: GlassNavigationBar(
+            selectedIndex: tab,
+            onDestinationSelected: (index) => setState(() => tab = index),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            label: 'History',
-          ),
-          NavigationDestination(icon: Icon(Icons.restart_alt), label: 'Qada'),
-          NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            label: 'Progress',
-          ),
-          NavigationDestination(icon: Icon(Icons.schedule), label: 'Times'),
-        ],
+        ),
       ),
     );
   }
@@ -275,14 +296,14 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           title,
           style: Theme.of(
             context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 6),
         Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
       ],
     ),
   );
-  Widget metric(String label, String value, {String? detail}) => Card(
+  Widget metric(String label, String value, {String? detail}) => GlassCard(
     child: Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -313,34 +334,71 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           'One prayer at a time.',
           DateFormat('EEEE, d MMMM yyyy').format(today),
         ),
-        Card(
+        GlassCard(
+          frosted: true,
           color: Theme.of(context).colorScheme.primaryContainer,
+          radius: 30,
           child: Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.all(20),
+            child: Row(
               children: [
-                Text(
-                  '$count of 5 prayers recorded today',
-                  style: const TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$count of 5 prayers recorded today',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          height: 1.25,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'A small moment to reflect and keep track.',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.copyWith(fontSize: 13),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                LinearProgressIndicator(
-                  value: count / 5,
-                  minHeight: 7,
-                  borderRadius: BorderRadius.circular(8),
+                const SizedBox(width: 16),
+                SizedBox(
+                  width: 72,
+                  height: 72,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox.expand(
+                        child: CircularProgressIndicator(
+                          value: count / 5,
+                          strokeWidth: 7,
+                          strokeCap: StrokeCap.round,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: .14),
+                          semanticsLabel: 'Daily prayer progress',
+                          semanticsValue: '$count of 5 performed',
+                        ),
+                      ),
+                      Text(
+                        '$count/5',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
-                const Text('A small moment to reflect and keep track.'),
               ],
             ),
           ),
         ),
         if (pending.isNotEmpty)
-          Card(
+          GlassCard(
             child: ListTile(
               leading: const Icon(Icons.fact_check_outlined),
               title: Text(
@@ -354,9 +412,10 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         const SizedBox(height: 10),
         for (final p in Prayer.values) prayerCard(j, today, p),
         const Padding(
-          padding: EdgeInsets.symmetric(vertical: 12),
+          padding: EdgeInsets.symmetric(vertical: 8),
           child: Text(
-            'A fresh page each midnight. Your previous records stay saved.',
+            'A fresh page at midnight. Your history stays saved.',
+            style: TextStyle(fontSize: 12),
             textAlign: TextAlign.center,
           ),
         ),
@@ -371,20 +430,30 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       PrayerStatus.missed => (Icons.history, 'Missed · added to qada'),
       PrayerStatus.unrecorded => (Icons.radio_button_unchecked, 'Unrecorded'),
     };
-    return Card(
+    final statusColor = status == PrayerStatus.missed
+        ? (Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xfff0c581)
+              : const Color(0xff855417))
+        : status == PrayerStatus.performed
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+    return GlassCard(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         child: Row(
           children: [
-            Checkbox(
-              value: status == PrayerStatus.performed,
-              semanticLabel: '${p.label} performed',
-              onChanged: (checked) => act(
-                () => controller.statuses(date, {
-                  p: checked!
-                      ? PrayerStatus.performed
-                      : PrayerStatus.unrecorded,
-                }),
+            Transform.scale(
+              scale: 1.2,
+              child: Checkbox(
+                value: status == PrayerStatus.performed,
+                semanticLabel: '${p.label} performed',
+                onChanged: (checked) => act(
+                  () => controller.statuses(date, {
+                    p: checked!
+                        ? PrayerStatus.performed
+                        : PrayerStatus.unrecorded,
+                  }),
+                ),
               ),
             ),
             Expanded(
@@ -394,14 +463,14 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   Text(
                     p.label,
                     style: const TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(icon, size: 14),
+                      Icon(icon, size: 14, color: statusColor),
                       const SizedBox(width: 5),
                       Flexible(
                         child: Text(
@@ -416,6 +485,17 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             ),
             PopupMenuButton<PrayerStatus>(
               tooltip: 'Update ${p.label}',
+              icon: const Icon(Icons.more_horiz_rounded),
+              style: IconButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                shape: const CircleBorder(),
+                side: BorderSide(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outline.withValues(alpha: .75),
+                  width: 1.1,
+                ),
+              ),
               onSelected: (status) async {
                 if (status == PrayerStatus.missed &&
                     !await confirm(
@@ -458,7 +538,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           'Your prayer journal',
           'Tracking since ${DateFormat.yMMMd().format(j.startDate)}',
         ),
-        Card(
+        GlassCard(
           child: CalendarDatePicker(
             key: ValueKey(
               '${dateKey(j.startDate)}-${dateKey(today)}-${dateKey(selected)}',
@@ -578,7 +658,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         detail: 'Starting balances + confirmed misses − replacements',
       ),
       for (final p in Prayer.values)
-        Card(
+        GlassCard(
           child: ListTile(
             title: Text(
               p.label,
@@ -602,7 +682,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           'No replacements recorded yet. Completing qada keeps the original missed prayer in your journal.',
         ),
       for (final e in j.replacements.reversed)
-        Card(
+        GlassCard(
           child: ListTile(
             leading: const Icon(Icons.check_circle_outline),
             title: Text('${e.prayer.label} × ${e.quantity}'),
@@ -776,7 +856,24 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   onTap: startingBalances,
                 ),
                 const SizedBox(height: 16),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Dark mode'),
+                  subtitle: const Text(
+                    'Softer tones for your evening check-in.',
+                  ),
+                  value: Theme.of(context).brightness == Brightness.dark,
+                  onChanged: (enabled) => act(
+                    () => controller.change(
+                      (j) => j.copy(
+                        theme: enabled ? AppTheme.dark : AppTheme.light,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 DropdownButtonFormField<AppTheme>(
+                  key: ValueKey(j.theme),
                   initialValue: j.theme,
                   decoration: const InputDecoration(labelText: 'Appearance'),
                   items: [

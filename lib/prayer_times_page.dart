@@ -7,6 +7,7 @@ import 'model.dart';
 import 'prayer_times_controller.dart';
 import 'prayer_times_models.dart';
 import 'reminders.dart';
+import 'ui/glass.dart';
 
 class PrayerTimesPage extends ConsumerStatefulWidget {
   const PrayerTimesPage({super.key});
@@ -145,7 +146,7 @@ class _PrayerTimesPageState extends ConsumerState<PrayerTimesPage> {
               ),
             ],
             error: (error, _) => [
-              Card(
+              GlassCard(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -177,7 +178,7 @@ class _PrayerTimesPageState extends ConsumerState<PrayerTimesPage> {
               final next = future.isEmpty ? null : future.first;
               return [
                 if (value.warning != null)
-                  Card(
+                  GlassCard(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Text(value.warning!),
@@ -195,7 +196,8 @@ class _PrayerTimesPageState extends ConsumerState<PrayerTimesPage> {
                 ),
                 const SizedBox(height: 16),
                 if (next != null)
-                  Card(
+                  GlassCard(
+                    frosted: true,
                     color: Theme.of(context).colorScheme.primaryContainer,
                     child: ListTile(
                       leading: const Icon(Icons.schedule),
@@ -206,7 +208,7 @@ class _PrayerTimesPageState extends ConsumerState<PrayerTimesPage> {
                     ),
                   ),
                 if (times.isEmpty)
-                  Card(
+                  GlassCard(
                     child: ListTile(
                       title: const Text('No saved times for today'),
                       subtitle: const Text(
@@ -221,7 +223,7 @@ class _PrayerTimesPageState extends ConsumerState<PrayerTimesPage> {
                     ),
                   ),
                 for (final time in times)
-                  Card(
+                  GlassCard(
                     child: ListTile(
                       leading: Icon(
                         time == next
