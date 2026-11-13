@@ -70,6 +70,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   Timer? midnight;
   Timer? prayerClock;
   bool fileBusy = false;
+  final qadaFormulaTooltip = GlobalKey<TooltipState>();
   late final ReminderService reminders;
   late final HomeWidgetService homeWidget;
   final titles = const ['Today', 'History', 'Qada', 'Progress'];
@@ -315,22 +316,40 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       ],
     ),
   );
-  Widget metric(String label, String value, {String? detail}) => GlassCard(
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          if (detail != null) Text(detail),
-        ],
+  Widget metric(
+    String label,
+    String value, {
+    String? detail,
+    Widget? labelAction,
+  }) => GlassCard(
+    child: SizedBox(
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (labelAction == null)
+              Text(label)
+            else
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(child: Text(label)),
+                  const SizedBox(width: 4),
+                  labelAction,
+                ],
+              ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            if (detail != null) Text(detail),
+          ],
+        ),
       ),
     ),
   );
@@ -570,7 +589,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   Widget historyPage(Journal j) {
     final selected =
         selectedDay != null &&
-            !selectedDay!.isBefore(j.startDate) &&
+            !selectedDay!.isBefore(earliestJournalDay) &&
             !selectedDay!.isAfter(today)
         ? selectedDay!
         : today;
@@ -587,7 +606,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               '${dateKey(j.startDate)}-${dateKey(today)}-${dateKey(selected)}',
             ),
             initialDate: selected,
-            firstDate: j.startDate,
+            firstDate: earliestJournalDay,
             lastDate: today,
             onDateChanged: (date) => setState(() => selectedDay = date),
           ),
@@ -599,6 +618,15 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
+        if (selected.isBefore(j.startDate))
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Text(
+              'Optional history before tracking began. Saving a prayer adds '
+              'this day only; other earlier dates stay outside your totals.',
+              style: TextStyle(fontSize: 12),
+            ),
+          ),
         for (final p in Prayer.values) prayerCard(j, selected, p),
         OutlinedButton.icon(
           onPressed: review,
@@ -698,7 +726,23 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       metric(
         'Outstanding qada',
         '${j.outstanding}',
-        detail: 'Starting balances + confirmed misses − replacements',
+        labelAction: Tooltip(
+          key: qadaFormulaTooltip,
+          message:
+              'Starting balances + confirmed misses − replacements. '
+              'Unrecorded prayers are excluded.',
+          triggerMode: TooltipTriggerMode.manual,
+          child: Semantics(
+            label: 'How outstanding qada is calculated',
+            button: true,
+            child: IconButton(
+              key: const ValueKey('qada-formula-info'),
+              onPressed: () =>
+                  qadaFormulaTooltip.currentState?.ensureTooltipVisible(),
+              icon: const Icon(Icons.info_outline_rounded, size: 20),
+            ),
+          ),
+        ),
       ),
       for (final p in Prayer.values)
         GlassCard(

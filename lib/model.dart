@@ -15,6 +15,7 @@ extension PrayerLabel on Prayer {
 String dateKey(DateTime date) =>
     '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 DateTime dayOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+DateTime get earliestJournalDay => DateTime(1900);
 DateTime nextDay(DateTime date) =>
     DateTime(date.year, date.month, date.day + 1);
 DateTime parseDay(String value) {
@@ -116,14 +117,22 @@ class Journal {
     DateTime now,
   ) {
     final target = dayOnly(day);
-    if (target.isBefore(startDate) || target.isAfter(dayOnly(now))) {
-      throw StateError('Choose a date between your tracking start and today.');
+    if (target.isBefore(earliestJournalDay) || target.isAfter(dayOnly(now))) {
+      throw StateError('Choose a date between 1 January 1900 and today.');
     }
     final updated = {
       for (final e in records.entries)
         e.key: Map<Prayer, PrayerStatus>.of(e.value),
     };
     updated[dateKey(day)] = {...?updated[dateKey(day)], ...changes};
+    // Optional backfilled days leave the journal again when their last
+    // confirmed record is cleared. Untouched gaps never become tracked days.
+    if (target.isBefore(startDate) &&
+        updated[dateKey(day)]!.values.every(
+          (s) => s == PrayerStatus.unrecorded,
+        )) {
+      updated.remove(dateKey(day));
+    }
     return copy(records: updated).checked();
   }
 
@@ -155,6 +164,18 @@ class Journal {
   Journal undo(String id) =>
       copy(replacements: replacements.where((e) => e.id != id).toList());
   Iterable<DateTime> days(DateTime now) sync* {
+    final historical =
+        records.entries
+            .where(
+              (e) =>
+                  e.key.compareTo(dateKey(startDate)) < 0 &&
+                  e.value.values.any((s) => s != PrayerStatus.unrecorded),
+            )
+            .map((e) => parseDay(e.key))
+            .where((day) => !day.isAfter(dayOnly(now)))
+            .toList()
+          ..sort();
+    yield* historical;
     for (var day = startDate; !day.isAfter(dayOnly(now)); day = nextDay(day)) {
       yield day;
     }
@@ -194,7 +215,7 @@ class Journal {
         throw const FormatException('Unsupported backup version.');
       }
       final start = parseDay(root['startDate'] as String);
-      if (start.isBefore(DateTime(1900)) || start.isAfter(dayOnly(now))) {
+      if (start.isBefore(earliestJournalDay) || start.isAfter(dayOnly(now))) {
         throw const FormatException('Invalid tracking start date.');
       }
       final rawStarting = root['starting'] as Map<String, dynamic>;
@@ -212,8 +233,8 @@ class Journal {
       final records = <String, Map<Prayer, PrayerStatus>>{};
       for (final e in (root['records'] as Map<String, dynamic>).entries) {
         final day = parseDay(e.key);
-        if (day.isBefore(start) || day.isAfter(dayOnly(now))) {
-          throw const FormatException('Record date outside tracking period.');
+        if (day.isBefore(earliestJournalDay) || day.isAfter(dayOnly(now))) {
+          throw const FormatException('Record date outside supported period.');
         }
         final row = e.value as Map<String, dynamic>;
         records[e.key] = {

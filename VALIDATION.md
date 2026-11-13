@@ -1,16 +1,24 @@
-# Validation record — v1.6.0+7
+# Validation record — v1.7.0+8
 
 ## Automated checks
 
 The final `scripts/validate.sh` completed successfully:
 
-- Formatting: 29 Dart files, 0 changes.
+- Formatting: 30 Dart files, 0 changes.
 - Flutter static analysis: no issues found.
-- Flutter tests: **56 passed, 0 failed**. Includes the previous daily tracking, qada, history, backup, and check-in tests, plus API parsing, official-source comparison, timezone/epoch handling, malformed API rejection, schema migration, backup defaults, stale-place response rejection, offline fallback, cache reuse, place switching, location denial, and offline/permission-denied notification controls.
+- Flutter tests: **62 passed, 0 failed**. Includes the previous daily tracking, qada, history, backup, and check-in tests, plus API parsing, official-source comparison, timezone/epoch handling, malformed API rejection, schema migration, backup defaults, stale-place response rejection, offline fallback, cache reuse, place switching, location denial, and offline/permission-denied notification controls.
 - Android JVM tests: **29 passed, 0 failures/errors/skips** (7 check-in tests, 5 prayer-time tests, and 17 native widget tests). Verified their current JUnit XML result files. Policy cases cover UNIX seconds conversion, exactly one upcoming occurrence per prayer, no replay of past events, and early/late broadcast suppression.
 - Universal and per-architecture Android debug APK builds succeeded.
 
 The tests do not verify real AlarmManager delivery, location hardware, WorkManager execution, Doze, reboot broadcasts, or OEM battery management.
+
+## Cards and historical maintenance — v1.7
+
+Three new domain tests cover historical performed/missed records before first launch, exclusion of untouched gaps, optional-day review membership, clearing optional days, qada correction conflicts, and backup round trips. Three new widget tests measure full content width for all six weekly/monthly Progress cards, open the adjacent qada formula tooltip, and edit a pre-start calendar date through the real checkbox/missed-confirmation controls. The latter test closes and reopens file-backed SQLite, remounts the app, verifies persisted statuses and review membership, and confirms the unchanged start date with no intervening records created.
+
+Light/dark Flutter raster captures were inspected for the full-width Progress cards, tappable formula tooltip, and selected pre-start History date. The existing narrow-screen case now also checks Qada and Progress at 320 × 720 with 1.6× text and high contrast. All 62 Flutter tests and the 29 Android tests passed, with universal and per-architecture debug APK builds. No connected Android device was available for phone validation.
+
+The calendar now allows dates from 1 January 1900 through today. The actual first-launch start date is preserved. An explicitly confirmed older day joins review/progress; untouched older days and gaps remain excluded. Clearing its last confirmed prayer removes that optional day again, unless a qada conflict requires undoing a replacement first. The database schema and backup structure/version are unchanged; backup date validation now accepts these older records. No production dependency, permission, or API changed.
 
 ## Compact widget — v1.6
 
@@ -64,9 +72,9 @@ Device location is requested only from the location button, at medium accuracy, 
 
 ## APK compatibility
 
-- Package: `com.personal.qada_tracker`; version **1.6.0** (code **7**); minimum API 24; target API 36.
+- Package: `com.personal.qada_tracker`; version **1.7.0** (code **8**); minimum API 24; target API 36.
 - Universal APK: `build/app/outputs/flutter-apk/app-debug.apk`.
-- SHA-256: `1e4e1d32dfc9d2ffb6efa44c1719166880c2213133290b04bd5903a9c25da4ef`.
+- SHA-256: `6665f4b98a13f43d96a08a816ae4ec04d589d1afb22abff4594ebc17f5d41db7`.
 - Signing certificate matches the previous debug APKs, allowing an in-place update that retains the private journal.
 - Smaller ARM64, ARM32, and x86-64 variants are in the same output directory.
 

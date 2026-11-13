@@ -132,6 +132,18 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         await capture(tester, '${tab.toLowerCase()}-${mode.name}');
+        if (tab == 'History') {
+          await tester.tap(find.text('12').first);
+          await tester.pumpAndSettle();
+          await capture(tester, 'history-backfill-${mode.name}');
+        }
+        if (tab == 'Qada') {
+          await tester.tap(find.byKey(const ValueKey('qada-formula-info')));
+          await tester.pumpAndSettle();
+          await capture(tester, 'qada-tooltip-${mode.name}');
+          Tooltip.dismissAllToolTips();
+          await tester.pumpAndSettle();
+        }
       }
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
@@ -169,6 +181,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await capture(tester, 'accessibility-320');
+    for (final tab in ['Qada', 'Progress']) {
+      await tester.tap(find.text(tab).last);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await capture(tester, '${tab.toLowerCase()}-accessibility-320');
+    }
     await tester.pumpWidget(const SizedBox());
     api.client.close();
     await db.close();

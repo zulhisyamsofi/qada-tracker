@@ -10,9 +10,9 @@ A personal Android prayer journal built with Flutter, Riverpod, and SQLite throu
 
 - **Today:** each prayer shows its time, e.g. `Subuh (05:48)`. Tick it once its time has started; early taps explain when you can record it. Untick to leave it unrecorded, or use the menu to confirm a miss. The location card opens place and notification settings; pull down to refresh times.
 - **Review:** previous unrecorded days appear for review; mark prayers individually or confirm all remaining prayers for a day.
-- **History:** select a date and correct its records. Earlier days remain saved when Today rolls over at local midnight or the app resumes.
-- **Qada:** enter optional old balances in Settings, record replacements by prayer and quantity, or undo entries. Replacements never tick today's obligatory prayers.
-- **Progress:** weekly/monthly performed totals, fully completed days, replacements, and unrecorded prayer totals.
+- **History:** select any past date (from 1900) and maintain its records. Days before first launch are optional: recording a prayer includes only that day, leaving untouched gaps outside review and totals. Earlier records remain saved when Today rolls over at local midnight or the app resumes.
+- **Qada:** tap the info icon beside Outstanding qada for the balance formula. Enter optional old balances in Settings, record replacements by prayer and quantity, or undo entries. Replacements never tick today's obligatory prayers.
+- **Progress:** full-width cards for weekly/monthly performed totals, fully completed days, replacements, and unrecorded prayer totals.
 - **Settings:** add a home-screen widget, enable the daily check-in reminder, change appearance, or export/restore a versioned JSON backup using Android's document picker.
 
 **Unticked does not mean missed.** Only confirmed misses add to qada. Balance = starting count + confirmed misses − replacements. Corrections cannot make balances negative; undo the conflicting replacement first. There is no “Not required” status.
@@ -85,7 +85,7 @@ The universal debug APK is generated at `build/app/outputs/flutter-apk/app-debug
 
 Backups include every record, setting, starting balance, and replacement entry. Imports validate dates, enums, counts, unique replacement IDs, version, and resulting balances before asking for confirmation. Restore replaces rather than merges data; SQLite commits it atomically. Cancelling either picker or confirmation preserves current data. Backup files are plain text, not encrypted; keep them private. The picker accepts files up to 10 MB (the plugin loads selected bytes into memory before validation).
 
-Tracking begins on first launch. Elapsed days are derived from calendar dates, so missed app launches do not require a background process. Old unticked prayers never silently become debt. A local midnight timer and resume observer refresh Today. Both optional notification features use notification/alarm access. The location button on Today’s prayer-time settings requests foreground location access only.
+Tracking begins on first launch. Manually recorded older days join the journal individually; confirmed misses count toward qada and remaining unrecorded prayers appear in review. Clearing the last confirmed prayer removes an optional older day from totals again, subject to the usual qada conflict checks. The original start date stays unchanged, and untouched earlier days do not create obligations. Elapsed days are derived from calendar dates, so missed app launches do not require a background process. Old unticked prayers never silently become debt. A local midnight timer and resume observer refresh Today. Both optional notification features use notification/alarm access. The location button on Today’s prayer-time settings requests foreground location access only.
 
 ## Tests and current validation status
 
@@ -95,7 +95,7 @@ Verified in the cloud instance:
 
 - Pinned Flutter/Dart and JDK setup, with checksum verification and TLS trust intact.
 - Frozen dependency resolution with `pubspec.lock`, and repeatable `scripts/setup.sh` execution.
-- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **56 passing Flutter tests and 29 passing Android tests**, and a successful Android debug APK build.
+- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **62 passing Flutter tests and 29 passing Android tests**, and a successful Android debug APK build.
 
 Prayer-time validation tests cover before/exactly-at/after start, checkboxes and menus, source/date mismatches, absent or malformed caches, atomic bulk changes, concurrent calendar refresh, notification routing, and historical/restore behavior.
 

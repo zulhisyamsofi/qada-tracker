@@ -85,33 +85,39 @@ void main() {
     );
     expect(j.balance(Prayer.subuh), 1);
   });
-  test('reject invalid counts, duplicate ids, and dates outside tracking', () {
-    final j = fresh().setStarting({for (final p in Prayer.values) p: 2});
-    for (final n in [-1, 0, 3]) {
-      expect(() => j.complete(Prayer.isyak, n, today, 'one'), throwsStateError);
-    }
-    final completed = j.complete(Prayer.isyak, 1, today, 'one');
-    expect(
-      () => completed.complete(Prayer.isyak, 1, today, 'one'),
-      throwsStateError,
-    );
-    expect(
-      () => j.setStatuses(DateTime(2026, 11, 9), {
-        Prayer.asar: PrayerStatus.missed,
-      }, today),
-      throwsStateError,
-    );
-    expect(
-      () => j.setStatuses(DateTime(2026, 11, 14), {
-        Prayer.asar: PrayerStatus.missed,
-      }, today),
-      throwsStateError,
-    );
-    expect(
-      () => j.setStarting({for (final p in Prayer.values) p: -1}),
-      throwsStateError,
-    );
-  });
+  test(
+    'reject invalid counts, duplicate ids, and dates outside supported range',
+    () {
+      final j = fresh().setStarting({for (final p in Prayer.values) p: 2});
+      for (final n in [-1, 0, 3]) {
+        expect(
+          () => j.complete(Prayer.isyak, n, today, 'one'),
+          throwsStateError,
+        );
+      }
+      final completed = j.complete(Prayer.isyak, 1, today, 'one');
+      expect(
+        () => completed.complete(Prayer.isyak, 1, today, 'one'),
+        throwsStateError,
+      );
+      expect(
+        () => j.setStatuses(DateTime(1899, 12, 31), {
+          Prayer.asar: PrayerStatus.missed,
+        }, today),
+        throwsStateError,
+      );
+      expect(
+        () => j.setStatuses(DateTime(2026, 11, 14), {
+          Prayer.asar: PrayerStatus.missed,
+        }, today),
+        throwsStateError,
+      );
+      expect(
+        () => j.setStarting({for (final p in Prayer.values) p: -1}),
+        throwsStateError,
+      );
+    },
+  );
   test('backup round trip preserves every setting and record', () {
     final j = fresh()
         .setStarting({for (final p in Prayer.values) p: p.index})
@@ -153,7 +159,7 @@ void main() {
       );
       invalid(
         (j) => j['records'] = {
-          '2026-11-09': {'subuh': 'missed'},
+          '1899-12-31': {'subuh': 'missed'},
         },
       );
       invalid(
@@ -172,6 +178,82 @@ void main() {
         j['starting']['subuh'] = 3;
         j['replacements'] = [entry, entry];
       });
+    },
+  );
+
+  test(
+    'optional historical days retain the tracking start and leave gaps untouched',
+    () {
+      final old = DateTime(2026, 11, 1);
+      final j = fresh().setStatuses(old, {
+        Prayer.subuh: PrayerStatus.performed,
+        Prayer.zohor: PrayerStatus.missed,
+      }, today);
+      expect(j.startDate, start);
+      expect(j.days(today).map(dateKey), [
+        '2026-11-01',
+        '2026-11-10',
+        '2026-11-11',
+        '2026-11-12',
+        '2026-11-13',
+      ]);
+      expect(j.unresolvedDays(today).map(dateKey), [
+        '2026-11-12',
+        '2026-11-11',
+        '2026-11-10',
+        '2026-11-01',
+      ]);
+      expect(j.balance(Prayer.zohor), 1);
+      expect(
+        j.status(DateTime(2026, 11, 5), Prayer.asar),
+        PrayerStatus.unrecorded,
+      );
+      expect(j.records.containsKey('2026-11-05'), isFalse);
+    },
+  );
+
+  test(
+    'clearing an optional historical day respects qada conflicts and removes only that day',
+    () {
+      final old = DateTime(2026, 11, 9);
+      var j = fresh()
+          .setStatuses(old, {
+            Prayer.subuh: PrayerStatus.performed,
+            Prayer.zohor: PrayerStatus.missed,
+          }, today)
+          .complete(Prayer.zohor, 1, today, 'old-miss-replacement');
+      expect(
+        () =>
+            j.setStatuses(old, {Prayer.zohor: PrayerStatus.unrecorded}, today),
+        throwsStateError,
+      );
+      j = j.setStatuses(old, {Prayer.subuh: PrayerStatus.unrecorded}, today);
+      expect(j.days(today).contains(old), isTrue);
+      j = j.undo('old-miss-replacement').setStatuses(old, {
+        Prayer.zohor: PrayerStatus.unrecorded,
+      }, today);
+      expect(j.records.containsKey(dateKey(old)), isFalse);
+      expect(j.days(today).first, start);
+      expect(j.startDate, start);
+      expect(j.outstanding, 0);
+    },
+  );
+
+  test(
+    'historical backfill round trips through backups with the same confirmed balances',
+    () {
+      final old = DateTime(1999, 12, 31);
+      final j = fresh()
+          .setStatuses(old, {
+            for (final p in Prayer.values) p: PrayerStatus.missed,
+          }, today)
+          .complete(Prayer.subuh, 1, today, 'backfill-qada');
+      final restored = Journal.decode(j.export(), today);
+      expect(restored.toJson(), j.toJson());
+      expect(restored.outstanding, 4);
+      expect(restored.days(today).map(dateKey).first, '1999-12-31');
+      expect(restored.startDate, start);
+      expect(restored.unresolvedDays(today).contains(old), isFalse);
     },
   );
 }
