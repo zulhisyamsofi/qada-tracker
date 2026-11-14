@@ -191,6 +191,8 @@ void main() {
         (await db.load(now)).status(now, Prayer.zohor),
         PrayerStatus.unrecorded,
       );
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.byTooltip('Update Isyak'), 150);
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Update Isyak'));

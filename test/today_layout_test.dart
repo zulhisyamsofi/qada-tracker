@@ -79,7 +79,7 @@ void main() {
   ]) {
     for (final mode in [AppTheme.light, AppTheme.dark]) {
       testWidgets(
-        'all five prayer checkboxes are immediately usable on ${size.width.toInt()}x${size.height.toInt()} ${mode.name}',
+        'restored prayer cards remain usable on ${size.width.toInt()}x${size.height.toInt()} ${mode.name}',
         (tester) async {
           viewport(tester, size);
           final db = JournalDatabase(NativeDatabase.memory());
@@ -96,30 +96,39 @@ void main() {
             );
             expect(find.text('Kuala Lumpur'), findsNothing);
             expect(find.byTooltip('Prayer times & location'), findsNothing);
-            visibleCheckboxes(tester);
+            if (size.width == 390) visibleCheckboxes(tester);
             final scroll = tester.state<ScrollableState>(
               find.descendant(
                 of: find.byKey(const ValueKey('today-prayers')),
                 matching: find.byType(Scrollable),
               ),
             );
-            expect(scroll.position.maxScrollExtent, 0);
+            if (size.width == 390) {
+              expect(scroll.position.maxScrollExtent, 0);
+            } else {
+              expect(scroll.position.maxScrollExtent, greaterThan(0));
+            }
+            expect(find.byType(CircularProgressIndicator), findsOneWidget);
+            expect(find.byType(LinearProgressIndicator), findsNothing);
             await capture(
               tester,
-              'today-compact-${size.width.toInt()}x${size.height.toInt()}-${mode.name}',
+              'today-restored-${size.width.toInt()}x${size.height.toInt()}-${mode.name}',
             );
             for (final p in Prayer.values) {
+              await tester.ensureVisible(prayerCheckbox(p));
+              await tester.pumpAndSettle();
               await tester.tap(prayerCheckbox(p));
               await tester.pumpAndSettle();
+              expect(
+                (await db.load(now)).status(now, p),
+                PrayerStatus.performed,
+                reason: p.label,
+              );
             }
-            expect(find.text('5 of 5 prayers recorded today'), findsOneWidget);
-            expect(
-              Prayer.values.every(
-                (p) => (tester.widget<Checkbox>(prayerCheckbox(p))).value!,
-              ),
-              isTrue,
-            );
-            visibleCheckboxes(tester);
+            scroll.position.jumpTo(0);
+            await tester.pumpAndSettle();
+            expect(find.text('5/5'), findsOneWidget);
+            if (size.width == 390) visibleCheckboxes(tester);
             expect((await db.load(now)).outstanding, 0);
             await tester.tap(find.text('History').last);
             await tester.pumpAndSettle();
@@ -197,7 +206,7 @@ void main() {
   );
 
   testWidgets(
-    'offline times retain a concise retry message while the five checkboxes stay visible',
+    'offline retry remains available and missing times still block prayer marking',
     (tester) async {
       viewport(tester, const Size(320, 640));
       final db = JournalDatabase(NativeDatabase.memory());
@@ -210,7 +219,8 @@ void main() {
           find.text('Times unavailable · pull down to retry'),
           findsOneWidget,
         );
-        visibleCheckboxes(tester);
+        await tester.ensureVisible(prayerCheckbox(Prayer.subuh));
+        await tester.pumpAndSettle();
         await tester.tap(prayerCheckbox(Prayer.subuh));
         await tester.pumpAndSettle();
         expect(

@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.18.0 — Restored roomy Today cards
+
+Restores Today’s original prayer-card padding, spacing, and rounded progress panel with a circular completion counter. Location controls stay in Settings and reviews stay in History. The tested 390 × 844 layout shows all five prayers without scrolling; shorter screens and enlarged text scroll without shrinking controls.
+
 ## v1.17.0 — Titled and padded home-screen widget
 
 Adds a compact Qada Tracker title above the five padded prayer boxes while retaining the 4 × 1 target. Title, background, and gaps open Today; prayer boxes keep toggling performed/unrecorded with the existing recording rules. Minimum content size is 280 × 80 dp. Existing launcher placements may need a small vertical resize or re-adding.

@@ -433,45 +433,82 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         key: const ValueKey('today-prayers'),
         physics: const AlwaysScrollableScrollPhysics(),
         cacheExtent: 2000,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.all(20),
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$count of 5 prayers recorded today',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                LinearProgressIndicator(
-                  value: count / 5,
-                  minHeight: 3,
-                  borderRadius: BorderRadius.circular(4),
-                  semanticsLabel: 'Daily prayer progress',
-                  semanticsValue: '$count of 5 performed',
-                ),
-                if (!valid)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      data.isLoading
-                          ? 'Loading prayer times…'
-                          : 'Times unavailable · pull down to retry',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+          GlassCard(
+            frosted: true,
+            color: Theme.of(context).colorScheme.primaryContainer,
+            radius: 30,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$count of 5 prayers recorded today',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            height: 1.25,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'A small moment to reflect and keep track.',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(fontSize: 13),
+                        ),
+                      ],
                     ),
                   ),
-              ],
+                  const SizedBox(width: 16),
+                  SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox.expand(
+                          child: CircularProgressIndicator(
+                            value: count / 5,
+                            strokeWidth: 7,
+                            strokeCap: StrokeCap.round,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: .14),
+                            semanticsLabel: 'Daily prayer progress',
+                            semanticsValue: '$count of 5 performed',
+                          ),
+                        ),
+                        Text(
+                          '$count/5',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          for (final p in Prayer.values) prayerCard(j, today, p, compact: true),
+          if (!valid)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                data.isLoading
+                    ? 'Loading prayer times…'
+                    : 'Times unavailable · pull down to retry',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          for (final p in Prayer.values) prayerCard(j, today, p),
         ],
       ),
     );
@@ -489,12 +526,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     ),
   );
 
-  Widget prayerCard(
-    Journal j,
-    DateTime date,
-    Prayer p, {
-    bool compact = false,
-  }) {
+  Widget prayerCard(Journal j, DateTime date, Prayer p) {
     final status = j.status(date, p);
     final isToday = dateKey(date) == dateKey(today);
     final calendar = isToday
@@ -541,7 +573,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         : theme.colorScheme.onSurface;
     return GlassCard(
       key: ValueKey('prayer-card-${dateKey(date)}-${p.name}'),
-      margin: EdgeInsets.only(bottom: compact ? 6 : 10),
+      margin: const EdgeInsets.only(bottom: 10),
       borderColor: performed
           ? green
           : missed
@@ -562,10 +594,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           ? (dark ? const Color(0xff3b3020) : const Color(0xfffff2dc))
           : null,
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: compact ? 4 : 10,
-          horizontal: 8,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         child: Row(
           children: [
             Transform.scale(

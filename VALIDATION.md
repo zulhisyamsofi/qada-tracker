@@ -1,3 +1,23 @@
+# Validation record — v1.18.0
+
+Restores Today’s original prayer-card padding, spacing, and rounded progress panel with a circular completion counter. Location controls stay in Settings and reviews stay in History. The tested 390 × 844 layout shows all five prayers without scrolling; shorter screens and enlarged text scroll without shrinking controls.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.18.0-arm64-v8a.apk` (21.2 MB).
+- **Universal fallback:** `qada-tracker-v1.18.0.apk` (59.9 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **103 Flutter tests**, **49 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified. No database, backup-format, status, or qada-calculation migration is needed.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.18.0-arm64-v8a.apk` (21,157,086 bytes): `406c445ea5dfae68419058b9b085f88f72534d0aa16ae1892e2b99c5a656e5a8`.
+- `qada-tracker-v1.18.0-armeabi-v7a.apk` (18,799,954 bytes): `89eb50a4a3552bd6037962715c5f680af15a6013f12714153ccb6573838de215`.
+- `qada-tracker-v1.18.0-x86_64.apk` (22,636,610 bytes): `56f75f16ae4f3141a901e6ac607e47aa529b1484fbb9105c85912a2d591e5a1a`.
+- `qada-tracker-v1.18.0.apk` (59,878,022 bytes): `c4a9d62ff6027be2581b8f3c4db5c920381ed44be115dff8030d6d124b8178e8`.
+
+---
+
 # Validation record — v1.17.0
 
 Adds a compact Qada Tracker title above the five padded prayer boxes while retaining the 4 × 1 target. Title, background, and gaps open Today; prayer boxes keep toggling performed/unrecorded with the existing recording rules. Minimum content size is 280 × 80 dp. Existing launcher placements may need a small vertical resize or re-adding.
