@@ -8,7 +8,7 @@ A personal Android prayer journal built with Flutter, Riverpod, and SQLite throu
 
 ## First launch walkthrough
 
-New installations open a seven-step guided tour that highlights real controls and visits all four tabs. It explains recording/clearing prayers, confirming misses, place selection and prayer alerts, historical edits and review, qada replacements and undo, progress, and Settings. Next, Back, and Skip tour are always available; the tour blocks taps on prayer records. Finishing or skipping saves the preference so the guide stays dismissed on subsequent launches. An interrupted unfinished tour starts again next time.
+New installations open an eight-step guided tour that highlights real controls and visits all four tabs. It explains recording/clearing prayers, confirming misses, place selection and prayer alerts, historical edits and review, qada replacements and undo, progress, and Settings. Next, Back, and Skip tour are always available; the tour blocks taps on prayer records. Finishing or skipping saves the preference so the guide stays dismissed on subsequent launches. Its prayer-reminder step preselects notifications for new Android users, lets them choose a place, and requests Android permission only after Enable & continue. Skipping, turning the switch off, or declining permission keeps new users’ alerts off; replay respects an existing opt-out. An interrupted unfinished tour starts again next time.
 
 Existing journals are not interrupted after updating. Use **Settings → App walkthrough** to replay the guide at any time. The guide follows light/dark appearance and reduced motion, and its instructions scroll when large text or a small screen needs more space. It introduces no new permissions or network services.
 
@@ -37,7 +37,7 @@ The first tab integrates the five daily records and their times; navigation now 
 
 Tap the sliders button on Today’s location card. Select a place from the Malaysia dropdown or tap **Use device location**. Location is requested only on that action, at medium accuracy, rounded to three decimals. No background GPS or location history is collected. The saved point is reused for refreshes; tap the button again after travelling. Coordinates are sent to WaktuSolat and included in the plaintext journal backup along with the selected place and notification preference.
 
-Enable **Prayer-time notifications** in **Prayer times & location** and grant notifications plus **alarms & reminders** access for on-time alerts. These alerts use a separate Android channel from the 11 PM check-in; neither feature ticks prayers or adds qada. Notification taps open Today. Disabling is possible even while offline or when the API is unavailable.
+Use the first-launch walkthrough, **Settings → Prayer-time notifications**, or Today’s location card to open **Prayer times & location** and enable **Prayer-time notifications** and grant notifications plus **alarms & reminders** access for on-time alerts. These alerts use a separate Android channel from the 11 PM check-in; neither feature ticks prayers or adds qada. Notification taps open Today. Disabling is possible even while offline or when the API is unavailable.
 
 Downloaded times are cached in SQLite and remain available offline. Android keeps only the next occurrence of each of the five prayers scheduled, then schedules successors after each alarm. WorkManager checks for refreshes every 12 hours when connected and downloads new months when fewer than 14 days remain. Refreshes use the last selected location, not a new GPS fix. Reboot, app updates, clock/timezone changes, and alarm-access grants reschedule alerts. Delayed broadcasts over 15 minutes old are discarded rather than replayed.
 
@@ -101,12 +101,12 @@ Verified in the cloud instance:
 
 - Pinned Flutter/Dart and JDK setup, with checksum verification and TLS trust intact.
 - Frozen dependency resolution with `pubspec.lock`, and repeatable `scripts/setup.sh` execution.
-- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **69 passing Flutter tests and 29 passing Android tests**, and a successful Android debug APK build.
+- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **77 passing Flutter tests and 29 passing Android tests**, and a successful Android debug APK build.
 
 Prayer-time validation tests cover before/exactly-at/after start, checkboxes and menus, source/date mismatches, absent or malformed caches, atomic bulk changes, concurrent calendar refresh, notification routing, and historical/restore behavior.
 
 Widget tests cover native RemoteViews, actual pending-intent clicks, SQLite writes, app/launcher synchronization, duplicate taps, date rollover, qada conflicts, write rollback, and launcher fallback instructions. Native widget tests use pinned Robolectric **4.16.1** on Android API **35**, with native graphics/SQLite; the test runtime is downloaded from Maven Central on first use.
 
-Theme tests also check persistent toggling, system-theme behavior, both themes across all tabs, and a narrow-screen/high-contrast/large-text layout. To regenerate ignored Flutter raster captures, run `QADA_CAPTURE_UI=1 flutter test test/theme_ui_test.dart`.
+Theme tests also check persistent toggling, system-theme behavior, both themes across all tabs, and a narrow-screen/high-contrast/large-text layout. To regenerate ignored Flutter raster captures, run `QADA_CAPTURE_UI=1 flutter test test/theme_ui_test.dart`. Use `QADA_CAPTURE_UI=1 flutter test test/notification_onboarding_test.dart` for the consent previews.
 
 The original Flutter download restriction has been resolved. The debug APK is available at the path above. Android runtime validation uses a separate disposable software emulator; see [VALIDATION.md](VALIDATION.md) for its result and limitations. No real phone has been tested. Chrome and Linux desktop doctor warnings are outside this Android app’s target.

@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.10.0 — Prayer-reminder consent
+
+Adds a first-launch prayer-reminder setup step with notifications preselected for new Android users, a place selector, explicit permission consent, optional alarm access, and a way to continue without alerts. Existing opt-outs are preserved. Settings links directly to prayer-time notification controls; onboarding and Settings share permission/channel checks and scheduling/cancellation. Tour navigation adapts to narrow screens and large text.
+
 ## v1.9.0 — First-launch walkthrough
 
 Adds a seven-step tour over the real app screens with highlighted controls, Next/Back/Skip, saved dismissal, and replay from Settings. First-time users see it automatically; existing journals retain their normal startup. Guide taps cannot change records. Light/dark, large text, reduced motion, rotation, interrupted tours, and write-failure retry are covered. The optional walkthrough preference is included in backups with a backward-compatible default.

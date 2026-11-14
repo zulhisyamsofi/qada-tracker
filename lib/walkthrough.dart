@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'controller.dart';
+import 'prayer_times_controller.dart';
+import 'prayer_times_models.dart';
+import 'reminders.dart';
 
 class WalkthroughStep {
   const WalkthroughStep(
@@ -7,14 +12,16 @@ class WalkthroughStep {
     this.icon,
     this.title,
     this.body,
-    this.hint,
-  );
+    this.hint, {
+    this.notificationSetup = false,
+  });
   final int tab;
   final String target;
   final IconData icon;
   final String title;
   final String body;
   final String hint;
+  final bool notificationSetup;
 }
 
 const walkthroughSteps = [
@@ -40,7 +47,16 @@ const walkthroughSteps = [
     Icons.schedule_rounded,
     'Choose your prayer-time location',
     'Prayer times appear beside each prayer. Tap the location card’s settings button to choose a Malaysian place or use your device location.',
-    'Prayer-time notifications are optional. Enable them in Prayer times & location and allow the Android permissions when asked.',
+    'The next step lets you choose prayer-time reminders. You can change the place, use device location, and manage alerts later from Today’s location card or Settings.',
+  ),
+  WalkthroughStep(
+    0,
+    'nav-0',
+    Icons.notifications_active_outlined,
+    'Prayer-time reminders',
+    'Get an alert at each of the five prayer times. Choose the place whose timetable you want to follow.',
+    'Reminders are selected for first-time setup. Enable & continue asks Android for notification permission. Skipping leaves your existing settings unchanged. You can disable reminders anytime in Settings.',
+    notificationSetup: true,
   ),
   WalkthroughStep(
     1,
@@ -76,9 +92,9 @@ const walkthroughSteps = [
   ),
 ];
 
-/// A read-only tour over the real screens. The modal route blocks all taps
+/// A tour over the real screens, with an explicit notification consent step. The modal route blocks all taps
 /// through the spotlight, so exploring the guide cannot alter prayer records.
-class AppWalkthrough extends StatefulWidget {
+class AppWalkthrough extends ConsumerStatefulWidget {
   const AppWalkthrough({
     required this.prepare,
     required this.finish,
@@ -87,11 +103,157 @@ class AppWalkthrough extends StatefulWidget {
   final Future<Rect?> Function(WalkthroughStep) prepare;
   final Future<void> Function() finish;
   @override
-  State<AppWalkthrough> createState() => _AppWalkthroughState();
+  ConsumerState<AppWalkthrough> createState() => _AppWalkthroughState();
 }
 
-class _AppWalkthroughState extends State<AppWalkthrough> {
+class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
   int index = 0;
+  late bool wantNotifications;
+  late PrayerPlace notificationPlace;
+
+  @override
+  void initState() {
+    super.initState();
+    final journal = ref.read(journalProvider).requireValue;
+    wantNotifications =
+        ref.read(reminderServiceProvider).supported &&
+        (!journal.walkthroughSeen || journal.prayerTimes.notifications);
+    notificationPlace = journal.prayerTimes.place;
+  }
+
+  Future<void> next() async {
+    if (saving || preparing) return;
+    if (!walkthroughSteps[index].notificationSetup) {
+      await loadStep(index + 1);
+      return;
+    }
+    setState(() {
+      saving = true;
+      error = null;
+    });
+    try {
+      await updatePrayerNotifications(
+        ref,
+        enabled: wantNotifications,
+        place: notificationPlace,
+      );
+      if (!mounted) return;
+      setState(() => saving = false);
+      await loadStep(index + 1);
+    } on FormatException catch (failure) {
+      if (mounted) {
+        setState(() {
+          saving = false;
+          wantNotifications = false;
+          error = failure.message;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          saving = false;
+          error = 'Could not save reminder settings. Please try again.';
+        });
+      }
+    }
+  }
+
+  Widget notificationControls() {
+    final service = ref.watch(reminderServiceProvider);
+    final access = ref.watch(reminderAccessProvider).asData?.value;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          key: const ValueKey('walkthrough-place'),
+          initialValue: notificationPlace.id,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Prayer-time place'),
+          items: [
+            if (!malaysiaPlaces.any((p) => p.id == notificationPlace.id))
+              DropdownMenuItem(
+                value: notificationPlace.id,
+                child: Text(notificationPlace.label),
+              ),
+            for (final place in malaysiaPlaces)
+              DropdownMenuItem(value: place.id, child: Text(place.label)),
+          ],
+          onChanged: saving
+              ? null
+              : (id) {
+                  if (id != null && id != notificationPlace.id) {
+                    setState(() {
+                      notificationPlace = malaysiaPlaces.firstWhere(
+                        (p) => p.id == id,
+                      );
+                    });
+                  }
+                },
+        ),
+        SwitchListTile(
+          key: const ValueKey('walkthrough-prayer-alerts'),
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Prayer-time notifications'),
+          subtitle: Text(
+            service.supported
+                ? 'Five daily alerts. Turn off anytime in Settings.'
+                : 'Available on Android.',
+          ),
+          value: wantNotifications,
+          onChanged: saving || !service.supported
+              ? null
+              : (value) => setState(() {
+                  wantNotifications = value;
+                  error = null;
+                }),
+        ),
+        if (service.supported && access?.exactAlarms == false) ...[
+          const Text(
+            'For precise timing, also allow alarms & reminders. Android may delay alerts without this access.',
+          ),
+          TextButton(
+            onPressed: saving
+                ? null
+                : () async {
+                    try {
+                      await service.openAlarmSettings();
+                    } catch (_) {
+                      if (mounted) {
+                        setState(
+                          () => error =
+                              'Could not open Android alarm settings. You can try later in Settings.',
+                        );
+                      }
+                    }
+                    if (mounted) ref.invalidate(reminderAccessProvider);
+                  },
+            child: const Text('Allow alarms & reminders'),
+          ),
+        ],
+        if (error != null && service.supported)
+          TextButton(
+            onPressed: saving
+                ? null
+                : () async {
+                    try {
+                      await service.openNotificationSettings();
+                    } catch (_) {
+                      if (mounted) {
+                        setState(
+                          () => error =
+                              'Could not open Android notification settings. You can try later in Settings.',
+                        );
+                      }
+                    }
+                    if (mounted) ref.invalidate(reminderAccessProvider);
+                  },
+            child: const Text('Android notification settings'),
+          ),
+      ],
+    );
+  }
+
   Rect? focus;
   bool preparing = true;
   bool saving = false;
@@ -155,6 +317,55 @@ class _AppWalkthroughState extends State<AppWalkthrough> {
     }
   }
 
+  Widget navigationButtons(WalkthroughStep step) {
+    final primary = FilledButton(
+      onPressed: saving || preparing
+          ? null
+          : index == walkthroughSteps.length - 1
+          ? finish
+          : next,
+      child: Text(
+        saving
+            ? 'Saving…'
+            : index == walkthroughSteps.length - 1
+            ? 'Get started'
+            : step.notificationSetup && wantNotifications
+            ? 'Enable & continue'
+            : 'Next',
+      ),
+    );
+    final back = OutlinedButton(
+      onPressed: saving || preparing ? null : () => loadStep(index - 1),
+      child: const Text('Back'),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stacked =
+            (constraints.maxWidth < 360 &&
+                MediaQuery.textScalerOf(context).scale(16) > 20) ||
+            (step.notificationSetup && constraints.maxWidth < 300);
+        if (stacked) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              primary,
+              if (index > 0) ...[const SizedBox(height: 8), back],
+            ],
+          );
+        }
+        return Row(
+          children: [
+            if (index > 0) ...[
+              Expanded(child: back),
+              const SizedBox(width: 12),
+            ],
+            Expanded(child: primary),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final step = walkthroughSteps[index];
@@ -201,7 +412,8 @@ class _AppWalkthroughState extends State<AppWalkthrough> {
                           ? MediaQuery.sizeOf(context).height -
                                 MediaQuery.paddingOf(context).vertical -
                                 32
-                          : MediaQuery.sizeOf(context).height * .54,
+                          : MediaQuery.sizeOf(context).height *
+                                (step.notificationSetup ? .74 : .54),
                     ),
                     child: Material(
                       color: theme.colorScheme.surface,
@@ -239,6 +451,7 @@ class _AppWalkthroughState extends State<AppWalkthrough> {
                             ),
                             const SizedBox(height: 16),
                             Flexible(
+                              flex: 3,
                               child: Scrollbar(
                                 controller: contentScroll,
                                 thumbVisibility: true,
@@ -268,6 +481,8 @@ class _AppWalkthroughState extends State<AppWalkthrough> {
                                       ),
                                       const SizedBox(height: 10),
                                       Text(step.body),
+                                      if (step.notificationSetup)
+                                        notificationControls(),
                                       const SizedBox(height: 12),
                                       DecoratedBox(
                                         decoration: BoxDecoration(
@@ -290,55 +505,27 @@ class _AppWalkthroughState extends State<AppWalkthrough> {
                                           ),
                                         ),
                                       ),
-                                      if (error != null)
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 12,
-                                          ),
-                                          child: Text(
-                                            error!,
-                                            style: TextStyle(
-                                              color: theme.colorScheme.error,
-                                            ),
-                                          ),
-                                        ),
                                     ],
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                if (index > 0) ...[
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed: saving || preparing
-                                          ? null
-                                          : () => loadStep(index - 1),
-                                      child: const Text('Back'),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                ],
-                                Expanded(
-                                  child: FilledButton(
-                                    onPressed: saving || preparing
-                                        ? null
-                                        : index == walkthroughSteps.length - 1
-                                        ? finish
-                                        : () => loadStep(index + 1),
+                            if (error != null)
+                              Flexible(
+                                child: SingleChildScrollView(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 12),
                                     child: Text(
-                                      saving
-                                          ? 'Saving…'
-                                          : index == walkthroughSteps.length - 1
-                                          ? 'Get started'
-                                          : 'Next',
+                                      error!,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.error,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            const SizedBox(height: 16),
+                            navigationButtons(step),
                           ],
                         ),
                       ),

@@ -16,6 +16,7 @@ Each feature edition is represented by a separate commit and annotated tag. The 
 | v1.7.0 | Consistent cards and editable history | 62 / 29 | [v1.7.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.7.0) |
 | v1.8.0 | Rounded splash icon | 62 / 29 | [v1.8.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.8.0) |
 | v1.9.0 | First-launch walkthrough | 69 / 29 | [v1.9.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.9.0) |
+| v1.10.0 | Prayer-reminder consent | 77 / 29 | [v1.10.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.10.0) |
 
 Every version passed formatting, static analysis, its Flutter tests, and an Android debug APK build. Versions with native test suites also passed those checks. Native widget tests use Robolectric. Actual launcher placement, GPS, notification delivery, reboot/Doze behavior, and OEM battery restrictions remain unverified on a physical phone.
 

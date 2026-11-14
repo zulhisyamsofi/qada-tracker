@@ -1031,6 +1031,20 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
+                  title: const Text('Prayer-time notifications'),
+                  subtitle: Text(
+                    j.prayerTimes.notifications
+                        ? 'On · place, alerts, and Android permissions'
+                        : 'Off · place, alerts, and Android permissions',
+                  ),
+                  trailing: const Icon(Icons.notifications_outlined),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    prayerTimeSettings();
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: const Text('Past qada starting balances'),
                   subtitle: const Text(
                     'Optional counts from before you began tracking.',

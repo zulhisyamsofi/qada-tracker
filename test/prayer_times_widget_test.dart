@@ -124,7 +124,7 @@ void main() {
       if (!enabled) {
         expect(
           find.text(
-            'Notifications are blocked. Allow them in Android notification settings.',
+            'Notifications were not enabled. You can continue without them or allow them later in Settings.',
           ),
           findsOneWidget,
         );

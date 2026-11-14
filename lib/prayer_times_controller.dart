@@ -100,3 +100,36 @@ class PrayerTimesController extends AsyncNotifier<PrayerTimesData> {
     }
   }
 }
+
+/// Shared consent and scheduling path for onboarding and Settings.
+Future<void> updatePrayerNotifications(
+  WidgetRef ref, {
+  required bool enabled,
+  PrayerPlace? place,
+}) async {
+  final service = ref.read(reminderServiceProvider);
+  if (enabled) {
+    final allowed = await service.requestNotifications();
+    final access = await service.access();
+    if (!allowed || !access.notifications) {
+      throw const FormatException(
+        'Notifications were not enabled. You can continue without them or allow them later in Settings.',
+      );
+    }
+    if (access.prayerTimesNotifications == false) {
+      throw const FormatException(
+        'The Prayer times notification channel is blocked. Allow it in Android notification settings, or continue without reminders.',
+      );
+    }
+  }
+  if (!ref.context.mounted) return;
+  await ref
+      .read(journalProvider.notifier)
+      .change(
+        (j) => j.copy(
+          prayerTimes: j.prayerTimes.copy(notifications: enabled, place: place),
+        ),
+      );
+  await service.syncPrayerTimes();
+  if (ref.context.mounted) ref.invalidate(reminderAccessProvider);
+}

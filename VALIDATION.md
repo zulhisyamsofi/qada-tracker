@@ -1,3 +1,13 @@
+# Validation record — v1.10.0+11
+
+The reminder-consent edition passes `scripts/validate.sh`: formatting (33 Dart files, no changes), static analysis (no issues), **77 Flutter tests**, **29 Android JVM tests**, and universal Android debug APK compilation. Package `com.personal.qada_tracker`; version 1.10.0 (code 11), minimum API 24, target API 36. Existing debug signing certificate retained. APK SHA-256: `9c51eb0ebbce54ecba9fd03d1d82999a894570ee5d4717f3586fb66c35d7b7a5`.
+
+Eight new tests verify default-on reminder selection before any permission request, explicit consent and selected-place persistence, optional alarm access, disabling through Settings, restart/backup persistence, permission/app/channel denial, skip/opt-out, replay respecting opt-out, failed-save retry, both themes with large text, and rotation while an error is displayed. The remaining tests cover the earlier app features.
+
+The eight-step tour offers prayer-time alerts to new Android users; the saved preference remains off until explicit consent and permission approval. Existing settings and opt-outs remain unchanged on replay or skip. Onboarding and Settings share permission/channel checks, transactional settings writes, and schedule refresh/cancellation. The daily 11 PM check-in reminder remains separately opt-in. No schema, backup version, permission, production dependency, or API changed. Phone delivery remains unverified; automated tests use Flutter rendering and simulated Android.
+
+---
+
 # Validation record — v1.9.0+10
 
 The walkthrough edition passes formatting (32 Dart files, no changes), static analysis (no issues), **69 Flutter tests**, and **29 Android JVM tests** (no failures, errors, or skips). Its universal Android debug APK builds successfully at `build/app/outputs/flutter-apk/app-debug.apk`. SHA-256: `11870ce8b68242faa3003513c75dee623cbc0c3b8f56cc2e53d76a19f3b89153`. The APK retains the existing debug signing certificate.

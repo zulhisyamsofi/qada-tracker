@@ -126,22 +126,8 @@ class _PrayerTimesSettingsState extends ConsumerState<PrayerTimesSettings> {
   Future<void> choose(PrayerPlace place) => ref
       .read(journalProvider.notifier)
       .change((j) => j.copy(prayerTimes: j.prayerTimes.copy(place: place)));
-  Future<void> notifications(bool enabled) => action(() async {
-    final service = ref.read(reminderServiceProvider);
-    if (enabled && !await service.requestNotifications()) {
-      throw const FormatException(
-        'Notifications are blocked. Allow them in Android notification settings.',
-      );
-    }
-    if (mounted) {
-      await ref
-          .read(journalProvider.notifier)
-          .change(
-            (j) =>
-                j.copy(prayerTimes: j.prayerTimes.copy(notifications: enabled)),
-          );
-    }
-  });
+  Future<void> notifications(bool enabled) =>
+      action(() => updatePrayerNotifications(ref, enabled: enabled));
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(journalProvider).requireValue.prayerTimes;
