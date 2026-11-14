@@ -75,7 +75,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   bool walkthroughChecked = false;
   bool walkthroughOpen = false;
   final walkthroughTargets = {
-    for (final key in ['prayer', 'times', 'settings']) key: GlobalKey(),
+    for (final key in ['prayer', 'settings']) key: GlobalKey(),
   };
   final navigationKeys = List.generate(4, (_) => GlobalKey());
   final qadaFormulaTooltip = GlobalKey<TooltipState>();
@@ -274,10 +274,19 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 letterSpacing: -.4,
               ),
             ),
-            const Text(
-              'Qada Tracker',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
+            if (tab == 0)
+              Text(
+                DateFormat('EEE, d MMM yyyy').format(today),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            if (tab != 0)
+              const Text(
+                'Qada Tracker',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
           ],
         ),
         actions: [
@@ -414,95 +423,60 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     final count = Prayer.values
         .where((p) => j.status(today, p) == PrayerStatus.performed)
         .length;
+    final data = ref.watch(prayerTimesProvider);
+    final valid =
+        PrayerRecordingPolicy.timeFor(
+          data.asData?.value.calendar,
+          j.prayerTimes.place.key,
+          today,
+          Prayer.subuh,
+        ) !=
+        null;
     return RefreshIndicator(
       onRefresh: () => ref.read(prayerTimesProvider.notifier).refresh(),
       child: ListView(
+        key: const ValueKey('today-prayers'),
         physics: const AlwaysScrollableScrollPhysics(),
         cacheExtent: 2000,
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         children: [
-          heading(
-            'One prayer at a time.',
-            DateFormat('EEEE, d MMMM yyyy').format(today),
-          ),
-          GlassCard(
-            frosted: true,
-            color: Theme.of(context).colorScheme.primaryContainer,
-            radius: 30,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '$count of 5 prayers recorded today',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            height: 1.25,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'A small moment to reflect and keep track.',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(fontSize: 13),
-                        ),
-                      ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$count of 5 prayers recorded today',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                LinearProgressIndicator(
+                  value: count / 5,
+                  minHeight: 3,
+                  borderRadius: BorderRadius.circular(4),
+                  semanticsLabel: 'Daily prayer progress',
+                  semanticsValue: '$count of 5 performed',
+                ),
+                if (!valid)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      data.isLoading
+                          ? 'Loading prayer times…'
+                          : 'Times unavailable · pull down to retry',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  SizedBox(
-                    width: 72,
-                    height: 72,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox.expand(
-                          child: CircularProgressIndicator(
-                            value: count / 5,
-                            strokeWidth: 7,
-                            strokeCap: StrokeCap.round,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: .14),
-                            semanticsLabel: 'Daily prayer progress',
-                            semanticsValue: '$count of 5 performed',
-                          ),
-                        ),
-                        Text(
-                          '$count/5',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
-          TodayPrayerTimesCard(
-            key: walkthroughTargets['times'],
-            day: today,
-            onSettings: prayerTimeSettings,
-          ),
-          const SizedBox(height: 10),
-          for (final p in Prayer.values) prayerCard(j, today, p),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              'A fresh page at midnight. Your history stays saved.',
-              style: TextStyle(fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-          ),
+          for (final p in Prayer.values) prayerCard(j, today, p, compact: true),
         ],
       ),
     );
@@ -520,7 +494,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     ),
   );
 
-  Widget prayerCard(Journal j, DateTime date, Prayer p) {
+  Widget prayerCard(
+    Journal j,
+    DateTime date,
+    Prayer p, {
+    bool compact = false,
+  }) {
     final status = j.status(date, p);
     final isToday = dateKey(date) == dateKey(today);
     final calendar = isToday
@@ -567,6 +546,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         : theme.colorScheme.onSurface;
     return GlassCard(
       key: ValueKey('prayer-card-${dateKey(date)}-${p.name}'),
+      margin: EdgeInsets.only(bottom: compact ? 6 : 10),
       borderColor: performed
           ? green
           : missed
@@ -587,7 +567,10 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           ? (dark ? const Color(0xff3b3020) : const Color(0xfffff2dc))
           : null,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        padding: EdgeInsets.symmetric(
+          vertical: compact ? 4 : 10,
+          horizontal: 8,
+        ),
         child: Row(
           children: [
             Transform.scale(
@@ -1080,13 +1063,10 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Prayer-time notifications'),
-                  subtitle: Text(
-                    j.prayerTimes.notifications
-                        ? 'On · place, alerts, and Android permissions'
-                        : 'Off · place, alerts, and Android permissions',
-                  ),
-                  trailing: const Icon(Icons.notifications_outlined),
+                  title: const Text('Prayer times & location'),
+                  subtitle: Text(j.prayerTimes.place.label),
+                  leading: const Icon(Icons.schedule_rounded),
+                  trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     Navigator.of(context).pop();
                     prayerTimeSettings();

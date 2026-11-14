@@ -132,7 +132,7 @@ void main() {
         expect((await db.load(now)).prayerTimes.notifications, isTrue);
         await tester.tap(find.byTooltip('Settings'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Prayer-time notifications'));
+        await tester.tap(find.text('Prayer times & location'));
         await tester.pumpAndSettle();
         await tester.scrollUntilVisible(
           find.byType(SwitchListTile),

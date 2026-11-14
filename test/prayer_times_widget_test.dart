@@ -53,7 +53,9 @@ void main() {
       }
       await tester.drag(find.byType(ListView), const Offset(0, 1000));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Prayer times & location'));
+      await tester.tap(find.byTooltip('Settings'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Prayer times & location'));
       await tester.pumpAndSettle();
       expect(find.text('Prayer times & location'), findsOneWidget);
       expect(
@@ -229,7 +231,7 @@ void main() {
       expect(find.text('Every step counts'), findsOneWidget);
       service.onOpenPrayerTimes!();
       await tester.pumpAndSettle();
-      expect(find.text('One prayer at a time.'), findsOneWidget);
+      expect(find.text('0 of 5 prayers recorded today'), findsOneWidget);
       expect(find.text('Times'), findsNothing);
       await tester.pumpWidget(const SizedBox());
       api.client.close();

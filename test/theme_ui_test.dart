@@ -69,7 +69,9 @@ void main() {
       await tester.pumpAndSettle();
       expect((await db.load(now)).theme, AppTheme.dark);
       expect(
-        Theme.of(tester.element(find.text('One prayer at a time.'))).brightness,
+        Theme.of(
+          tester.element(find.text('2 of 5 prayers recorded today')),
+        ).brightness,
         Brightness.dark,
       );
       expect(
@@ -121,7 +123,9 @@ void main() {
       await tester.pumpWidget(app(db, api));
       await tester.pumpAndSettle();
       await capture(tester, 'today-${mode.name}');
-      await tester.tap(find.byTooltip('Prayer times & location'));
+      await tester.tap(find.byTooltip('Settings'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Prayer times & location'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await capture(tester, 'prayer-settings-${mode.name}');

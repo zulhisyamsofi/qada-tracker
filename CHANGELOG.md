@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.14.0 — Focused Today checklist
+
+Opens Today directly to all five prayer cards without scrolling at normal font sizes on the tested phone layouts. Moves saved location controls to Settings → Prayer times & location, keeps review above History’s calendar, and updates the walkthrough. Large text remains scrollable with full touch targets.
+
 ## v1.13.0 — History review badges and calendar
 
 Adds a red History badge counting past days with unrecorded prayers, matching calendar date rings, and a review prompt above the calendar. Partial corrections, bulk review, long gaps, optional historical records, and midnight/resume update the markers without turning unrecorded prayers into qada.

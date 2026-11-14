@@ -1,98 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'controller.dart';
-import 'model.dart';
-import 'prayer_recording_policy.dart';
 import 'prayer_times_controller.dart';
 import 'prayer_times_models.dart';
 import 'reminders.dart';
-import 'ui/glass.dart';
 
-/// Compact context for the times printed on Today's prayer cards.
-class TodayPrayerTimesCard extends ConsumerWidget {
-  const TodayPrayerTimesCard({
-    required this.day,
-    required this.onSettings,
-    super.key,
-  });
-  final DateTime day;
-  final VoidCallback onSettings;
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(journalProvider).requireValue.prayerTimes;
-    final data = ref.watch(prayerTimesProvider);
-    final loading = data.isLoading || (data.asData?.value.refreshing ?? false);
-    final calendar = data.asData?.value.calendar;
-    final valid =
-        PrayerRecordingPolicy.timeFor(
-          calendar,
-          settings.place.key,
-          day,
-          Prayer.subuh,
-        ) !=
-        null;
-    final now = ref.read(clockProvider)();
-    final upcoming = valid
-        ? calendar!.entries
-              .where((e) => e.date == dateKey(day) && e.at.isAfter(now))
-              .firstOrNull
-        : null;
-    final detail = valid
-        ? '${upcoming == null ? 'All prayer times have started' : 'Next: ${Prayer.values.byName(upcoming.prayer).label} ${upcoming.time}'} · ${calendar!.timezone}'
-        : loading
-        ? 'Loading prayer times…'
-        : 'Times unavailable. Refresh to record today’s prayers.';
-    return GlassCard(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${settings.place.label}${valid ? ' · ${calendar!.zone}' : ''}',
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        detail,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Prayer times & location',
-                  onPressed: onSettings,
-                  icon: const Icon(Icons.tune_rounded),
-                ),
-              ],
-            ),
-            if (data.asData?.value.warning != null && valid)
-              const Text(
-                'Saved timetable · Refresh currently unavailable',
-                style: TextStyle(fontSize: 12),
-              ),
-            if (!valid && !loading)
-              TextButton.icon(
-                onPressed: () =>
-                    ref.read(prayerTimesProvider.notifier).refresh(),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Refresh times'),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Place, source, and alert controls are reached from Today, without a fifth tab.
+/// Place, source, and alert controls are reached from Settings.
 class PrayerTimesSettings extends ConsumerStatefulWidget {
   const PrayerTimesSettings({super.key});
   @override

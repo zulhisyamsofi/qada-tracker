@@ -20,6 +20,7 @@ Each feature edition is represented by a separate commit and annotated tag. The 
 | v1.11.0 | Prayer-card status styling | 79 / 29 | [v1.11.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.11.0) |
 | v1.12.0 | Smaller optimized APKs | 79 / 29 | [v1.12.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.12.0) |
 | v1.13.0 | History review badges and calendar | 85 / 29 | [v1.13.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.13.0) |
+| v1.14.0 | Focused Today checklist | 94 / 29 | [v1.14.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.14.0) |
 
 Every version passed formatting, static analysis, its Flutter tests, and an Android debug APK build. Versions with native test suites also passed those checks. Native widget tests use Robolectric. Actual launcher placement, GPS, notification delivery, reboot/Doze behavior, and OEM battery restrictions remain unverified on a physical phone.
 

@@ -1,3 +1,24 @@
+# Validation record — v1.14.0
+
+Opens Today directly to all five prayer cards without scrolling at normal font sizes on the tested phone layouts. Moves saved location controls to Settings → Prayer times & location, keeps review above History’s calendar, and updates the walkthrough. Large text remains scrollable with full touch targets.
+
+Downloads:
+- **Realme GT Master / most recent Android phones:** `qada-tracker-v1.14.0-arm64-v8a.apk` (21.2 MB).
+- **Universal fallback:** `qada-tracker-v1.14.0.apk` (59.8 MB).
+- Other assets target older 32-bit ARM phones and x86-64 emulators. Choose one APK, then install it over the existing app to keep the journal. Package and signing certificate are unchanged.
+
+Validation: formatting, static analysis, **94 Flutter tests**, **29 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag. `SHA256SUMS` covers every download. Physical phone notification/Doze/battery behavior remains unverified.
+
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 mapping confirms the persisted WorkManager entry-point name is retained. The source is Flutter 3.38.5 with the pinned Android toolchain. Earlier checkpoint records below retain their original hashes and results.
+
+- `qada-tracker-v1.14.0-arm64-v8a.apk`: `44f6aae8325df40d4235703633720b03f55b5ed4c245f6c6de4776887fde5ff6`
+- `qada-tracker-v1.14.0-armeabi-v7a.apk`: `d9dab0d49eaad22d406f9fef026715b6b7707b0f2c5dbcdd20a683e548f5bdf3`
+- `qada-tracker-v1.14.0-x86_64.apk`: `b9f00d170d806752c96b63c05cdd933fc59e9523a6aa16cf8911230a9acfd517`
+- `qada-tracker-v1.14.0.apk`: `50dede0765b6e4153ea156639961a0b96fc4cace6b7473c89ba0a72970565955`
+
+---
+
 # Validation record — v1.13.0
 
 Adds a red History badge counting past days with unrecorded prayers, matching calendar date rings, and a review prompt above the calendar. Partial corrections, bulk review, long gaps, optional historical records, and midnight/resume update the markers without turning unrecorded prayers into qada.
