@@ -32,8 +32,10 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Personal APKs retain the existing signer so upgrades preserve journals.
+            // Flutter also supplies its embedding rules and optimized R8 defaults.
+            isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug")
         }
     }

@@ -36,11 +36,23 @@ def main():
     with tempfile.TemporaryDirectory(prefix="qada-release-") as temporary:
         for entry in entries:
             tag = entry["tag"]
-            parsed = urllib.parse.urlsplit(entry["url"])
-            if parsed.scheme != "https" or parsed.netloc != "litter.catbox.moe":
-                raise ValueError("Transfer URLs must use the approved HTTPS file host.")
-            if not re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]):
-                raise ValueError("Invalid expected SHA-256.")
+            files = entry.get("files") or [{
+                "name": f"qada-tracker-{tag}.apk",
+                "url": entry["url"], "sha256": entry["sha256"], "size": entry["size"],
+            }]
+            names = [file["name"] for file in files]
+            if len(names) != len(set(names)):
+                raise ValueError("Duplicate asset filenames.")
+            for file in files:
+                if not re.fullmatch(rf"qada-tracker-{re.escape(tag)}(?:-(?:armeabi-v7a|arm64-v8a|x86_64))?\.apk", file["name"]):
+                    raise ValueError("Unexpected APK filename.")
+                parsed = urllib.parse.urlsplit(file["url"])
+                if parsed.scheme != "https" or parsed.netloc != "litter.catbox.moe":
+                    raise ValueError("Transfer URLs must use the approved HTTPS file host.")
+                if not re.fullmatch(r"[0-9a-f]{64}", file["sha256"]):
+                    raise ValueError("Invalid expected SHA-256.")
+                if type(file["size"]) is not int or not 0 < file["size"] < 250_000_000:
+                    raise ValueError("Invalid APK size.")
             ref = api(f"repos/{repo}/git/ref/tags/{tag}")["object"]
             if ref["type"] != "tag":
                 raise ValueError(f"{tag} must remain an annotated tag.")
@@ -55,19 +67,22 @@ def main():
                 raise ValueError(f"Refusing to replace assets on published release {tag}.")
             folder = Path(temporary, tag)
             folder.mkdir()
-            apk = folder / f"qada-tracker-{tag}.apk"
-            # Deliberately send no GitHub authorization header to the file host.
-            with urllib.request.urlopen(entry["url"], timeout=120) as response, apk.open("wb") as stream:
-                while block := response.read(1024 * 1024):
-                    stream.write(block)
-                    if stream.tell() > entry["size"]:
-                        raise ValueError(f"{tag} exceeds its verified size.")
-            if apk.stat().st_size != entry["size"] or sha256(apk) != entry["sha256"]:
-                raise ValueError(f"Checksum/size mismatch for {tag}.")
+            downloaded = []
+            for file in files:
+                apk = folder / file["name"]
+                # Deliberately send no GitHub authorization header to the file host.
+                with urllib.request.urlopen(file["url"], timeout=120) as response, apk.open("wb") as stream:
+                    while block := response.read(1024 * 1024):
+                        stream.write(block)
+                        if stream.tell() > file["size"]:
+                            raise ValueError(f"{tag} exceeds its verified size.")
+                if apk.stat().st_size != file["size"] or sha256(apk) != file["sha256"]:
+                    raise ValueError(f"Checksum/size mismatch for {apk.name}.")
+                downloaded.append(apk)
             checksum = folder / "SHA256SUMS"
-            checksum.write_text(f"{entry['sha256']}  {apk.name}\n")
+            checksum.write_text("".join(f"{file['sha256']}  {file['name']}\n" for file in files))
             assets = {a["name"]: a for a in release["assets"]}
-            for file in [apk, checksum]:
+            for file in [*downloaded, checksum]:
                 if file.name not in assets:
                     endpoint = f"https://uploads.github.com/{release_path}/assets?name={urllib.parse.quote(file.name)}"
                     request = urllib.request.Request(endpoint, data=file.read_bytes(), method="POST", headers={
@@ -80,7 +95,7 @@ def main():
                     with urllib.request.urlopen(request, timeout=180) as response:
                         assets[file.name] = json.load(response)
             assets = {a["name"]: a for a in api(release_path)["assets"]}
-            for file in [apk, checksum]:
+            for file in [*downloaded, checksum]:
                 asset = assets[file.name]
                 if asset["size"] != file.stat().st_size:
                     raise ValueError(f"Uploaded size mismatch for {file.name}.")

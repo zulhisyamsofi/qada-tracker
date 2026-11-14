@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.12.0 — Smaller optimized APKs
+
+Replaces debug distribution with optimized release APKs: Dart ahead-of-time compilation and tree shaking, R8 Android code shrinking, resource shrinking, and icon tree shaking. Includes ARM64, 32-bit ARM, x86-64, and a universal fallback. Keeps the existing app signer for in-place upgrades and preserves the WorkManager entry point across updates. No features or journal data removed.
+
 ## v1.11.0 — Prayer-card status styling
 
 Performed prayer cards use green borders and softer text, confirmed misses use bold red styling, and past unrecorded prayers use amber styling with a needs-review label. The cues apply to Today, History, and daily review without changing prayer statuses or qada rules. High-contrast mode retains fully opaque completed text.

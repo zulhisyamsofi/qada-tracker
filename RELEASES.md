@@ -1,6 +1,6 @@
 # Private Android releases
 
-The repository and its GitHub releases remain private. Release assets require GitHub sign-in with repository access. These are personal-installation Android debug APKs, not Play Store publications.
+The repository and its GitHub releases remain private. Release assets require GitHub sign-in with repository access. Versions through v1.11.0 use personal-installation debug APKs; v1.12.0 onward use optimized release-mode APKs. These are private installations, not Play Store publications.
 
 Each feature edition is represented by a separate commit and annotated tag. The existing v1.0.0 commit is retained as the baseline. Flutter source snapshots for v1.1.0–v1.4.0 were recovered from the original debug APKs; native integration and tests were separated from the accumulated additions. All versions were checked and rebuilt for this publication. The v1.5.0 app code matches the completed integrated-times implementation.
 
@@ -18,10 +18,11 @@ Each feature edition is represented by a separate commit and annotated tag. The 
 | v1.9.0 | First-launch walkthrough | 69 / 29 | [v1.9.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.9.0) |
 | v1.10.0 | Prayer-reminder consent | 77 / 29 | [v1.10.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.10.0) |
 | v1.11.0 | Prayer-card status styling | 79 / 29 | [v1.11.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.11.0) |
+| v1.12.0 | Smaller optimized APKs | 79 / 29 | [v1.12.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.12.0) |
 
 Every version passed formatting, static analysis, its Flutter tests, and an Android debug APK build. Versions with native test suites also passed those checks. Native widget tests use Robolectric. Actual launcher placement, GPS, notification delivery, reboot/Doze behavior, and OEM battery restrictions remain unverified on a physical phone.
 
-Each release contains `qada-tracker-v<version>.apk` and `SHA256SUMS`. All APKs retain package `com.personal.qada_tracker`, minimum API 24, target API 36, and the same debug signing certificate (`ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`). Install the latest APK as an update to retain the journal.
+Each release contains `qada-tracker-v<version>.apk` and `SHA256SUMS`. From v1.12.0, that APK is an optimized universal fallback; additional `-arm64-v8a.apk`, `-armeabi-v7a.apk`, and `-x86_64.apk` downloads contain only their target processor libraries. ARM64 is recommended for the Realme GT Master. Optimized build command: `./scripts/build-release.sh`. All APKs retain package `com.personal.qada_tracker`, minimum API 24, target API 36, and the same debug signing certificate (`ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`). Install the latest APK as an update to retain the journal.
 
 No repository visibility change, Android store release, or cloud-environment publication is performed by this GitHub release process.
 

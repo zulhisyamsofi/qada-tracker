@@ -6,6 +6,12 @@ A personal Android prayer journal built with Flutter, Riverpod, and SQLite throu
 
 [Download the latest private Android release](https://github.com/zulhisyamsofi/qada-tracker/releases/latest). Sign in with a GitHub account that has repository access to download its APK. Each feature edition has a separate commit, annotated version tag, release notes, APK, and checksum file. See [RELEASES.md](RELEASES.md) and [CHANGELOG.md](CHANGELOG.md).
 
+## Smaller installation downloads
+
+From v1.12.0, GitHub downloads use optimized **release-mode** APKs with Dart AOT compilation, tree shaking, R8 code shrinking, resource shrinking, and icon tree shaking. No app features are removed. Choose the **arm64-v8a APK** for a Realme GT Master or most recent Android phones; the unsuffixed APK is a universal fallback containing all three supported processor types. Other downloads target older 32-bit ARM phones and x86-64 emulators. Install one APK over the existing app to preserve the journal; the application ID and signing certificate remain the same.
+
+Reproduce all four optimized APKs and their checksums with `./scripts/build-release.sh`; output is under `build/releases/v<version>/`. The ordinary `scripts/validate.sh` still builds a debug APK for development checks. **Do not use the debug APK for distribution.** Release mode does not expose debug tools; it retains the existing personal-use signing key for update compatibility. Dart obfuscation is unnecessary for this size reduction.
+
 ## First launch walkthrough
 
 New installations open an eight-step guided tour that highlights real controls and visits all four tabs. It explains recording/clearing prayers, confirming misses, place selection and prayer alerts, historical edits and review, qada replacements and undo, progress, and Settings. Next, Back, and Skip tour are always available; the tour blocks taps on prayer records. Finishing or skipping saves the preference so the guide stays dismissed on subsequent launches. Its prayer-reminder step preselects notifications for new Android users, lets them choose a place, and requests Android permission only after Enable & continue. Skipping, turning the switch off, or declining permission keeps new users’ alerts off; replay respects an existing opt-out. An interrupted unfinished tour starts again next time.

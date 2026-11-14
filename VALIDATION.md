@@ -1,3 +1,24 @@
+# Validation record — v1.12.0
+
+Replaces debug distribution with optimized release APKs: Dart ahead-of-time compilation and tree shaking, R8 Android code shrinking, resource shrinking, and icon tree shaking. Includes ARM64, 32-bit ARM, x86-64, and a universal fallback. Keeps the existing app signer for in-place upgrades and preserves the WorkManager entry point across updates. No features or journal data removed.
+
+Downloads:
+- **Realme GT Master / most recent Android phones:** `qada-tracker-v1.12.0-arm64-v8a.apk` (21.1 MB).
+- **Universal fallback:** `qada-tracker-v1.12.0.apk` (59.6 MB).
+- Other assets target older 32-bit ARM phones and x86-64 emulators. Choose one APK, then install it over the existing app to keep the journal. Package and signing certificate are unchanged.
+
+Validation: formatting, static analysis, **79 Flutter tests**, **29 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag. `SHA256SUMS` covers every download. Physical phone notification/Doze/battery behavior remains unverified.
+
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 mapping confirms the persisted WorkManager entry-point name is retained. The source is Flutter 3.38.5 with the pinned Android toolchain. Earlier checkpoint records below retain their original hashes and results.
+
+- `qada-tracker-v1.12.0-arm64-v8a.apk`: `ae801ffd1924edc5807e64a842fa3a7d7b38785f16ea91fb9c4de392a3620d23`
+- `qada-tracker-v1.12.0-armeabi-v7a.apk`: `0dd35437793e767d367dc6cc8409f328eb7a64bed05f64e4d82162b3e2854013`
+- `qada-tracker-v1.12.0-x86_64.apk`: `204a09a194db2074575ff2755ec0cb2a2aa1a7a09652e4c8c149877e4459e59d`
+- `qada-tracker-v1.12.0.apk`: `1525650d05279741872a4ebdfba64e7f91c58b50804173fa239b5cc7df491830`
+
+---
+
 # Validation record — v1.11.0+12
 
 The prayer-card edition passes `scripts/validate.sh`: formatting (34 Dart files, zero changes), static analysis (no issues), **79 Flutter tests**, **29 Android JVM tests**, and universal Android debug APK compilation. Package `com.personal.qada_tracker`; version 1.11.0 (code 12), minimum API 24, target API 36. The existing debug signing certificate is retained. APK SHA-256: `b0078eb0dabc0d1c20c0b325bcf3f2b3bd53c6ad82ac7cd2671c1d5ba2f6a715`.
