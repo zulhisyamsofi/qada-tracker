@@ -1,3 +1,23 @@
+# Validation record — v1.16.0
+
+Removes the oversized circular border from the qada info button while keeping its accessible tap area. The formula popup now has a bounded width, screen-edge clearance, internal padding, rounded corners, and readable theme-aware text. Six popup checks cover light/dark, narrow screens, and enlarged text.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.16.0-arm64-v8a.apk` (21.2 MB).
+- **Universal fallback:** `qada-tracker-v1.16.0.apk` (59.9 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **103 Flutter tests**, **49 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified. No database, backup-format, status, or qada-calculation migration is needed.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.16.0-arm64-v8a.apk` (21,156,154 bytes): `53bfddce5f00ed66d01d69850a77ff070bca444786569c445becd25ee4157d35`.
+- `qada-tracker-v1.16.0-armeabi-v7a.apk` (18,799,026 bytes): `468b06022afeab57a049dbd2c937bae24e5c2f8a111bf5e36f526476c07365a5`.
+- `qada-tracker-v1.16.0-x86_64.apk` (22,635,682 bytes): `f994d52d0e4978a6c46ee1c3f6b668d3b277781218b461fbd36fa6a73a6fc993`.
+- `qada-tracker-v1.16.0.apk` (59,877,094 bytes): `c8d84bf4395e7cbced64cb1faca674d67efd32c958ead51d6873789c9e8e9bff`.
+
+---
+
 # Validation record — v1.15.0
 
 

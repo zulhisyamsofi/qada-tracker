@@ -820,11 +820,33 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               'Starting balances + confirmed misses − replacements. '
               'Unrecorded prayers are excluded.',
           triggerMode: TooltipTriggerMode.manual,
+          constraints: BoxConstraints(
+            maxWidth: (MediaQuery.sizeOf(context).width - 48).clamp(0.0, 320.0),
+          ),
+          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.inverseSurface,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontSize: 14,
+            height: 1.4,
+            color: Theme.of(context).colorScheme.onInverseSurface,
+          ),
           child: Semantics(
             label: 'How outstanding qada is calculated',
             button: true,
             child: IconButton(
               key: const ValueKey('qada-formula-info'),
+              style: const ButtonStyle(
+                minimumSize: WidgetStatePropertyAll(Size(48, 48)),
+                maximumSize: WidgetStatePropertyAll(Size(48, 48)),
+                padding: WidgetStatePropertyAll(EdgeInsets.all(14)),
+                side: WidgetStatePropertyAll(BorderSide.none),
+                backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+                shape: WidgetStatePropertyAll(RoundedRectangleBorder()),
+              ),
               onPressed: () =>
                   qadaFormulaTooltip.currentState?.ensureTooltipVisible(),
               icon: const Icon(Icons.info_outline_rounded, size: 20),
