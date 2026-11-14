@@ -1,3 +1,11 @@
+# Validation record — v1.8.0+9
+
+The rounded splash-icon edition passes `scripts/validate.sh`: formatting (30 Dart files, zero changes), static analysis (no issues), 62 Flutter tests, 29 Android JVM tests, and universal Android debug APK compilation. The application change is confined to the icon’s rounded background path. Runtime phone validation remains unavailable.
+
+Package `com.personal.qada_tracker`; version 1.8.0 (code 9), minimum API 24, target API 36. The existing debug signing certificate is retained. APK SHA-256: `09e57ce341a33086e2a27a07f896d955061172e347eb1745d8ae07d9036c6d95`.
+
+---
+
 # Validation record — v1.7.0+8
 
 ## Automated checks

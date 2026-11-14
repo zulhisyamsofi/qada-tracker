@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.8.0 — Rounded splash icon
+
+Rounds the green icon background while retaining the crescent and checkmark. The icon used by Android’s splash and launcher now has transparent rounded corners.
+
 ## v1.7.0 — Consistent cards and editable history
 
 Makes all weekly/monthly Progress cards full width and moves the outstanding-qada formula into an adjacent tappable info tooltip. History supports manual records before first launch, including confirmed misses and corrections, without moving the tracking start or creating review items for untouched gaps. Optional historical days are included in review/progress only while they contain a confirmed record. Persistence, backup validation, and negative-balance protection cover these older records.
