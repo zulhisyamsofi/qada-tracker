@@ -2,10 +2,26 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="horizontal" android:baselineAligned="false"
-    android:padding="4dp" android:clickable="true" android:focusable="true"
+    android:orientation="vertical" android:baselineAligned="false"
+    android:paddingStart="8dp" android:paddingEnd="8dp"
+    android:paddingTop="6dp" android:paddingBottom="6dp" android:clickable="true" android:focusable="true"
     android:contentDescription="@string/prayer_widget_open"
     android:background="@drawable/widget_panel_light">
+    <TextView android:id="@+id/widget_title"
+        android:layout_width="match_parent" android:layout_height="16dp"
+        android:layout_marginStart="2dp" android:layout_marginBottom="4dp"
+        android:text="@string/prayer_widget_title" android:textColor="#173D31"
+        android:textSize="12sp" android:textStyle="bold"
+        android:fontFamily="sans-serif-rounded" android:includeFontPadding="false"
+        android:maxLines="1" android:ellipsize="end"
+        android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp"
+        android:autoSizeMaxTextSize="12sp" android:autoSizeStepGranularity="1sp"
+        android:clickable="true" android:focusable="true"
+        android:contentDescription="@string/prayer_widget_open" />
+    <LinearLayout android:id="@+id/widget_prayers"
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:orientation="horizontal"
+        android:baselineAligned="false">
         <LinearLayout android:id="@+id/widget_subuh" style="@style/PrayerWidgetBox">
             <TextView android:id="@+id/widget_subuh_name" style="@style/PrayerWidgetName" android:text="Subuh" />
             <TextView android:id="@+id/widget_subuh_status" style="@style/PrayerWidgetStatus" />
@@ -26,4 +42,5 @@
             <TextView android:id="@+id/widget_isyak_name" style="@style/PrayerWidgetName" android:text="Isyak" />
             <TextView android:id="@+id/widget_isyak_status" style="@style/PrayerWidgetStatus" />
         </LinearLayout>
+    </LinearLayout>
 </LinearLayout>

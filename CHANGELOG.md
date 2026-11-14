@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.17.0 — Titled and padded home-screen widget
+
+Adds a compact Qada Tracker title above the five padded prayer boxes while retaining the 4 × 1 target. Title, background, and gaps open Today; prayer boxes keep toggling performed/unrecorded with the existing recording rules. Minimum content size is 280 × 80 dp. Existing launcher placements may need a small vertical resize or re-adding.
+
 ## v1.16.0 — Qada formula tooltip polish
 
 Removes the oversized circular border from the qada info button while keeping its accessible tap area. The formula popup now has a bounded width, screen-edge clearance, internal padding, rounded corners, and readable theme-aware text. Six popup checks cover light/dark, narrow screens, and enlarged text.

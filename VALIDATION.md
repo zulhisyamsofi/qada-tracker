@@ -1,3 +1,23 @@
+# Validation record — v1.17.0
+
+Adds a compact Qada Tracker title above the five padded prayer boxes while retaining the 4 × 1 target. Title, background, and gaps open Today; prayer boxes keep toggling performed/unrecorded with the existing recording rules. Minimum content size is 280 × 80 dp. Existing launcher placements may need a small vertical resize or re-adding.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.17.0-arm64-v8a.apk` (21.2 MB).
+- **Universal fallback:** `qada-tracker-v1.17.0.apk` (59.9 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **103 Flutter tests**, **49 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified. No database, backup-format, status, or qada-calculation migration is needed.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.17.0-arm64-v8a.apk` (21,157,086 bytes): `d9377074f150c200d17676a010411bfaef9000c899e8c7e5a344f885015817b3`.
+- `qada-tracker-v1.17.0-armeabi-v7a.apk` (18,799,954 bytes): `9e96494187e4e8c6d27d9be94a2618543f954267c662f65ceaa3784c0e690504`.
+- `qada-tracker-v1.17.0-x86_64.apk` (22,636,610 bytes): `8c7ddfb3a68b36ba2295d42823fab492f10b3ca883e293255c1431f92ed2e7ea`.
+- `qada-tracker-v1.17.0.apk` (59,878,022 bytes): `c312946566c69ace64b54050435260790f606628852720e8187dc2d3067f35d5`.
+
+---
+
 # Validation record — v1.16.0
 
 Removes the oversized circular border from the qada info button while keeping its accessible tap area. The formula popup now has a bounded width, screen-edge clearance, internal padding, rounded corners, and readable theme-aware text. Six popup checks cover light/dark, narrow screens, and enlarged text.

@@ -204,12 +204,12 @@ class PrayerHomeWidgetTest {
             assertEquals("○", view.findViewById<TextView>(R.id.widget_asar_status).text.toString())
             assertEquals("Subuh, performed. Tap to leave unrecorded.", view.findViewById<View>(R.id.widget_subuh).contentDescription.toString())
             assertEquals("Maghrib, unrecorded. Tap to mark performed for today.", view.findViewById<View>(R.id.widget_maghrib).contentDescription.toString())
-            capture(view, "widget-$theme", 360, 64)
-            assertCompact(view, 64)
+            capture(view, "widget-$theme", 360, 88)
+            assertCompact(view, 88)
         }
         val narrow = PrayerHomeWidget.views(context, 78, root, clock()).apply(context, FrameLayout(context))
-        capture(narrow, "widget-narrow", 280, 56)
-        assertCompact(narrow, 56)
+        capture(narrow, "widget-narrow", 280, 80)
+        assertCompact(narrow, 80)
         assertTrue(narrow.findViewById<View>(R.id.widget_isyak).right <= 280)
         assertEquals(0, narrow.findViewById<TextView>(R.id.widget_maghrib_name).layout.getEllipsisCount(0))
     }
@@ -353,20 +353,23 @@ class PrayerHomeWidgetTest {
         val host = FrameLayout(activity)
         activity.setContentView(host)
         val view = PrayerHomeWidget.views(activity, 7, journal(), clock()).apply(activity, host)
-        host.addView(view, FrameLayout.LayoutParams(360, 64))
+        host.addView(view, FrameLayout.LayoutParams(360, 88))
         shadowOf(android.os.Looper.getMainLooper()).idle()
-        capture(view, "widget-background", 360, 64)
+        capture(view, "widget-background", 360, 88)
         val app = shadowOf(RuntimeEnvironment.getApplication())
         val first = view.findViewById<View>(R.id.widget_subuh)
         val second = view.findViewById<View>(R.id.widget_zohor)
-        for (x in listOf(2f, (first.right + second.left) / 2f)) {
-            tap(view, x, 32f)
+        tap(view, 40f, 12f)
+        assertEquals(MainActivity::class.java.name, app.nextStartedActivity.component!!.className)
+        val row = view.findViewById<View>(R.id.widget_prayers)
+        for (x in listOf(2f, row.left + (first.right + second.left) / 2f)) {
+            tap(view, x, 52f)
             val intent = app.nextStartedActivity
             assertEquals(MainActivity::class.java.name, intent.component!!.className)
             assertTrue(intent.getBooleanExtra(PrayerReminders.OPEN_TODAY, false))
         }
         assertFalse(app.broadcastIntents.any { it.action == PrayerHomeWidget.MARK })
-        tap(view, (first.left + first.right) / 2f, 32f)
+        tap(view, row.left + (first.left + first.right) / 2f, 52f)
         assertNull(app.nextStartedActivity)
         assertEquals(1, app.broadcastIntents.count { it.action == PrayerHomeWidget.MARK })
         activity.finish()
@@ -375,8 +378,8 @@ class PrayerHomeWidgetTest {
     @Test fun oneRowAtMinimumSizeKeepsNamesReadableWithLargeSystemText() {
         RuntimeEnvironment.setFontScale(1.6f)
         val view = PrayerHomeWidget.views(context, 8, journal(), clock()).apply(context, FrameLayout(context))
-        capture(view, "widget-large-text", 280, 56)
-        assertCompact(view, 56)
+        capture(view, "widget-large-text", 280, 80)
+        assertCompact(view, 80)
     }
 
     private fun tap(view: View, x: Float, y: Float) {
@@ -390,10 +393,15 @@ class PrayerHomeWidgetTest {
     }
 
     private fun assertCompact(view: View, height: Int) {
+        assertTrue(view.height == height)
+        val title = view.findViewById<TextView>(R.id.widget_title)
+        assertEquals("Qada Tracker", title.text.toString())
+        assertEquals(0, title.layout.getEllipsisCount(0))
+        assertTrue("Title overlaps prayers", title.bottom <= view.findViewById<View>(R.id.widget_prayers).top)
         for (id in listOf(R.id.widget_subuh, R.id.widget_zohor, R.id.widget_asar, R.id.widget_maghrib, R.id.widget_isyak)) {
             val box = view.findViewById<View>(id)
             assertTrue("Prayer target too small", box.width >= 48 && box.height >= 48)
-            assertTrue("Prayer box exceeds one-row height", box.top >= 0 && box.bottom <= height)
+            assertTrue("Prayer box exceeds one-row height", box.top >= 0 && box.bottom <= view.findViewById<View>(R.id.widget_prayers).height)
         }
         for (id in listOf(R.id.widget_subuh_name, R.id.widget_zohor_name, R.id.widget_asar_name, R.id.widget_maghrib_name, R.id.widget_isyak_name)) {
             val name = view.findViewById<TextView>(id)

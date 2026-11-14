@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="prayer_widget_title">Qada Tracker</string>
     <string name="prayer_widget_label">Today’s prayers</string>
-    <string name="prayer_widget_description">Five compact prayer toggles. Tap the background to open Today.</string>
+    <string name="prayer_widget_description">Qada Tracker with five prayer toggles. Tap the title or background to open Today.</string>
     <string name="prayer_widget_open">Open Qada Tracker</string>
 </resources>

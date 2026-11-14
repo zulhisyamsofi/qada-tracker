@@ -23,6 +23,7 @@ Each feature edition is represented by a separate commit and annotated tag. The 
 | v1.14.0 | Focused Today checklist | 94 / 29 | [v1.14.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.14.0) |
 | v1.15.0 | Unified notification settings | 98 / 49 | [v1.15.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.15.0) |
 | v1.16.0 | Qada formula tooltip polish | 103 / 49 | [v1.16.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.16.0) |
+| v1.17.0 | Titled and padded home-screen widget | 103 / 49 | [v1.17.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.17.0) |
 
 Every version passed formatting, static analysis, its Flutter tests, and an Android debug APK build. Versions with native test suites also passed those checks. Native widget tests use Robolectric. Actual launcher placement, GPS, notification delivery, reboot/Doze behavior, and OEM battery restrictions remain unverified on a physical phone.
 

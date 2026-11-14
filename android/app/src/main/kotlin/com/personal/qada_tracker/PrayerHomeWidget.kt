@@ -125,6 +125,9 @@ class PrayerHomeWidget : AppWidgetProvider() {
             return RemoteViews(context.packageName, R.layout.prayer_widget).apply {
                 setInt(R.id.widget_root, "setBackgroundResource", if (dark) R.drawable.widget_panel_dark else R.drawable.widget_panel_light)
                 setOnClickPendingIntent(R.id.widget_root, open)
+                setOnClickPendingIntent(R.id.widget_title, open)
+                setOnClickPendingIntent(R.id.widget_prayers, open)
+                setTextColor(R.id.widget_title, ink)
                 for ((index, prayer) in PrayerWidgetPolicy.prayers.withIndex()) {
                     val status = if (root != null) PrayerWidgetPolicy.status(root, date, prayer) else "unrecorded"
                     val performed = status == "performed"
