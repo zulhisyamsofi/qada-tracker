@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## release-tools-v1.1.0 — Private APK transfer fallback
+
+Lets the existing checked-release workflow read APKs from a temporary private GitHub transfer commit when the external 72-hour host is unavailable. Source tags, filenames, file sizes, SHA-256 hashes, draft status, and uploaded digests remain verified. No signing keys or personal data are transferred. The temporary branch is removed after successful publication; APKs are attached to private releases.
+
 ## v1.14.0 — Focused Today checklist
 
 Opens Today directly to all five prayer cards without scrolling at normal font sizes on the tested phone layouts. Moves saved location controls to Settings → Prayer times & location, keeps review above History’s calendar, and updates the walkthrough. Large text remains scrollable with full touch targets.

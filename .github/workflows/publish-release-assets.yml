@@ -7,6 +7,10 @@ on:
         description: 'Checked draft assets as JSON; blank uses the bootstrap manifest'
         required: false
         type: string
+      assets_ref:
+        description: 'Optional checked private asset commit SHA'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -23,6 +27,13 @@ jobs:
       - name: Check out the release manifest
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
+      - name: Check out verified private transfer files
+        if: ${{ inputs.assets_ref != '' }}
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.assets_ref }}
+          path: checked-assets
           persist-credentials: false
       - name: Upload verified APKs and checksums to draft releases
         env:

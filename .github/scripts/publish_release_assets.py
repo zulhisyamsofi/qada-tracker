@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 import urllib.parse
@@ -46,9 +47,16 @@ def main():
             for file in files:
                 if not re.fullmatch(rf"qada-tracker-{re.escape(tag)}(?:-(?:armeabi-v7a|arm64-v8a|x86_64))?\.apk", file["name"]):
                     raise ValueError("Unexpected APK filename.")
-                parsed = urllib.parse.urlsplit(file["url"])
-                if parsed.scheme != "https" or parsed.netloc != "litter.catbox.moe":
-                    raise ValueError("Transfer URLs must use the approved HTTPS file host.")
+                if "path" in file:
+                    relative = Path(file["path"])
+                    asset_root = Path("checked-assets").resolve()
+                    asset = (asset_root / relative).resolve()
+                    if relative.is_absolute() or not asset.is_relative_to(asset_root) or not asset.is_file():
+                        raise ValueError("Asset must be a file inside the private transfer checkout.")
+                else:
+                    parsed = urllib.parse.urlsplit(file["url"])
+                    if parsed.scheme != "https" or parsed.netloc != "litter.catbox.moe":
+                        raise ValueError("Transfer URLs must use the approved HTTPS file host.")
                 if not re.fullmatch(r"[0-9a-f]{64}", file["sha256"]):
                     raise ValueError("Invalid expected SHA-256.")
                 if type(file["size"]) is not int or not 0 < file["size"] < 250_000_000:
@@ -70,12 +78,18 @@ def main():
             downloaded = []
             for file in files:
                 apk = folder / file["name"]
-                # Deliberately send no GitHub authorization header to the file host.
-                with urllib.request.urlopen(file["url"], timeout=120) as response, apk.open("wb") as stream:
-                    while block := response.read(1024 * 1024):
-                        stream.write(block)
-                        if stream.tell() > file["size"]:
-                            raise ValueError(f"{tag} exceeds its verified size.")
+                if "path" in file:
+                    source = Path("checked-assets") / file["path"]
+                    if source.stat().st_size != file["size"]:
+                        raise ValueError(f"Size mismatch for {apk.name}.")
+                    shutil.copyfile(source, apk)
+                else:
+                    # Deliberately send no GitHub authorization header to the file host.
+                    with urllib.request.urlopen(file["url"], timeout=120) as response, apk.open("wb") as stream:
+                        while block := response.read(1024 * 1024):
+                            stream.write(block)
+                            if stream.tell() > file["size"]:
+                                raise ValueError(f"{tag} exceeds its verified size.")
                 if apk.stat().st_size != file["size"] or sha256(apk) != file["sha256"]:
                     raise ValueError(f"Checksum/size mismatch for {apk.name}.")
                 downloaded.append(apk)
