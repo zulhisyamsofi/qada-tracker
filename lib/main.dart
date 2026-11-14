@@ -17,6 +17,7 @@ import 'ui/glass.dart';
 import 'home_widget.dart';
 import 'prayer_recording_policy.dart';
 import 'walkthrough.dart';
+import 'ui/history_calendar.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -246,6 +247,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   @override
   Widget build(BuildContext context) {
     final data = ref.watch(journalProvider);
+    final unrecordedDays =
+        data.asData?.value.unresolvedDays(today).toSet() ?? <DateTime>{};
     if (data.hasValue && !walkthroughChecked) {
       walkthroughChecked = true;
       if (!data.requireValue.walkthroughSeen) {
@@ -329,7 +332,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             constraints: const BoxConstraints(maxWidth: 680),
             child: switch (tab) {
               0 => todayPage(j),
-              1 => historyPage(j),
+              1 => historyPage(j, unrecordedDays),
               2 => qadaPage(j),
               _ => progressPage(j),
             },
@@ -346,6 +349,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           child: GlassNavigationBar(
             selectedIndex: tab,
             destinationKeys: navigationKeys,
+            unrecordedDayCount: unrecordedDays.length,
             onDestinationSelected: (index) => setState(() => tab = index),
           ),
         ),
@@ -410,7 +414,6 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     final count = Prayer.values
         .where((p) => j.status(today, p) == PrayerStatus.performed)
         .length;
-    final pending = j.unresolvedDays(today);
     return RefreshIndicator(
       onRefresh: () => ref.read(prayerTimesProvider.notifier).refresh(),
       child: ListView(
@@ -490,18 +493,6 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             day: today,
             onSettings: prayerTimeSettings,
           ),
-          if (pending.isNotEmpty)
-            GlassCard(
-              child: ListTile(
-                leading: const Icon(Icons.fact_check_outlined),
-                title: Text(
-                  '${pending.length} ${pending.length == 1 ? 'day needs' : 'days need'} review',
-                ),
-                subtitle: const Text('Unrecorded prayers are not qada debt.'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: review,
-              ),
-            ),
           const SizedBox(height: 10),
           for (final p in Prayer.values) prayerCard(j, today, p),
           const Padding(
@@ -695,7 +686,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     );
   }
 
-  Widget historyPage(Journal j) {
+  Widget historyPage(Journal j, Set<DateTime> unrecordedDays) {
     final selected =
         selectedDay != null &&
             !selectedDay!.isBefore(earliestJournalDay) &&
@@ -709,14 +700,24 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           'Your prayer journal',
           'Tracking since ${DateFormat.yMMMd().format(j.startDate)}',
         ),
-        GlassCard(
-          child: CalendarDatePicker(
-            key: ValueKey(
-              '${dateKey(j.startDate)}-${dateKey(today)}-${dateKey(selected)}',
+        if (unrecordedDays.isNotEmpty)
+          GlassCard(
+            key: const ValueKey('history-review-prompt'),
+            child: ListTile(
+              leading: const Icon(Icons.fact_check_outlined),
+              title: Text(
+                '${unrecordedDays.length} ${unrecordedDays.length == 1 ? 'day needs' : 'days need'} review',
+              ),
+              subtitle: const Text('Unrecorded prayers are not qada debt.'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: review,
             ),
-            initialDate: selected,
-            firstDate: earliestJournalDay,
-            lastDate: today,
+          ),
+        GlassCard(
+          child: HistoryCalendar(
+            selectedDate: selected,
+            today: today,
+            unrecordedDays: unrecordedDays,
             onDateChanged: (date) => setState(() => selectedDay = date),
           ),
         ),

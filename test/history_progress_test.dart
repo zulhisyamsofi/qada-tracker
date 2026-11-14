@@ -8,6 +8,7 @@ import 'package:qada_tracker/database.dart';
 import 'package:qada_tracker/main.dart';
 import 'package:qada_tracker/model.dart';
 import 'package:qada_tracker/ui/glass.dart';
+import 'package:qada_tracker/ui/history_calendar.dart';
 import 'support/prayer_times.dart';
 
 final now = DateTime(2026, 11, 14, 12);
@@ -106,8 +107,8 @@ void main() {
         await tester.pumpAndSettle();
         expect(
           tester
-              .widget<CalendarDatePicker>(find.byType(CalendarDatePicker))
-              .initialDate,
+              .widget<HistoryCalendar>(find.byType(HistoryCalendar))
+              .selectedDate,
           old,
         );
         final subuh = find.byWidgetPredicate(
@@ -142,19 +143,20 @@ void main() {
         db = JournalDatabase(NativeDatabase(file));
         await tester.pumpWidget(journalApp(db));
         await tester.pumpAndSettle();
-        expect(find.text('1 day needs review'), findsOneWidget);
+        expect(find.text('1 day needs review'), findsNothing);
         j = await db.load(now);
         expect(j.status(old, Prayer.subuh), PrayerStatus.performed);
         expect(j.status(old, Prayer.zohor), PrayerStatus.missed);
         expect(Journal.decode(j.export(), now).toJson(), j.toJson());
         await tester.tap(find.text('History').last);
         await tester.pumpAndSettle();
+        expect(find.text('1 day needs review'), findsOneWidget);
         await tester.tap(find.text('12').first);
         await tester.pumpAndSettle();
         expect(
           tester
-              .widget<CalendarDatePicker>(find.byType(CalendarDatePicker))
-              .initialDate,
+              .widget<HistoryCalendar>(find.byType(HistoryCalendar))
+              .selectedDate,
           old,
         );
         expect(tester.takeException(), isNull);

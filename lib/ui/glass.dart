@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'review_indicators.dart';
 
 class GlassBackdrop extends StatelessWidget {
   const GlassBackdrop({required this.child, super.key});
@@ -185,11 +186,13 @@ class GlassNavigationBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     this.destinationKeys,
+    this.unrecordedDayCount = 0,
     super.key,
   });
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final List<GlobalKey>? destinationKeys;
+  final int unrecordedDayCount;
   static const labels = ['Today', 'History', 'Qada', 'Progress'];
   static const icons = [
     Icons.wb_sunny_outlined,
@@ -210,11 +213,15 @@ class GlassNavigationBar extends StatelessWidget {
               key: destinationKeys?[index],
               button: true,
               selected: index == selectedIndex,
-              label: labels[index],
+              label: index == 1 && unrecordedDayCount > 0
+                  ? 'History, $unrecordedDayCount past ${unrecordedDayCount == 1 ? 'day' : 'days'} with unrecorded prayers'
+                  : labels[index],
               onTap: () => onDestinationSelected(index),
               child: ExcludeSemantics(
                 child: Tooltip(
-                  message: labels[index],
+                  message: index == 1 && unrecordedDayCount > 0
+                      ? 'History · $unrecordedDayCount ${unrecordedDayCount == 1 ? 'day needs' : 'days need'} review'
+                      : labels[index],
                   child: Padding(
                     padding: const EdgeInsets.all(5),
                     child: InkWell(
@@ -243,15 +250,41 @@ class GlassNavigationBar extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              index == 0 && index == selectedIndex
-                                  ? Icons.wb_sunny_rounded
-                                  : icons[index],
-                              size: 23,
-                              color: index == selectedIndex
-                                  ? const Color(0xff103b2c)
-                                  : theme.colorScheme.onSurface,
-                            ),
+                            if (index == 1)
+                              Badge(
+                                key: const ValueKey('history-review-badge'),
+                                label: Text(
+                                  '$unrecordedDayCount',
+                                  textScaler: MediaQuery.textScalerOf(
+                                    context,
+                                  ).clamp(maxScaleFactor: 1.3),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontFamily: 'Nunito',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                                isLabelVisible: unrecordedDayCount > 0,
+                                backgroundColor: reviewIndicatorColor(context),
+                                textColor: reviewIndicatorTextColor(context),
+                                child: Icon(
+                                  icons[index],
+                                  size: 23,
+                                  color: index == selectedIndex
+                                      ? const Color(0xff103b2c)
+                                      : theme.colorScheme.onSurface,
+                                ),
+                              )
+                            else
+                              Icon(
+                                index == 0 && index == selectedIndex
+                                    ? Icons.wb_sunny_rounded
+                                    : icons[index],
+                                size: 23,
+                                color: index == selectedIndex
+                                    ? const Color(0xff103b2c)
+                                    : theme.colorScheme.onSurface,
+                              ),
                             const SizedBox(height: 4),
                             // Fit full destination names in the fixed tab
                             // bar; tooltips and semantics retain their labels.

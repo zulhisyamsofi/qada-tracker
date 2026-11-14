@@ -1,0 +1,267 @@
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../model.dart';
+import 'review_indicators.dart';
+
+/// Editable Gregorian calendar with review markers, independent of qada status.
+class HistoryCalendar extends StatefulWidget {
+  const HistoryCalendar({
+    required this.selectedDate,
+    required this.today,
+    required this.unrecordedDays,
+    required this.onDateChanged,
+    super.key,
+  });
+  final DateTime selectedDate, today;
+  final Set<DateTime> unrecordedDays;
+  final ValueChanged<DateTime> onDateChanged;
+  @override
+  State<HistoryCalendar> createState() => _HistoryCalendarState();
+}
+
+class _HistoryCalendarState extends State<HistoryCalendar> {
+  late DateTime month;
+  DateTime monthOf(DateTime date) => DateTime(date.year, date.month);
+  @override
+  void initState() {
+    super.initState();
+    month = monthOf(widget.selectedDate);
+  }
+
+  @override
+  void didUpdateWidget(HistoryCalendar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (monthOf(oldWidget.selectedDate) != monthOf(widget.selectedDate)) {
+      month = monthOf(widget.selectedDate);
+    }
+    if (month.isAfter(monthOf(widget.today))) month = monthOf(widget.today);
+  }
+
+  Future<void> chooseDate() async {
+    final days = DateUtils.getDaysInMonth(month.year, month.month);
+    final candidate = DateTime(
+      month.year,
+      month.month,
+      math.min(widget.selectedDate.day, days),
+    );
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: candidate.isAfter(widget.today) ? widget.today : candidate,
+      firstDate: earliestJournalDay,
+      lastDate: widget.today,
+      currentDate: widget.today,
+      helpText: 'Choose a date',
+    );
+    if (!mounted || picked == null) return;
+    setState(() => month = monthOf(picked));
+    widget.onDateChanged(picked);
+  }
+
+  Widget dayCell(DateTime date) {
+    final theme = Theme.of(context);
+    final enabled =
+        !date.isBefore(earliestJournalDay) && !date.isAfter(widget.today);
+    final selected = date == widget.selectedDate;
+    final isToday = date == widget.today;
+    final pending =
+        date.isBefore(widget.today) && widget.unrecordedDays.contains(date);
+    final red = reviewIndicatorColor(context);
+    final text = !enabled
+        ? theme.colorScheme.onSurface.withValues(alpha: .35)
+        : pending
+        ? red
+        : selected
+        ? theme.colorScheme.onPrimary
+        : isToday
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurface;
+    final onTap = enabled ? () => widget.onDateChanged(date) : null;
+    return Semantics(
+      label:
+          '${DateFormat.yMMMMEEEEd().format(date)}${isToday ? ', today' : ''}'
+          '${pending ? ', has unrecorded prayers, needs review' : ''}',
+      button: true,
+      enabled: enabled,
+      selected: selected,
+      onTap: onTap,
+      child: ExcludeSemantics(
+        child: SizedBox(
+          height: 48,
+          child: InkWell(
+            key: ValueKey('history-date-${dateKey(date)}'),
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: Center(
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: Padding(
+                  padding: const EdgeInsets.all(3),
+                  child: DecoratedBox(
+                    key: ValueKey('history-day-${dateKey(date)}'),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: selected
+                          ? pending
+                                ? red.withValues(alpha: .16)
+                                : theme.colorScheme.primary
+                          : null,
+                      border: pending
+                          ? Border.all(color: red, width: 2)
+                          : isToday && !selected
+                          ? Border.all(
+                              color: theme.colorScheme.primary,
+                              width: 1.2,
+                            )
+                          : null,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${date.day}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: text,
+                          fontWeight: pending || selected
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = MaterialLocalizations.of(context);
+    final theme = Theme.of(context);
+    final offset =
+        (month.weekday % 7 - localizations.firstDayOfWeekIndex + 7) % 7;
+    final days = DateUtils.getDaysInMonth(month.year, month.month);
+    final rows = (offset + days + 6) ~/ 7;
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  key: const ValueKey('history-choose-date'),
+                  onPressed: chooseDate,
+                  style: TextButton.styleFrom(padding: const EdgeInsets.all(8)),
+                  child: Text(
+                    DateFormat.yMMMM().format(month),
+                    textAlign: TextAlign.start,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                tooltip: localizations.previousMonthTooltip,
+                onPressed: month.isAfter(monthOf(earliestJournalDay))
+                    ? () => setState(
+                        () => month = DateTime(month.year, month.month - 1),
+                      )
+                    : null,
+                icon: const Icon(Icons.chevron_left_rounded),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                tooltip: localizations.nextMonthTooltip,
+                onPressed: month.isBefore(monthOf(widget.today))
+                    ? () => setState(
+                        () => month = DateTime(month.year, month.month + 1),
+                      )
+                    : null,
+                icon: const Icon(Icons.chevron_right_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.4,
+            child: FocusTraversalGroup(
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      for (var col = 0; col < 7; col++)
+                        Expanded(
+                          child: SizedBox(
+                            height: 32,
+                            child: Center(
+                              child: Text(
+                                localizations.narrowWeekdays[(col +
+                                        localizations.firstDayOfWeekIndex) %
+                                    7],
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  for (var row = 0; row < rows; row++)
+                    Row(
+                      children: [
+                        for (var col = 0; col < 7; col++)
+                          Expanded(
+                            child:
+                                row * 7 + col - offset + 1 < 1 ||
+                                    row * 7 + col - offset + 1 > days
+                                ? const SizedBox(height: 48)
+                                : dayCell(
+                                    DateTime(
+                                      month.year,
+                                      month.month,
+                                      row * 7 + col - offset + 1,
+                                    ),
+                                  ),
+                          ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.circle_outlined,
+                  size: 16,
+                  color: reviewIndicatorColor(context),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Past days with unrecorded prayers',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

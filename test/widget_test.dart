@@ -34,6 +34,8 @@ void main() {
       await tester.tap(find.byType(Checkbox).first);
       await tester.pumpAndSettle();
       expect(find.text('1 of 5 prayers recorded today'), findsOneWidget);
+      await tester.tap(find.text('History').last);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('1 day needs review'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Remaining missed'));
@@ -98,6 +100,8 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
     expect(find.text('0 of 5 prayers recorded today'), findsOneWidget);
+    await tester.tap(find.text('History').last);
+    await tester.pumpAndSettle();
     expect(find.text('1 day needs review'), findsOneWidget);
     now = DateTime(2026, 11, 17);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);

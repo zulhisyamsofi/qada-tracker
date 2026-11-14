@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.13.0 — History review badges and calendar
+
+Adds a red History badge counting past days with unrecorded prayers, matching calendar date rings, and a review prompt above the calendar. Partial corrections, bulk review, long gaps, optional historical records, and midnight/resume update the markers without turning unrecorded prayers into qada.
+
 ## v1.12.0 — Smaller optimized APKs
 
 Replaces debug distribution with optimized release APKs: Dart ahead-of-time compilation and tree shaking, R8 Android code shrinking, resource shrinking, and icon tree shaking. Includes ARM64, 32-bit ARM, x86-64, and a universal fallback. Keeps the existing app signer for in-place upgrades and preserves the WorkManager entry point across updates. No features or journal data removed.

@@ -63,8 +63,8 @@ const walkthroughSteps = [
     'nav-1',
     Icons.calendar_month_outlined,
     'Maintain your History',
-    'Open History, choose a date in the calendar, then use the same checkboxes and three-dot menus to edit its prayers. Earlier dates are editable too.',
-    'Today shows a review prompt when earlier days have unrecorded prayers. Review one prayer at a time or confirm the remaining prayers together. Untouched dates before tracking began do not create debt.',
+    'History’s red badge counts past days with unrecorded prayers. Red rings identify those dates in the calendar. Select a date to edit its prayers.',
+    'The review prompt above History’s calendar opens earlier unrecorded prayers. Review one prayer at a time or confirm the remaining prayers together. Untouched dates before tracking began do not create debt.',
   ),
   WalkthroughStep(
     2,

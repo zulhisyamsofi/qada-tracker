@@ -1,3 +1,24 @@
+# Validation record — v1.13.0
+
+Adds a red History badge counting past days with unrecorded prayers, matching calendar date rings, and a review prompt above the calendar. Partial corrections, bulk review, long gaps, optional historical records, and midnight/resume update the markers without turning unrecorded prayers into qada.
+
+Downloads:
+- **Realme GT Master / most recent Android phones:** `qada-tracker-v1.13.0-arm64-v8a.apk` (21.2 MB).
+- **Universal fallback:** `qada-tracker-v1.13.0.apk` (59.8 MB).
+- Other assets target older 32-bit ARM phones and x86-64 emulators. Choose one APK, then install it over the existing app to keep the journal. Package and signing certificate are unchanged.
+
+Validation: formatting, static analysis, **85 Flutter tests**, **29 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag. `SHA256SUMS` covers every download. Physical phone notification/Doze/battery behavior remains unverified.
+
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 mapping confirms the persisted WorkManager entry-point name is retained. The source is Flutter 3.38.5 with the pinned Android toolchain. Earlier checkpoint records below retain their original hashes and results.
+
+- `qada-tracker-v1.13.0-arm64-v8a.apk`: `6278eda3b46ccac3570b52508283a3ff32da98b83d8dd931d946bc514a29d606`
+- `qada-tracker-v1.13.0-armeabi-v7a.apk`: `8ccc1011f232451d45cbfadc71e09981304c9a0261f638c448eb245bbf2a18ba`
+- `qada-tracker-v1.13.0-x86_64.apk`: `8ee1403f6d17d194510774832be18be9ff85793a4fa4350b9d277ddd68fe029e`
+- `qada-tracker-v1.13.0.apk`: `ceb52185f8784d13e0c10e271921b1a0c7416ffa930a13dec360cc41b977219c`
+
+---
+
 # Validation record — v1.12.0
 
 Replaces debug distribution with optimized release APKs: Dart ahead-of-time compilation and tree shaking, R8 Android code shrinking, resource shrinking, and icon tree shaking. Includes ARM64, 32-bit ARM, x86-64, and a universal fallback. Keeps the existing app signer for in-place upgrades and preserves the WorkManager entry point across updates. No features or journal data removed.
