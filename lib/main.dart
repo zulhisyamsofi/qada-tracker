@@ -16,6 +16,7 @@ import 'ui/app_theme.dart';
 import 'ui/glass.dart';
 import 'home_widget.dart';
 import 'prayer_recording_policy.dart';
+import 'walkthrough.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -70,6 +71,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   Timer? midnight;
   Timer? prayerClock;
   bool fileBusy = false;
+  bool walkthroughChecked = false;
+  bool walkthroughOpen = false;
+  final walkthroughTargets = {
+    for (final key in ['prayer', 'times', 'settings']) key: GlobalKey(),
+  };
+  final navigationKeys = List.generate(4, (_) => GlobalKey());
   final qadaFormulaTooltip = GlobalKey<TooltipState>();
   late final ReminderService reminders;
   late final HomeWidgetService homeWidget;
@@ -174,6 +181,44 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     );
   }
 
+  Future<void> startWalkthrough() async {
+    if (!mounted || walkthroughOpen) return;
+    walkthroughOpen = true;
+    await showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      transitionDuration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 160),
+      pageBuilder: (context, _, _) => AppWalkthrough(
+        prepare: (step) async {
+          if (!mounted) return null;
+          setState(() => tab = step.tab);
+          await WidgetsBinding.instance.endOfFrame;
+          if (!mounted) return null;
+          final key = step.target.startsWith('nav-')
+              ? navigationKeys[step.tab]
+              : walkthroughTargets[step.target]!;
+          final target = key.currentContext;
+          if (target == null || !target.mounted) return null;
+          await Scrollable.ensureVisible(target, alignment: .12);
+          await WidgetsBinding.instance.endOfFrame;
+          if (!mounted) return null;
+          final box = key.currentContext?.findRenderObject();
+          if (box is! RenderBox || !box.attached || !box.hasSize) return null;
+          return box.localToGlobal(Offset.zero) & box.size;
+        },
+        finish: () => controller.change((j) => j.copy(walkthroughSeen: true)),
+      ),
+    );
+    if (!mounted) return;
+    setState(() {
+      tab = 0;
+      walkthroughOpen = false;
+    });
+  }
+
   Future<bool> confirm(
     String title,
     String message, {
@@ -201,6 +246,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   @override
   Widget build(BuildContext context) {
     final data = ref.watch(journalProvider);
+    if (data.hasValue && !walkthroughChecked) {
+      walkthroughChecked = true;
+      if (!data.requireValue.walkthroughSeen) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => startWalkthrough());
+      }
+    }
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: MediaQuery.textScalerOf(context).scale(44) + 20 < 72
@@ -240,6 +291,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           ),
           const SizedBox(width: 8),
           IconButton(
+            key: walkthroughTargets['settings'],
             tooltip: 'Settings',
             onPressed: data.hasValue ? () => settings() : null,
             icon: const Icon(Icons.settings_outlined),
@@ -293,6 +345,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           margin: EdgeInsets.zero,
           child: GlassNavigationBar(
             selectedIndex: tab,
+            destinationKeys: navigationKeys,
             onDestinationSelected: (index) => setState(() => tab = index),
           ),
         ),
@@ -362,6 +415,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       onRefresh: () => ref.read(prayerTimesProvider.notifier).refresh(),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
+        cacheExtent: 2000,
         padding: const EdgeInsets.all(20),
         children: [
           heading(
@@ -431,7 +485,11 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               ),
             ),
           ),
-          TodayPrayerTimesCard(day: today, onSettings: prayerTimeSettings),
+          TodayPrayerTimesCard(
+            key: walkthroughTargets['times'],
+            day: today,
+            onSettings: prayerTimeSettings,
+          ),
           if (pending.isNotEmpty)
             GlassCard(
               child: ListTile(
@@ -505,6 +563,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         child: Row(
           children: [
             Transform.scale(
+              key: isToday && p == Prayer.subuh
+                  ? walkthroughTargets['prayer']
+                  : null,
               scale: 1.2,
               child: Checkbox(
                 value: status == PrayerStatus.performed,
@@ -954,6 +1015,19 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 heading(
                   'Your journal, your way',
                   'Stored on this phone. No account or tracking.',
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.help_outline_rounded),
+                  title: const Text('App walkthrough'),
+                  subtitle: const Text(
+                    'A guided tour of the screens and controls.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    startWalkthrough();
+                  },
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,

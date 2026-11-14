@@ -26,6 +26,7 @@ void main() {
     (tester) async {
       final now = DateTime.utc(2026, 11, 13, 2);
       final db = JournalDatabase(NativeDatabase.memory());
+      await db.save(Journal(startDate: dayOnly(now)));
       final api = FakeTimesApi();
       await tester.pumpWidget(
         ProviderScope(
@@ -90,6 +91,7 @@ void main() {
     ) async {
       final now = DateTime.utc(2026, 11, 13, 2);
       final db = JournalDatabase(NativeDatabase.memory());
+      await db.save(Journal(startDate: dayOnly(now)));
       final api = FakeTimesApi()..fail = true;
       final service = _TimesReminders();
       await db.save(
@@ -144,6 +146,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       var now = DateTime.utc(2026, 11, 13, 2);
       final db = JournalDatabase(NativeDatabase.memory());
+      await db.save(Journal(startDate: dayOnly(now)));
       final api = FakeTimesApi();
       await tester.pumpWidget(
         ProviderScope(
@@ -206,6 +209,7 @@ void main() {
     (tester) async {
       final now = DateTime.utc(2026, 11, 13, 2);
       final db = JournalDatabase(NativeDatabase.memory());
+      await db.save(Journal(startDate: dayOnly(now)));
       final api = FakeTimesApi();
       final service = _TimesReminders();
       await tester.pumpWidget(

@@ -78,7 +78,7 @@ class JournalDatabase extends GeneratedDatabase {
       'SELECT document FROM journal WHERE id = 1',
     ).getSingleOrNull();
     if (row != null) return Journal.decode(row.read<String>('document'), now);
-    final initial = Journal(startDate: dayOnly(now));
+    final initial = Journal(startDate: dayOnly(now), walkthroughSeen: false);
     // Another connection (the home widget) may initialize/read concurrently.
     await customStatement(
       'INSERT OR IGNORE INTO journal(id, document) VALUES(1, ?)',

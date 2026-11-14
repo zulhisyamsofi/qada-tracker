@@ -1,3 +1,15 @@
+# Validation record — v1.9.0+10
+
+The walkthrough edition passes formatting (32 Dart files, no changes), static analysis (no issues), **69 Flutter tests**, and **29 Android JVM tests** (no failures, errors, or skips). Its universal Android debug APK builds successfully at `build/app/outputs/flutter-apk/app-debug.apk`. SHA-256: `11870ce8b68242faa3003513c75dee623cbc0c3b8f56cc2e53d76a19f3b89153`. The APK retains the existing debug signing certificate.
+
+Seven new tests cover automatic first launch, all seven steps and actual tab changes, blocked prayer edits, Next/Back, completed and skipped dismissal, Android Back, Settings replay, interrupted tours, file-backed SQLite restart, failed-write retry, legacy backup defaults, invalid preference rejection, and preference round trips. Light/dark captures were inspected at 390 × 844 and 320 × 720 with 1.6× text; rotation to 720 × 320, high contrast, and reduced motion also pass. A native widget regression assertion verifies that launcher toggles retain the new preference. Existing feature fixtures represent users who have already seen the guide.
+
+New database initialization opts into the tour. Older journals and backups without the optional boolean default to seen; they can replay the tour from Settings. No database schema or backup version change is required, and no dependency, permission, or API was added. An unfinished tour is shown again after restart; completing or skipping returns to Today. This edition includes the v1.8 rounded splash icon.
+
+Validation uses Flutter rendering and Robolectric. Physical Android launch/rotation and accessibility-service behavior have not been tested on a phone. The earlier release records and checksums below are retained for provenance.
+
+---
+
 # Validation record — v1.8.0+9
 
 The rounded splash-icon edition passes `scripts/validate.sh`: formatting (30 Dart files, zero changes), static analysis (no issues), 62 Flutter tests, 29 Android JVM tests, and universal Android debug APK compilation. The application change is confined to the icon’s rounded background path. Runtime phone validation remains unavailable.

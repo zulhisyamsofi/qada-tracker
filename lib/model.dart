@@ -55,6 +55,8 @@ class Journal {
     List<QadaEntry>? replacements,
     this.theme = AppTheme.system,
     this.reminderEnabled = false,
+    // Legacy journals are treated as seen; new databases explicitly opt in.
+    this.walkthroughSeen = true,
     this.prayerTimes = const PrayerTimeSettings(),
   }) : records = Map.unmodifiable(
          (records ?? {}).map(
@@ -72,6 +74,7 @@ class Journal {
   final List<QadaEntry> replacements;
   final AppTheme theme;
   final bool reminderEnabled;
+  final bool walkthroughSeen;
   final PrayerTimeSettings prayerTimes;
 
   PrayerStatus status(DateTime day, Prayer p) =>
@@ -89,6 +92,7 @@ class Journal {
     List<QadaEntry>? replacements,
     AppTheme? theme,
     bool? reminderEnabled,
+    bool? walkthroughSeen,
     PrayerTimeSettings? prayerTimes,
   }) => Journal(
     startDate: startDate,
@@ -97,6 +101,7 @@ class Journal {
     replacements: replacements ?? this.replacements,
     theme: theme ?? this.theme,
     reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+    walkthroughSeen: walkthroughSeen ?? this.walkthroughSeen,
     prayerTimes: prayerTimes ?? this.prayerTimes,
   );
 
@@ -196,6 +201,7 @@ class Journal {
     'startDate': dateKey(startDate),
     'theme': theme.name,
     'reminderEnabled': reminderEnabled,
+    'walkthroughSeen': walkthroughSeen,
     'prayerTimes': prayerTimes.toJson(),
     'starting': {for (final p in Prayer.values) p.name: starting[p] ?? 0},
     'records': {
@@ -281,6 +287,7 @@ class Journal {
         replacements: replacements,
         theme: AppTheme.values.byName(root['theme'] as String),
         reminderEnabled: (root['reminderEnabled'] ?? false) as bool,
+        walkthroughSeen: (root['walkthroughSeen'] ?? true) as bool,
         prayerTimes: root['prayerTimes'] == null
             ? const PrayerTimeSettings()
             : PrayerTimeSettings.fromJson(

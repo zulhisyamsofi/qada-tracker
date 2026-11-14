@@ -33,6 +33,7 @@ void main() {
   ) async {
     phoneSize(tester);
     final db = JournalDatabase(NativeDatabase.memory());
+    await db.save(Journal(startDate: dayOnly(now)));
     await tester.pumpWidget(journalApp(db));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Progress').last);
@@ -67,6 +68,7 @@ void main() {
     (tester) async {
       phoneSize(tester);
       final db = JournalDatabase(NativeDatabase.memory());
+      await db.save(Journal(startDate: dayOnly(now)));
       await tester.pumpWidget(journalApp(db));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Qada').last);
@@ -94,6 +96,7 @@ void main() {
       final file = File('${directory.path}/journal.sqlite');
       var db = JournalDatabase(NativeDatabase(file));
       final old = DateTime(2026, 11, 12);
+      await db.save(Journal(startDate: dayOnly(now)));
       try {
         await tester.pumpWidget(journalApp(db));
         await tester.pumpAndSettle();

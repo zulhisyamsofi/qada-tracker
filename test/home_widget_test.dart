@@ -123,6 +123,7 @@ void main() {
   ) async {
     final db = JournalDatabase(NativeDatabase.memory());
     await seedPrayerCalendar(db, now);
+    await db.save((await db.load(now)).copy(walkthroughSeen: true));
     final widget = TestHomeWidget();
     await tester.pumpWidget(
       ProviderScope(
@@ -235,6 +236,7 @@ void main() {
     'Settings provides widget instructions when pinning is unavailable',
     (tester) async {
       final db = JournalDatabase(NativeDatabase.memory());
+      await db.save(Journal(startDate: dayOnly(now)));
       final widget = TestHomeWidget(supported: true);
       await tester.pumpWidget(
         ProviderScope(
@@ -273,6 +275,7 @@ void main() {
     tester,
   ) async {
     final db = JournalDatabase(NativeDatabase.memory());
+    await db.save(Journal(startDate: dayOnly(now)));
     final files = FakeBackupFiles();
     await tester.pumpWidget(
       ProviderScope(

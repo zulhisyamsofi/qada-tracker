@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.9.0 — First-launch walkthrough
+
+Adds a seven-step tour over the real app screens with highlighted controls, Next/Back/Skip, saved dismissal, and replay from Settings. First-time users see it automatically; existing journals retain their normal startup. Guide taps cannot change records. Light/dark, large text, reduced motion, rotation, interrupted tours, and write-failure retry are covered. The optional walkthrough preference is included in backups with a backward-compatible default.
+
 ## v1.8.0 — Rounded splash icon
 
 Rounds the green icon background while retaining the crescent and checkmark. The icon used by Android’s splash and launcher now has transparent rounded corners.

@@ -68,7 +68,7 @@ class PrayerHomeWidgetTest {
     @After fun cleanup() { file.delete() }
 
     @Test fun fiveBoxesToggleSharedJournalWithoutFlutter() {
-        val original = journal()
+        val original = journal().put("walkthroughSeen", true)
         save(original)
         for (prayer in PrayerWidgetPolicy.prayers) {
             assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.toggle(context, prayer, today) { clock() })
@@ -82,6 +82,7 @@ class PrayerHomeWidgetTest {
         assertEquals(original.getString("startDate"), stored.getString("startDate"))
         assertEquals(original.getJSONObject("prayerTimes").toString(), stored.getJSONObject("prayerTimes").toString())
         assertTrue(stored.getBoolean("reminderEnabled"))
+        assertTrue(stored.getBoolean("walkthroughSeen"))
         assertEquals("light", stored.getString("theme"))
         assertEquals(0, stored.getJSONArray("replacements").length())
     }

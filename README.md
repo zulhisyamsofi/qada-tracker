@@ -6,6 +6,12 @@ A personal Android prayer journal built with Flutter, Riverpod, and SQLite throu
 
 [Download the latest private Android release](https://github.com/zulhisyamsofi/qada-tracker/releases/latest). Sign in with a GitHub account that has repository access to download its APK. Each feature edition has a separate commit, annotated version tag, release notes, APK, and checksum file. See [RELEASES.md](RELEASES.md) and [CHANGELOG.md](CHANGELOG.md).
 
+## First launch walkthrough
+
+New installations open a seven-step guided tour that highlights real controls and visits all four tabs. It explains recording/clearing prayers, confirming misses, place selection and prayer alerts, historical edits and review, qada replacements and undo, progress, and Settings. Next, Back, and Skip tour are always available; the tour blocks taps on prayer records. Finishing or skipping saves the preference so the guide stays dismissed on subsequent launches. An interrupted unfinished tour starts again next time.
+
+Existing journals are not interrupted after updating. Use **Settings → App walkthrough** to replay the guide at any time. The guide follows light/dark appearance and reduced motion, and its instructions scroll when large text or a small screen needs more space. It introduces no new permissions or network services.
+
 ## Daily use
 
 - **Today:** each prayer shows its time, e.g. `Subuh (05:48)`. Tick it once its time has started; early taps explain when you can record it. Untick to leave it unrecorded, or use the menu to confirm a miss. The location card opens place and notification settings; pull down to refresh times.
@@ -95,7 +101,7 @@ Verified in the cloud instance:
 
 - Pinned Flutter/Dart and JDK setup, with checksum verification and TLS trust intact.
 - Frozen dependency resolution with `pubspec.lock`, and repeatable `scripts/setup.sh` execution.
-- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **62 passing Flutter tests and 29 passing Android tests**, and a successful Android debug APK build.
+- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **69 passing Flutter tests and 29 passing Android tests**, and a successful Android debug APK build.
 
 Prayer-time validation tests cover before/exactly-at/after start, checkboxes and menus, source/date mismatches, absent or malformed caches, atomic bulk changes, concurrent calendar refresh, notification routing, and historical/restore behavior.
 

@@ -178,10 +178,12 @@ class GlassNavigationBar extends StatelessWidget {
   const GlassNavigationBar({
     required this.selectedIndex,
     required this.onDestinationSelected,
+    this.destinationKeys,
     super.key,
   });
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
+  final List<GlobalKey>? destinationKeys;
   static const labels = ['Today', 'History', 'Qada', 'Progress'];
   static const icons = [
     Icons.wb_sunny_outlined,
@@ -199,6 +201,7 @@ class GlassNavigationBar extends StatelessWidget {
         for (var index = 0; index < labels.length; index++)
           Expanded(
             child: Semantics(
+              key: destinationKeys?[index],
               button: true,
               selected: index == selectedIndex,
               label: labels[index],
