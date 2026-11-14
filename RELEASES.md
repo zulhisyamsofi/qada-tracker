@@ -25,7 +25,7 @@ Each feature edition is represented by a separate commit and annotated tag. The 
 
 Every version passed formatting, static analysis, its Flutter tests, and an Android debug APK build. Versions with native test suites also passed those checks. Native widget tests use Robolectric. Actual launcher placement, GPS, notification delivery, reboot/Doze behavior, and OEM battery restrictions remain unverified on a physical phone.
 
-Each release contains `qada-tracker-v<version>.apk` and `SHA256SUMS`. From v1.12.0, that APK is an optimized universal fallback; additional `-arm64-v8a.apk`, `-armeabi-v7a.apk`, and `-x86_64.apk` downloads contain only their target processor libraries. ARM64 is recommended for the Realme GT Master. Optimized build command: `./scripts/build-release.sh`. All APKs retain package `com.personal.qada_tracker`, minimum API 24, target API 36, and the same debug signing certificate (`ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`). Install the latest APK as an update to retain the journal.
+Each release contains `qada-tracker-v<version>.apk` and `SHA256SUMS`. From v1.12.0, that APK is an optimized universal fallback; additional `-arm64-v8a.apk`, `-armeabi-v7a.apk`, and `-x86_64.apk` downloads contain only their target processor libraries. ARM64 is recommended for the Realme GT Master. Optimized build command: `./scripts/build-release.sh`. All APKs retain package `com.personal.qada_tracker`, minimum API 24, target API 36, and the same debug signing certificate (`ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`). Install the latest APK as an update to retain the journal, and use the same processor variant for subsequent updates (Flutter applies per-ABI version-code offsets).
 
 No repository visibility change, Android store release, or cloud-environment publication is performed by this GitHub release process.
 
@@ -38,3 +38,5 @@ The workflow now runs manually. Supply a JSON `manifest` input for new checked d
 ## Private transfer fallback — release-tools-v1.1.0
 
 If the temporary file host is unavailable, the workflow accepts an `assets_ref` commit SHA and manifest files with a `path` relative to its `checked-assets` checkout. Only already-built APKs are staged on a temporary private branch; no signing key or journal data is included. The same tag, filename, size, hash, draft, and uploaded-digest checks apply. The private transfer branch is deleted after verification and publication. APK binaries are not added to the application's main-branch history.
+
+The v1.12.0–v1.15.0 upload completed successfully in [GitHub Actions](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43606169544). All APK/checksum assets were independently verified before publication, v1.15.0 is marked latest, and the temporary private transfer branch has been deleted.

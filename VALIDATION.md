@@ -1,5 +1,10 @@
 # Validation record — v1.15.0
 
+
+Publication completed: v1.12.0–v1.15.0 are private GitHub releases with separate annotated feature tags. [The uploader workflow](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43606169544) passed; all 16 APK digests/sizes and all four checksum files were independently checked against the local artifacts before publication. v1.15.0 is latest. The temporary private APK transfer branch was deleted; no signing keys or journals were transferred. Its ARM64 download is **21,156,158 bytes (21.2 MB)**, about 88.6% smaller than the pre-publication 185,671,938-byte universal debug APK; the optimized universal fallback is 59,860,710 bytes.
+
+A disposable software Android 15 emulator accepted the optimized x86-64 v1.12.0 install and an in-place update to v1.15.0. Activity launch returned success and the baseline tour rendered. Repeated emulator System UI/launcher ANRs prevented a reliable interactive end-to-end check, so runtime UI, notification timing, real hardware, and OEM background behavior remain unverified. Automated Flutter/Robolectric results below are separate from this limited smoke check. Flutter's standard per-ABI version-code offsets apply; keep the same APK variant for subsequent updates.
+
 Groups Prayer-time notifications and Daily check-in reminder in Settings → Notifications, preserving their independent choices. Location settings contain only place/timetable controls. Adds shared permission checks, a same-channel test alert, rescheduling, and Android alarm/notification/battery settings links. The 11 PM check-in now triggers when any prayer is unrecorded, and stays until all five are confirmed. Repairs cached prayer alarms on startup/resume, separates channel checks, and retains the existing 15-minute stale-delivery cutoff. Removes repeated Qada Tracker screen subtitles.
 
 Downloads:
