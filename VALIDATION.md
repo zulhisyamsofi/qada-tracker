@@ -1,3 +1,13 @@
+# Validation record — v1.11.0+12
+
+The prayer-card edition passes `scripts/validate.sh`: formatting (34 Dart files, zero changes), static analysis (no issues), **79 Flutter tests**, **29 Android JVM tests**, and universal Android debug APK compilation. Package `com.personal.qada_tracker`; version 1.11.0 (code 12), minimum API 24, target API 36. The existing debug signing certificate is retained. APK SHA-256: `b0078eb0dabc0d1c20c0b325bcf3f2b3bd53c6ad82ac7cd2671c1d5ba2f6a715`.
+
+Two new widget tests verify performed cards’ green borders and softer text, confirmed misses’ bold red styling, past unrecorded cards’ amber needs-review styling, repeated checkbox changes, corrections between missed/unrecorded, and exact qada effects in both themes. The eight consent tests and all earlier feature tests also pass. The final app and test sources are byte-for-byte identical to the fully tested requested changes, apart from release metadata and documentation.
+
+Rendered previews were inspected in light/dark; narrow consent controls also passed 320 × 720 at 1.6× text, high contrast, and rotation. High-contrast completed text stays opaque. Styling applies across Today, History, and daily review without changing statuses or qada calculations. No schema, backup version, dependency, Android permission, or API source changed. Real-phone notification delivery remains unverified.
+
+---
+
 # Validation record — v1.10.0+11
 
 The reminder-consent edition passes `scripts/validate.sh`: formatting (33 Dart files, no changes), static analysis (no issues), **77 Flutter tests**, **29 Android JVM tests**, and universal Android debug APK compilation. Package `com.personal.qada_tracker`; version 1.10.0 (code 11), minimum API 24, target API 36. Existing debug signing certificate retained. APK SHA-256: `9c51eb0ebbce54ecba9fd03d1d82999a894570ee5d4717f3586fb66c35d7b7a5`.

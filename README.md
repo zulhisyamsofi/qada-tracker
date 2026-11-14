@@ -14,7 +14,7 @@ Existing journals are not interrupted after updating. Use **Settings → App wal
 
 ## Daily use
 
-- **Today:** each prayer shows its time, e.g. `Subuh (05:48)`. Tick it once its time has started; early taps explain when you can record it. Untick to leave it unrecorded, or use the menu to confirm a miss. The location card opens place and notification settings; pull down to refresh times.
+- **Today:** performed cards have green borders and softer text; confirmed misses use bold red styling. Past unrecorded cards use amber borders and an explicit needs-review label, excluding them from qada until confirmed. Each prayer shows its time, e.g. `Subuh (05:48)`. Tick it once its time has started; early taps explain when you can record it. Untick to leave it unrecorded, or use the menu to confirm a miss. The location card opens place and notification settings; pull down to refresh times.
 - **Review:** previous unrecorded days appear for review; mark prayers individually or confirm all remaining prayers for a day.
 - **History:** select any past date (from 1900) and maintain its records. Days before first launch are optional: recording a prayer includes only that day, leaving untouched gaps outside review and totals. Earlier records remain saved when Today rolls over at local midnight or the app resumes.
 - **Qada:** tap the info icon beside Outstanding qada for the balance formula. Enter optional old balances in Settings, record replacements by prayer and quantity, or undo entries. Replacements never tick today's obligatory prayers.
@@ -101,12 +101,12 @@ Verified in the cloud instance:
 
 - Pinned Flutter/Dart and JDK setup, with checksum verification and TLS trust intact.
 - Frozen dependency resolution with `pubspec.lock`, and repeatable `scripts/setup.sh` execution.
-- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **77 passing Flutter tests and 29 passing Android tests**, and a successful Android debug APK build.
+- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **79 passing Flutter tests and 29 passing Android tests**, and a successful Android debug APK build.
 
 Prayer-time validation tests cover before/exactly-at/after start, checkboxes and menus, source/date mismatches, absent or malformed caches, atomic bulk changes, concurrent calendar refresh, notification routing, and historical/restore behavior.
 
 Widget tests cover native RemoteViews, actual pending-intent clicks, SQLite writes, app/launcher synchronization, duplicate taps, date rollover, qada conflicts, write rollback, and launcher fallback instructions. Native widget tests use pinned Robolectric **4.16.1** on Android API **35**, with native graphics/SQLite; the test runtime is downloaded from Maven Central on first use.
 
-Theme tests also check persistent toggling, system-theme behavior, both themes across all tabs, and a narrow-screen/high-contrast/large-text layout. To regenerate ignored Flutter raster captures, run `QADA_CAPTURE_UI=1 flutter test test/theme_ui_test.dart`. Use `QADA_CAPTURE_UI=1 flutter test test/notification_onboarding_test.dart` for the consent previews.
+Theme tests also check persistent toggling, system-theme behavior, both themes across all tabs, and a narrow-screen/high-contrast/large-text layout. To regenerate ignored Flutter raster captures, run `QADA_CAPTURE_UI=1 flutter test test/theme_ui_test.dart`. Use `QADA_CAPTURE_UI=1 flutter test test/notification_onboarding_test.dart test/prayer_card_status_test.dart` for the consent and status-card previews.
 
 The original Flutter download restriction has been resolved. The debug APK is available at the path above. Android runtime validation uses a separate disposable software emulator; see [VALIDATION.md](VALIDATION.md) for its result and limitations. No real phone has been tested. Chrome and Linux desktop doctor warnings are outside this Android app’s target.

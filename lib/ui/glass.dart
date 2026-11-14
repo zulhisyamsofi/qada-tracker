@@ -93,6 +93,8 @@ class GlassCard extends StatelessWidget {
     required this.child,
     this.margin = const EdgeInsets.only(bottom: 10),
     this.color,
+    this.borderColor,
+    this.borderWidth,
     this.frosted = false,
     this.radius = 24,
     super.key,
@@ -100,6 +102,8 @@ class GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry margin;
   final Color? color;
+  final Color? borderColor;
+  final double? borderWidth;
   final bool frosted;
   final double radius;
   @override
@@ -134,12 +138,14 @@ class GlassCard extends StatelessWidget {
               ],
       ),
       border: Border.all(
-        color: contrast
-            ? theme.colorScheme.outline
-            : dark
-            ? const Color(0xffa6dbc6).withValues(alpha: .42)
-            : Colors.white.withValues(alpha: .94),
-        width: contrast ? 1.8 : 1.2,
+        color:
+            borderColor ??
+            (contrast
+                ? theme.colorScheme.outline
+                : dark
+                ? const Color(0xffa6dbc6).withValues(alpha: .42)
+                : Colors.white.withValues(alpha: .94)),
+        width: borderWidth ?? (contrast ? 1.8 : 1.2),
       ),
     );
     Widget panel = DecoratedBox(

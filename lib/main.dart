@@ -544,20 +544,57 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     final early = time != null && ref.read(clockProvider)().isBefore(time.at);
     final (icon, label) = switch (status) {
       PrayerStatus.performed => (Icons.check_circle_outline, 'Performed'),
-      PrayerStatus.missed => (Icons.history, 'Missed · added to qada'),
+      PrayerStatus.missed => (
+        Icons.error_outline_rounded,
+        'Missed · added to qada',
+      ),
       PrayerStatus.unrecorded => (
         early ? Icons.schedule : Icons.radio_button_unchecked,
         early ? 'Starts at ${time.time} · Unrecorded' : 'Unrecorded',
       ),
     };
-    final statusColor = status == PrayerStatus.missed
-        ? (Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xfff0c581)
-              : const Color(0xff855417))
-        : status == PrayerStatus.performed
-        ? Theme.of(context).colorScheme.primary
-        : Theme.of(context).colorScheme.onSurfaceVariant;
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final highContrast = MediaQuery.highContrastOf(context);
+    final performed = status == PrayerStatus.performed;
+    final missed = status == PrayerStatus.missed;
+    final needsReview = !isToday && status == PrayerStatus.unrecorded;
+    final green = dark ? const Color(0xff80d6ae) : const Color(0xff2b8058);
+    final red = dark ? const Color(0xffffb4ab) : const Color(0xffb3261e);
+    final amber = dark ? const Color(0xfff2c679) : const Color(0xff875510);
+    final statusColor = missed
+        ? red
+        : needsReview
+        ? amber
+        : performed
+        ? green
+        : theme.colorScheme.onSurfaceVariant;
+    final titleColor = performed && !highContrast
+        ? theme.colorScheme.onSurface.withValues(alpha: .72)
+        : missed
+        ? red
+        : theme.colorScheme.onSurface;
     return GlassCard(
+      key: ValueKey('prayer-card-${dateKey(date)}-${p.name}'),
+      borderColor: performed
+          ? green
+          : missed
+          ? red
+          : needsReview
+          ? amber
+          : null,
+      borderWidth: missed
+          ? 2.2
+          : performed || needsReview
+          ? 1.8
+          : null,
+      color: performed
+          ? (dark ? const Color(0xff123c2d) : const Color(0xffe3f5e9))
+          : missed
+          ? (dark ? const Color(0xff4b2625) : const Color(0xffffe9e6))
+          : needsReview
+          ? (dark ? const Color(0xff3b3020) : const Color(0xfffff2dc))
+          : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         child: Row(
@@ -585,20 +622,31 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 children: [
                   Text(
                     '${p.label}${isToday ? ' (${time?.time ?? '--:--'})' : ''}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: performed ? FontWeight.w600 : FontWeight.w800,
+                      color: titleColor,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(icon, size: 14, color: statusColor),
+                      Icon(
+                        needsReview ? Icons.pending_actions_rounded : icon,
+                        size: 14,
+                        color: statusColor,
+                      ),
                       const SizedBox(width: 5),
                       Flexible(
                         child: Text(
-                          label,
-                          style: const TextStyle(fontSize: 12),
+                          needsReview ? 'Unrecorded · needs review' : label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: statusColor,
+                            fontWeight: missed || needsReview
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],

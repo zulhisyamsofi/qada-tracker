@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.11.0 — Prayer-card status styling
+
+Performed prayer cards use green borders and softer text, confirmed misses use bold red styling, and past unrecorded prayers use amber styling with a needs-review label. The cues apply to Today, History, and daily review without changing prayer statuses or qada rules. High-contrast mode retains fully opaque completed text.
+
 ## v1.10.0 — Prayer-reminder consent
 
 Adds a first-launch prayer-reminder setup step with notifications preselected for new Android users, a place selector, explicit permission consent, optional alarm access, and a way to continue without alerts. Existing opt-outs are preserved. Settings links directly to prayer-time notification controls; onboarding and Settings share permission/channel checks and scheduling/cancellation. Tour navigation adapts to narrow screens and large text.
