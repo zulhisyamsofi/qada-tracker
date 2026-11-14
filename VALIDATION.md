@@ -1,5 +1,7 @@
 # Validation record — v1.20.0
 
+Publication completed: v1.16.0–v1.20.0 have separate feature commits, annotated tags, private GitHub releases, optimized APKs, and checksum files. [The upload workflow](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43618983708) passed. All 20 APK digests/sizes and all five checksum files were independently verified before publication. v1.20.0 is latest, and the temporary private transfer branch was deleted. No signing keys or journal data were transferred. The final ARM64 download is **21,157,054 bytes (21.2 MB)**; the universal fallback is 59,828,842 bytes.
+
 Removes the notification testing/diagnostics expander and unused test-alert interfaces. Both reminder switches remain together. Android notification/alarm settings links appear only when an enabled reminder needs access; daily and prayer-channel permission checks remain independent. Includes the v1.16–v1.19 qada tooltip polish, titled/padded 4 × 1 widget, restored Today cards/circular progress panel, and simpler Dark mode settings. Existing widgets may need a small vertical resize or re-adding to accommodate the title.
 
 Downloads:
@@ -8,6 +10,10 @@ Downloads:
 - Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
 
 Validation: formatting, static analysis, **103 Flutter tests**, **47 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified. No database, backup-format, status, or qada-calculation migration is needed.
+
+Implementation checks also verify all five saved prayer statuses in both themes on 390 × 844, 320 × 640, and 320 × 568 viewports with Android-style safe areas. The larger layout shows all five without scrolling; smaller screens and large text retain full-size touch targets and can scroll. Six actual-tooltip cases measure outer screen clearance, bounded width, and inner padding in both themes and at enlarged text. Light/dark previews, readable Nunito tooltip text, and the borderless info icon were visually inspected.
+
+The 17 widget cases cover the compact title, increased padding, 4 × 1 target metadata, full prayer names at 1.6× text, and 48 × 48 dp minimum prayer targets at 280 × 80 dp. Real title/background/gap/box gestures distinguish app navigation from toggling. Settings checks cover removed Appearance/testing controls, persistent light/dark/system values, independent reminder choices, and conditional permission links. The 18 notification-integration cases run across simulated API 33/35, alongside seven daily-policy and five prayer-time-policy cases. Physical launcher and OS notification delivery remain unverified; no new emulator validation was performed during release packaging.
 
 Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
 

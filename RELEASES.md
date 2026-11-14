@@ -45,3 +45,7 @@ The workflow now runs manually. Supply a JSON `manifest` input for new checked d
 If the temporary file host is unavailable, the workflow accepts an `assets_ref` commit SHA and manifest files with a `path` relative to its `checked-assets` checkout. Only already-built APKs are staged on a temporary private branch; no signing key or journal data is included. The same tag, filename, size, hash, draft, and uploaded-digest checks apply. The private transfer branch is deleted after verification and publication. APK binaries are not added to the application's main-branch history.
 
 The v1.12.0–v1.15.0 upload completed successfully in [GitHub Actions](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43606169544). All APK/checksum assets were independently verified before publication, v1.15.0 is marked latest, and the temporary private transfer branch has been deleted.
+
+## UI polish publication — v1.16.0–v1.20.0
+
+The five feature editions are published, with v1.20.0 marked latest. [The uploader workflow](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43618983708) passed; all 20 optimized APKs and five checksum files were independently verified before publication. Its private transfer branch has been removed. The latest ARM64 APK is 21.2 MB, with the same app ID and signing certificate for in-place updates. Existing widgets may need a small vertical resize or re-adding for the title.
