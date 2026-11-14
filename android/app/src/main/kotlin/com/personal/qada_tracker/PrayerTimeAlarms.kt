@@ -131,22 +131,6 @@ internal object PrayerTimeAlarms {
             prefs(context).edit().putStringSet("sent", sent.sorted().takeLast(400).toSet()).apply()
         } catch (_: SecurityException) { /* Permission was revoked while delivering. */ }
     }
-    fun sendTest(context: Context) {
-        channel(context)
-        check(PrayerTimeStore.config(context)?.enabled == true) { "Enable prayer-time notifications first." }
-        check(notificationsAllowed(context)) { "Prayer-time notifications are blocked in Android settings." }
-        val open = PendingIntent.getActivity(context, 10000, Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra(OPEN, true)
-        }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        @Suppress("DEPRECATION")
-        val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(context, CHANNEL) else Notification.Builder(context)
-        builder.setSmallIcon(R.drawable.notification_icon).setContentTitle("Prayer notification test")
-            .setContentText("Check your notification tray. Prayer alerts use this same channel.")
-            .setContentIntent(open).setAutoCancel(true)
-        if (Build.VERSION.SDK_INT >= 26) builder.setTimeoutAfter(60000)
-        notifications(context).notify(10000, builder.build())
-    }
 
 }
 

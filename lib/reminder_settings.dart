@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'controller.dart';
-import 'model.dart';
 import 'prayer_times_controller.dart';
 import 'reminders.dart';
 
@@ -57,17 +56,15 @@ class _ReminderSettingsState extends ConsumerState<ReminderSettings> {
     final j = ref.watch(journalProvider).requireValue;
     final service = ref.watch(reminderServiceProvider);
     final access = ref.watch(reminderAccessProvider).asData?.value;
-    final times = j.prayerTimes.notifications
-        ? ref.watch(prayerTimesProvider)
-        : null;
-    final calendar = times?.asData?.value.calendar;
-    final matching = calendar?.sourceKey == j.prayerTimes.place.key;
-    final next = matching
-        ? calendar!.entries
-              .where((e) => e.at.isAfter(ref.read(clockProvider)()))
-              .firstOrNull
-        : null;
     final enabled = j.reminderEnabled || j.prayerTimes.notifications;
+    final notificationBlocked =
+        service.supported &&
+        enabled &&
+        access != null &&
+        (!(access.appNotifications ?? access.notifications) ||
+            (j.prayerTimes.notifications &&
+                access.prayerTimesNotifications == false) ||
+            (j.reminderEnabled && !access.notifications));
     return Column(
       key: const ValueKey('notification-settings-group'),
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,90 +116,17 @@ class _ReminderSettingsState extends ConsumerState<ReminderSettings> {
           const Text(
             'Allow alarms & reminders for on-time delivery. Android may delay or skip inexact alerts.',
           ),
-        if (service.supported)
-          ExpansionTile(
-            key: const ValueKey('notification-permissions-testing'),
-            tilePadding: EdgeInsets.zero,
-            title: const Text('Notification permissions & testing'),
-            childrenPadding: const EdgeInsets.only(bottom: 12),
-            expandedCrossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (access != null)
-                Text(
-                  (access.appNotifications ?? access.notifications)
-                      ? 'Android notifications: allowed'
-                      : 'Android notifications: blocked',
-                ),
-              if (j.prayerTimes.notifications && access != null)
-                Text(
-                  (access.prayerTimesNotifications ?? access.notifications)
-                      ? 'Prayer notifications: allowed'
-                      : 'Prayer notifications: blocked in Android settings',
-                ),
-              if (next != null)
-                Text(
-                  'Next saved prayer time: ${Prayer.values.byName(next.prayer).label} · ${next.date} ${next.time} (${calendar!.timezone})',
-                )
-              else if (j.prayerTimes.notifications && times?.isLoading != true)
-                const Text(
-                  'No upcoming saved times. Refresh them in Settings → Prayer times & location.',
-                ),
-              if (j.prayerTimes.notifications)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: busy
-                          ? null
-                          : () => action(() async {
-                              await service.sendTestPrayerNotification();
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Test notification sent. Check your notification tray.',
-                                    ),
-                                  ),
-                                );
-                              }
-                            }),
-                      icon: const Icon(Icons.notifications_active_outlined),
-                      label: const Text('Send test notification'),
-                    ),
-                    TextButton(
-                      onPressed: busy
-                          ? null
-                          : () => action(service.syncPrayerTimes),
-                      child: const Text('Reschedule alerts'),
-                    ),
-                  ],
-                )
-              else
-                const Text(
-                  'Enable Prayer-time notifications to send a test alert.',
-                ),
-              if (access?.exactAlarms == false)
-                TextButton(
-                  onPressed: busy
-                      ? null
-                      : () => action(service.openAlarmSettings),
-                  child: const Text('Allow alarms & reminders'),
-                ),
-              TextButton(
-                onPressed: busy
-                    ? null
-                    : () => action(service.openNotificationSettings),
-                child: const Text('Android notification settings'),
-              ),
-              const Text(
-                'If alerts stop while the app is closed, check battery/background restrictions. On Realme, allow background activity in the app’s battery settings.',
-              ),
-              TextButton(
-                onPressed: busy ? null : () => action(service.openAppSettings),
-                child: const Text('App battery settings'),
-              ),
-            ],
+        if (notificationBlocked)
+          TextButton(
+            onPressed: busy
+                ? null
+                : () => action(service.openNotificationSettings),
+            child: const Text('Android notification settings'),
+          ),
+        if (service.supported && enabled && access?.exactAlarms == false)
+          TextButton(
+            onPressed: busy ? null : () => action(service.openAlarmSettings),
+            child: const Text('Allow alarms & reminders'),
           ),
       ],
     );

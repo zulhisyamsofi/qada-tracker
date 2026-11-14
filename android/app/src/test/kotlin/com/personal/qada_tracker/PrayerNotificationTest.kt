@@ -131,18 +131,6 @@ class PrayerNotificationTest {
         assertTrue(manager.activeNotifications.isEmpty())
     }
 
-    @Test fun testNotificationUsesPrayerChannelWithoutChangingRecordsOrDeliveryTokens() {
-        PrayerTimeAlarms.configure(context,true,time)
-        val before=PrayerTimeStore.config(context)
-        PrayerTimeAlarms.sendTest(context)
-        val posted=context.getSystemService(NotificationManager::class.java).activeNotifications.single().notification
-        assertEquals("prayer_times",posted.channelId)
-        assertEquals("Prayer notification test",posted.extras.getString(Notification.EXTRA_TITLE))
-        assertEquals(before,PrayerTimeStore.config(context))
-        assertTrue(context.getSharedPreferences("prayer_time_alarms",Context.MODE_PRIVATE).getStringSet("sent",emptySet())!!.isEmpty())
-        assertEquals(5,shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms.size)
-    }
-
     @Test fun dailyChannelCanBeDisabledWhilePrayerAlertsStayAllowed() {
         PrayerReminders.createChannel(context)
         PrayerTimeAlarms.channel(context)
@@ -153,8 +141,9 @@ class PrayerNotificationTest {
         assertEquals(false,access["notifications"])
         assertEquals(true,access["appNotifications"])
         assertEquals(true,access["prayerNotifications"])
-        PrayerTimeAlarms.sendTest(context)
-        assertTrue(manager.activeNotifications.isNotEmpty())
+        PrayerTimeAlarms.configure(context, true, time)
+        PrayerTimeAlarms.deliver(context, prayerIntent("zohor"), at(14, 13))
+        assertEquals("Time for Zohor", manager.activeNotifications.single().notification.extras.getString(Notification.EXTRA_TITLE))
     }
 
     @Test fun optingOutClearsPendingPrayerAlarmsAndNotifications() {

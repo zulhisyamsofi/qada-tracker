@@ -26,6 +26,7 @@ Each feature edition is represented by a separate commit and annotated tag. The 
 | v1.17.0 | Titled and padded home-screen widget | 103 / 49 | [v1.17.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.17.0) |
 | v1.18.0 | Restored roomy Today cards | 103 / 49 | [v1.18.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.18.0) |
 | v1.19.0 | Simpler dark-mode settings | 103 / 49 | [v1.19.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.19.0) |
+| v1.20.0 | Cleaner notification settings | 103 / 47 | [v1.20.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.20.0) |
 
 Every version passed formatting, static analysis, its Flutter tests, and an Android debug APK build. Versions with native test suites also passed those checks. Native widget tests use Robolectric. Actual launcher placement, GPS, notification delivery, reboot/Doze behavior, and OEM battery restrictions remain unverified on a physical phone.
 

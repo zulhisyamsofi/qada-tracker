@@ -1,3 +1,23 @@
+# Validation record — v1.20.0
+
+Removes the notification testing/diagnostics expander and unused test-alert interfaces. Both reminder switches remain together. Android notification/alarm settings links appear only when an enabled reminder needs access; daily and prayer-channel permission checks remain independent. Includes the v1.16–v1.19 qada tooltip polish, titled/padded 4 × 1 widget, restored Today cards/circular progress panel, and simpler Dark mode settings. Existing widgets may need a small vertical resize or re-adding to accommodate the title.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.20.0-arm64-v8a.apk` (21.2 MB).
+- **Universal fallback:** `qada-tracker-v1.20.0.apk` (59.8 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **103 Flutter tests**, **47 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified. No database, backup-format, status, or qada-calculation migration is needed.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.20.0-arm64-v8a.apk` (21,157,054 bytes): `80f5d24c2f07d75bbdd53f7062c419ed71bba6fdd5faacfe4b9e11fec2fd9cc5`.
+- `qada-tracker-v1.20.0-armeabi-v7a.apk` (18,750,770 bytes): `74d369dfe85b5f65801cdd4cb9c483d9cd7be05f891ede533ed5092a3b72757f`.
+- `qada-tracker-v1.20.0-x86_64.apk` (22,636,578 bytes): `e06e1f5372bb97f4c6866d5f7fa36fe8d7abac3ac81afc962c66f161243c2a50`.
+- `qada-tracker-v1.20.0.apk` (59,828,842 bytes): `a58133d600696650090445c9a658a7c49e0fe321d2e6a91b1451db82c6dba2e8`.
+
+---
+
 # Validation record — v1.19.0
 
 Removes the redundant Appearance dropdown. The Settings Dark mode switch and app-bar shortcut remain, with persistent theme changes and backup compatibility. Existing system-following preferences remain supported until a manual light/dark selection is made.

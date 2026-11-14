@@ -73,14 +73,6 @@ class MainActivity : FlutterActivity() {
                             result.success(intent.getBooleanExtra(PrayerTimeAlarms.OPEN, false))
                             intent.removeExtra(PrayerTimeAlarms.OPEN)
                         }
-                        "testPrayerNotification" -> {
-                            PrayerTimeAlarms.sendTest(this@MainActivity)
-                            result.success(null)
-                        }
-                        "openAppSettings" -> {
-                            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
-                            result.success(null)
-                        }
                         "access" -> result.success(PrayerReminders.access(this@MainActivity))
                         "requestNotifications" -> {
                             if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {

@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.20.0 — Cleaner notification settings
+
+Removes the notification testing/diagnostics expander and unused test-alert interfaces. Both reminder switches remain together. Android notification/alarm settings links appear only when an enabled reminder needs access; daily and prayer-channel permission checks remain independent. Includes the v1.16–v1.19 qada tooltip polish, titled/padded 4 × 1 widget, restored Today cards/circular progress panel, and simpler Dark mode settings. Existing widgets may need a small vertical resize or re-adding to accommodate the title.
+
 ## v1.19.0 — Simpler dark-mode settings
 
 Removes the redundant Appearance dropdown. The Settings Dark mode switch and app-bar shortcut remain, with persistent theme changes and backup compatibility. Existing system-following preferences remain supported until a manual light/dark selection is made.

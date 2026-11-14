@@ -49,9 +49,8 @@ void main() {
       expect(await service.requestNotifications(), isTrue);
       await service.openAlarmSettings();
       await service.openNotificationSettings();
-      await service.openAppSettings();
-      await service.sendTestPrayerNotification();
-      expect(calls.any((c) => c.method == 'testPrayerNotification'), isTrue);
+      expect(calls.any((c) => c.method == 'openAlarmSettings'), isTrue);
+      expect(calls.any((c) => c.method == 'openNotificationSettings'), isTrue);
       await service.sync(false);
       expect(calls.last.arguments, {'enabled': false});
     },

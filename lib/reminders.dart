@@ -116,27 +116,6 @@ class ReminderService {
     if (supported) await channel.invokeMethod<void>('openAlarmSettings');
   }
 
-  Future<void> sendTestPrayerNotification() async {
-    if (!supported) {
-      throw const FormatException('Prayer alerts are available on Android.');
-    }
-    try {
-      await channel.invokeMethod<void>('testPrayerNotification');
-    } on PlatformException {
-      throw const FormatException(
-        'Could not send the test. Check Android app and prayer-channel notification permissions.',
-      );
-    } on MissingPluginException {
-      throw const FormatException(
-        'The notification test is unavailable in this build.',
-      );
-    }
-  }
-
-  Future<void> openAppSettings() async {
-    if (supported) await channel.invokeMethod<void>('openAppSettings');
-  }
-
   Future<void> openNotificationSettings() async {
     if (supported) await channel.invokeMethod<void>('openNotificationSettings');
   }
