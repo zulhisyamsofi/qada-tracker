@@ -19,8 +19,10 @@ class ConsentReminders extends ReminderService {
     this.granted = true,
     this.appAllowed = true,
     this.channelAllowed = true,
+    this.dailyAllowed,
   }) : super(supported: true);
   final bool granted, appAllowed, channelAllowed;
+  final bool? dailyAllowed;
   bool exact = false;
   int requests = 0,
       prayerSyncs = 0,
@@ -41,7 +43,8 @@ class ConsentReminders extends ReminderService {
 
   @override
   Future<ReminderAccess> access() async => ReminderAccess(
-    notifications: appAllowed,
+    notifications: dailyAllowed ?? appAllowed,
+    appNotifications: appAllowed,
     exactAlarms: exact,
     prayerTimesNotifications: channelAllowed,
   );
@@ -132,14 +135,11 @@ void main() {
         expect((await db.load(now)).prayerTimes.notifications, isTrue);
         await tester.tap(find.byTooltip('Settings'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Prayer times & location'));
-        await tester.pumpAndSettle();
-        await tester.scrollUntilVisible(
-          find.byType(SwitchListTile),
-          150,
-          scrollable: find.byType(Scrollable).last,
+        final prayerToggle = find.byKey(
+          const ValueKey('prayer-notifications-toggle'),
         );
-        await tester.tap(find.byType(SwitchListTile));
+        await tester.ensureVisible(prayerToggle);
+        await tester.tap(prayerToggle);
         await tester.pumpAndSettle();
         journal = await db.load(now);
         expect(journal.prayerTimes.notifications, isFalse);
@@ -149,6 +149,28 @@ void main() {
           Journal.decode(journal.export(), now).prayerTimes.notifications,
           isFalse,
         );
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+        await db.close();
+      }
+    },
+  );
+
+  testWidgets(
+    'blocked daily check-in channel does not prevent opting into prayer alerts',
+    (tester) async {
+      phone(tester);
+      final db = JournalDatabase(NativeDatabase.memory());
+      final service = ConsentReminders(dailyAllowed: false);
+      try {
+        await tester.pumpWidget(app(db, service));
+        await tester.pumpAndSettle();
+        await openConsent(tester);
+        await press(tester, 'Enable & continue');
+        expect(find.text('Maintain your History'), findsOneWidget);
+        expect((await db.load(now)).prayerTimes.notifications, isTrue);
+        expect((await db.load(now)).reminderEnabled, isFalse);
+        await press(tester, 'Skip tour');
       } finally {
         await tester.pumpWidget(const SizedBox());
         await db.close();

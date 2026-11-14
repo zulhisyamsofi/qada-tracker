@@ -47,7 +47,7 @@ const walkthroughSteps = [
     Icons.schedule_rounded,
     'Choose your prayer-time location',
     'Prayer times appear beside each prayer. Tap the gear, then Prayer times & location in Settings to choose a Malaysian place or use your device location.',
-    'The next step lets you choose prayer-time reminders. You can change the place or use device location in Settings → Prayer times & location.',
+    'The next step lets you choose prayer-time reminders. You can change the place or use device location in Settings → Prayer times & location. Both reminder switches are together under Settings → Notifications.',
   ),
   WalkthroughStep(
     0,
@@ -55,7 +55,7 @@ const walkthroughSteps = [
     Icons.notifications_active_outlined,
     'Prayer-time reminders',
     'Get an alert at each of the five prayer times. Choose the place whose timetable you want to follow.',
-    'Reminders are selected for first-time setup. Enable & continue asks Android for notification permission. Skipping leaves your existing settings unchanged. You can disable reminders anytime in Settings → Prayer times & location.',
+    'Reminders are selected for first-time setup. Enable & continue asks Android for notification permission. Skipping leaves your existing settings unchanged. You can disable reminders anytime in Settings → Notifications.',
     notificationSetup: true,
   ),
   WalkthroughStep(
@@ -87,7 +87,7 @@ const walkthroughSteps = [
     'settings',
     Icons.settings_outlined,
     'Make it yours in Settings',
-    'Tap the gear for past qada starting balances, appearance, the home-screen widget, and the daily reminder at 11 PM when no prayer has been recorded.',
+    'Tap the gear for past qada starting balances, appearance, the home-screen widget, and the Notifications group, including the daily reminder at 11 PM if any prayer is still unrecorded.',
     'Export a manual backup regularly. Restore replaces your journal after confirmation. You can replay this tour here with App walkthrough.',
   ),
 ];

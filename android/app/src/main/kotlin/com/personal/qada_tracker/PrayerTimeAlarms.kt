@@ -48,14 +48,13 @@ internal object PrayerTimeAlarms {
         }
     }
     @Synchronized
-    fun configure(context: Context, force: Boolean = false) {
+    fun configure(context: Context, force: Boolean = false, now: Long = System.currentTimeMillis()) {
         channel(context)
         val config = PrayerTimeStore.config(context)
-        val work = WorkManager.getInstance(context)
         if (config == null || !config.enabled) {
             cancel(context)
             prefs(context).edit().remove("stamp").remove("source").apply()
-            work.cancelUniqueWork(PERIODIC); work.cancelUniqueWork(REFRESH)
+            refreshWork(context, null, null, now, false)
             return
         }
         val calendar = PrayerTimeStore.calendar(context)?.takeIf { it.key == config.key }
@@ -63,31 +62,45 @@ internal object PrayerTimeAlarms {
         if (!force && prefs(context).getString("stamp", null) == stamp) return
         val sourceChanged = prefs(context).getString("source", null) != config.key
         cancel(context, clearNotifications = sourceChanged)
-        val now = System.currentTimeMillis()
         // Only five alarms are pending. Each delivery schedules the next occurrence.
         // This avoids OS alarm-count limits and works offline through the cache.
         if (calendar != null) for (slot in PrayerTimePolicy.next(calendar.entries, now)) {
             val index = PrayerTimePolicy.names.indexOf(slot.prayer)
+            val exact = PrayerReminders.exactAllowed(context)
             val operation = pending(context, index, slot, config.key)
             try {
-                if (PrayerReminders.exactAllowed(context)) alarms(context).setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, slot.at, operation)
+                if (exact) alarms(context).setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, slot.at, operation)
                 else alarms(context).setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, slot.at, operation)
-            } catch (_: SecurityException) { alarms(context).setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, slot.at, operation) }
-        }
-        val constraints = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
-        val periodic = PeriodicWorkRequest.Builder(PrayerCalendarWorker::class.java, 12, TimeUnit.HOURS)
-            .setConstraints(constraints).setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.MINUTES).build()
-        work.enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.KEEP, periodic)
-        if (calendar == null || !calendar.fresh(now)) {
-            // Give a foreground refresh time to finish before making duplicate API calls.
-            val refresh = OneTimeWorkRequest.Builder(PrayerCalendarWorker::class.java).setInitialDelay(1, TimeUnit.MINUTES)
-                .setConstraints(constraints).setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.MINUTES).build()
-            work.enqueueUniqueWork(REFRESH, if (sourceChanged) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP, refresh)
+            } catch (_: SecurityException) {
+                alarms(context).setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, slot.at, pending(context, index, slot, config.key))
+            }
         }
         prefs(context).edit().putString("stamp", stamp).putString("source", config.key).apply()
+        refreshWork(context, config, calendar, now, sourceChanged)
+    }
+    private fun refreshWork(context: Context, config: PrayerTimeConfig?, calendar: SavedPrayerCalendar?, now: Long, sourceChanged: Boolean) {
+        try {
+            val work = WorkManager.getInstance(context)
+            if (config == null) {
+                work.cancelUniqueWork(PERIODIC); work.cancelUniqueWork(REFRESH)
+                return
+            }
+            val constraints = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+            val periodic = PeriodicWorkRequest.Builder(PrayerCalendarWorker::class.java, 12, TimeUnit.HOURS)
+                .setConstraints(constraints).setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.MINUTES).build()
+            work.enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.KEEP, periodic)
+            if (calendar == null || !calendar.fresh(now)) {
+                val refresh = OneTimeWorkRequest.Builder(PrayerCalendarWorker::class.java).setInitialDelay(1, TimeUnit.MINUTES)
+                    .setConstraints(constraints).setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.MINUTES).build()
+                work.enqueueUniqueWork(REFRESH, if (sourceChanged) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP, refresh)
+            }
+        } catch (error: Exception) {
+            // Already-downloaded prayer alerts must not depend on refresh startup.
+            Log.w("PrayerTimeAlarms", "Background refresh unavailable; cached alarms remain scheduled", error)
+        }
     }
     @Synchronized
-    fun deliver(context: Context, intent: Intent) {
+    fun deliver(context: Context, intent: Intent, now: Long = System.currentTimeMillis()) {
         val config = PrayerTimeStore.config(context)
         val calendar = PrayerTimeStore.calendar(context)
         val at = intent.getLongExtra("at", -1)
@@ -96,11 +109,10 @@ internal object PrayerTimeAlarms {
         val slot = calendar?.entries?.firstOrNull { it.prayer == name && it.at == at }
         val token = "$at|$source|$name"
         val sent = prefs(context).getStringSet("sent", emptySet())!!.toMutableSet()
-        val now = System.currentTimeMillis()
-        val eligible = config?.enabled == true && config.key == source && calendar?.key == source && slot != null &&
+        val eligible = config?.enabled == true && config.key == source && calendar != null && calendar.key == source && slot != null &&
             PrayerTimePolicy.timely(at, now) && token !in sent && notificationsAllowed(context)
         // Schedule successors first. Do not dismiss the notification we are about to post.
-        configure(context, force = true)
+        configure(context, force = true, now = now)
         if (!eligible) return
         val index = PrayerTimePolicy.names.indexOf(slot.prayer)
         val open = PendingIntent.getActivity(context, 10001 + index, Intent(context, MainActivity::class.java).apply {
@@ -119,6 +131,23 @@ internal object PrayerTimeAlarms {
             prefs(context).edit().putStringSet("sent", sent.sorted().takeLast(400).toSet()).apply()
         } catch (_: SecurityException) { /* Permission was revoked while delivering. */ }
     }
+    fun sendTest(context: Context) {
+        channel(context)
+        check(PrayerTimeStore.config(context)?.enabled == true) { "Enable prayer-time notifications first." }
+        check(notificationsAllowed(context)) { "Prayer-time notifications are blocked in Android settings." }
+        val open = PendingIntent.getActivity(context, 10000, Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra(OPEN, true)
+        }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        @Suppress("DEPRECATION")
+        val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(context, CHANNEL) else Notification.Builder(context)
+        builder.setSmallIcon(R.drawable.notification_icon).setContentTitle("Prayer notification test")
+            .setContentText("Check your notification tray. Prayer alerts use this same channel.")
+            .setContentIntent(open).setAutoCancel(true)
+        if (Build.VERSION.SDK_INT >= 26) builder.setTimeoutAfter(60000)
+        notifications(context).notify(10000, builder.build())
+    }
+
 }
 
 class PrayerTimeReceiver : BroadcastReceiver() {

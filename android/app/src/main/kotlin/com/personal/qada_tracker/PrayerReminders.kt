@@ -32,7 +32,7 @@ internal object PrayerReminders {
         if (Build.VERSION.SDK_INT >= 26) {
             manager(context).createNotificationChannel(NotificationChannel(
                 CHANNEL, "Daily prayer check-in", NotificationManager.IMPORTANCE_DEFAULT
-            ).apply { description = "A reminder at 11 PM when no prayers have been recorded today." })
+            ).apply { description = "A reminder at 11 PM when any prayer is still unrecorded today." })
         }
     }
 
@@ -45,7 +45,7 @@ internal object PrayerReminders {
         (Build.VERSION.SDK_INT < 26 || manager(context).getNotificationChannel(CHANNEL)?.importance != NotificationManager.IMPORTANCE_NONE)
     fun exactAllowed(context: Context): Boolean = Build.VERSION.SDK_INT < 31 || alarms(context).canScheduleExactAlarms()
     fun access(context: Context): Map<String, Boolean> = mapOf(
-        "notifications" to notificationsAllowed(context), "exactAlarms" to exactAllowed(context),
+        "notifications" to notificationsAllowed(context), "appNotifications" to appNotificationsAllowed(context), "exactAlarms" to exactAllowed(context),
         "prayerNotifications" to PrayerTimeAlarms.notificationsAllowed(context)
     )
 
@@ -57,7 +57,7 @@ internal object PrayerReminders {
     )
 
     @Synchronized
-    fun sync(context: Context, enabled: Boolean) {
+    fun sync(context: Context, enabled: Boolean, now: Calendar = Calendar.getInstance()) {
         createChannel(context)
         prefs(context).edit().putBoolean("enabled", enabled).commit()
         if (!enabled) {
@@ -65,18 +65,17 @@ internal object PrayerReminders {
             manager(context).cancel(ID)
             return
         }
-        // Clear a displayed reminder immediately after recording, including restore.
+        // Keep a displayed reminder until every prayer is confirmed, including restore.
         val journal = journal(context)
-        if (journal != null && hasRecordedPrayer(journal, ReminderPolicy.day(Calendar.getInstance()))) {
+        if (journal != null && !hasUnrecordedPrayer(journal, ReminderPolicy.day(now))) {
             manager(context).cancel(ID)
         }
-        schedule(context)
+        schedule(context, now)
     }
 
     @Synchronized
-    fun schedule(context: Context) {
+    fun schedule(context: Context, now: Calendar = Calendar.getInstance()) {
         if (!prefs(context).getBoolean("enabled", false)) return
-        val now = Calendar.getInstance()
         val target = ReminderPolicy.next(now, prefs(context).getString("lastChecked", null))
         val operation = pending(context, ReminderPolicy.day(target))
         // Notification permission can be revoked in Settings without opening the app.
@@ -112,20 +111,19 @@ internal object PrayerReminders {
         }
     }
 
-    private fun hasRecordedPrayer(journal: JSONObject, date: String): Boolean {
+    private fun hasUnrecordedPrayer(journal: JSONObject, date: String): Boolean {
         val row = journal.optJSONObject("records")?.optJSONObject(date)
-        return ReminderPolicy.hasRecordedPrayer(prayers.map { row?.optString(it) })
+        return ReminderPolicy.hasUnrecordedPrayer(prayers.map { row?.optString(it) })
     }
 
     @Synchronized
-    fun deliver(context: Context, expectedDay: String?) {
+    fun deliver(context: Context, expectedDay: String?, now: Calendar = Calendar.getInstance()) {
         if (!prefs(context).getBoolean("enabled", false)) return
-        val now = Calendar.getInstance()
         val date = ReminderPolicy.day(now)
         val journal = journal(context)
         val notify = journal != null && ReminderPolicy.shouldNotify(
             journal.optBoolean("reminderEnabled", false), expectedDay, now,
-            prefs(context).getString("lastChecked", null), hasRecordedPrayer(journal, date)
+            prefs(context).getString("lastChecked", null), hasUnrecordedPrayer(journal, date)
         ) && notificationsAllowed(context)
         // A delayed yesterday alarm must not suppress today's future check.
         if (expectedDay == date && now.get(Calendar.HOUR_OF_DAY) == 23) {
@@ -140,7 +138,7 @@ internal object PrayerReminders {
             val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(context, CHANNEL) else Notification.Builder(context)
             builder.setSmallIcon(R.drawable.notification_icon)
                 .setContentTitle("A moment for your prayer journal")
-                .setContentText("You haven’t recorded any prayers today. Check in before midnight.")
+                .setContentText("You still have unrecorded prayers today. Check in before midnight.")
                 .setContentIntent(open).setAutoCancel(true)
             if (Build.VERSION.SDK_INT >= 26) {
                 val midnight = (now.clone() as Calendar).apply {
@@ -154,7 +152,7 @@ internal object PrayerReminders {
                 // Android 13 permission may have changed since the check above.
             }
         }
-        schedule(context)
+        schedule(context, now)
     }
 }
 

@@ -8,11 +8,17 @@ class ReminderAccess {
     required this.exactAlarms,
     this.error,
     this.prayerTimesNotifications,
+    this.appNotifications,
   });
+
+  /// App permission combined with the daily check-in channel setting.
   final bool notifications;
   final bool exactAlarms;
   final String? error;
   final bool? prayerTimesNotifications;
+
+  /// Global Android app permission, independent of either channel.
+  final bool? appNotifications;
 }
 
 /// Android owns the alarms and checks SQLite at delivery, even without Flutter.
@@ -31,6 +37,7 @@ class ReminderService {
   final MethodChannel channel;
   final bool supported;
   String? _error;
+  String? _prayerError;
   void Function()? onOpenToday;
   void Function()? onOpenPrayerTimes;
   Future<bool> initialPrayerTimesTap() async {
@@ -48,11 +55,11 @@ class ReminderService {
     if (!supported) return;
     try {
       await channel.invokeMethod<void>('syncPrayerTimes');
-      _error = null;
+      _prayerError = null;
     } on PlatformException {
-      _error = 'Android could not schedule prayer-time alerts.';
+      _prayerError = 'Android could not schedule prayer-time alerts.';
     } on MissingPluginException {
-      _error = 'Prayer-time alerts are unavailable in this build.';
+      _prayerError = 'Prayer-time alerts are unavailable in this build.';
     }
   }
 
@@ -79,7 +86,13 @@ class ReminderService {
         notifications: result?['notifications'] == true,
         exactAlarms: result?['exactAlarms'] == true,
         prayerTimesNotifications: result?['prayerNotifications'] as bool?,
-        error: _error,
+        appNotifications: result?['appNotifications'] as bool?,
+        error: _error == null && _prayerError == null
+            ? null
+            : [
+                if (_error != null) _error,
+                if (_prayerError != null) _prayerError,
+              ].join('\n'),
       );
     } on PlatformException {
       return const ReminderAccess(
@@ -101,6 +114,27 @@ class ReminderService {
       await channel.invokeMethod<bool>('requestNotifications') == true;
   Future<void> openAlarmSettings() async {
     if (supported) await channel.invokeMethod<void>('openAlarmSettings');
+  }
+
+  Future<void> sendTestPrayerNotification() async {
+    if (!supported) {
+      throw const FormatException('Prayer alerts are available on Android.');
+    }
+    try {
+      await channel.invokeMethod<void>('testPrayerNotification');
+    } on PlatformException {
+      throw const FormatException(
+        'Could not send the test. Check Android app and prayer-channel notification permissions.',
+      );
+    } on MissingPluginException {
+      throw const FormatException(
+        'The notification test is unavailable in this build.',
+      );
+    }
+  }
+
+  Future<void> openAppSettings() async {
+    if (supported) await channel.invokeMethod<void>('openAppSettings');
   }
 
   Future<void> openNotificationSettings() async {

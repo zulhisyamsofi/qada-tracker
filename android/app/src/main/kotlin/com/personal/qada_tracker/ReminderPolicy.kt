@@ -27,10 +27,10 @@ internal object ReminderPolicy {
         return target
     }
 
-    fun hasRecordedPrayer(statuses: List<String?>): Boolean = statuses.any { it == "performed" || it == "missed" }
+    fun hasUnrecordedPrayer(statuses: List<String?>): Boolean = statuses.any { it != "performed" && it != "missed" }
 
     fun shouldNotify(enabled: Boolean, expectedDay: String?, now: Calendar,
-                     lastCheckedDay: String?, hasRecordedPrayer: Boolean): Boolean =
+                     lastCheckedDay: String?, hasUnrecordedPrayer: Boolean): Boolean =
         enabled && expectedDay == day(now) && lastCheckedDay != day(now) &&
-            now.get(Calendar.HOUR_OF_DAY) == 23 && !hasRecordedPrayer
+            now.get(Calendar.HOUR_OF_DAY) == 23 && hasUnrecordedPrayer
 }

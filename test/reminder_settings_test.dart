@@ -19,6 +19,8 @@ class FakeReminders extends ReminderService {
   Future<ReminderAccess> access() async =>
       ReminderAccess(notifications: allowed, exactAlarms: false);
   @override
+  Future<void> syncPrayerTimes() async {}
+  @override
   Future<void> sync(bool enabled) async {
     enabledStates.add(enabled);
   }
@@ -50,17 +52,27 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: Scaffold(body: ReminderSettings())),
+          child: const MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(child: ReminderSettings()),
+            ),
+          ),
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(SwitchListTile));
+      expect(
+        find.text('11:00 PM · if any of today’s prayers are still unrecorded.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('daily-check-in-toggle')));
       await tester.pumpAndSettle();
       expect((await db.load(now)).reminderEnabled, allowed);
       expect(service.enabledStates.last, allowed);
       if (allowed) {
+        await tester.tap(find.text('Notification permissions & testing'));
+        await tester.pumpAndSettle();
         expect(find.text('Allow alarms & reminders'), findsOneWidget);
-        await tester.tap(find.byType(SwitchListTile));
+        await tester.tap(find.byKey(const ValueKey('daily-check-in-toggle')));
         await tester.pumpAndSettle();
         expect(service.enabledStates.last, isFalse);
         expect((await db.load(now)).reminderEnabled, isFalse);
@@ -83,4 +95,58 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   }
+  testWidgets('both switches are together and remain independent', (
+    tester,
+  ) async {
+    final db = JournalDatabase(NativeDatabase.memory());
+    final now = DateTime(2026, 11, 14);
+    final service = FakeReminders(true);
+    await db.save(Journal(startDate: now, reminderEnabled: true));
+    final container = ProviderContainer(
+      overrides: [
+        fakePrayerTimes,
+        databaseProvider.overrideWith((ref) async => db),
+        clockProvider.overrideWithValue(() => now),
+        reminderServiceProvider.overrideWithValue(service),
+      ],
+    );
+    final listener = container.listen(journalProvider, (_, _) {});
+    try {
+      await container.read(journalProvider.future);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(child: ReminderSettings()),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final prayer = find.byKey(const ValueKey('prayer-notifications-toggle'));
+      final daily = find.byKey(const ValueKey('daily-check-in-toggle'));
+      expect(find.text('Notifications'), findsOneWidget);
+      expect(tester.widget<SwitchListTile>(prayer).value, isFalse);
+      expect(tester.widget<SwitchListTile>(daily).value, isTrue);
+      await tester.tap(prayer);
+      await tester.pumpAndSettle();
+      expect((await db.load(now)).prayerTimes.notifications, isTrue);
+      expect((await db.load(now)).reminderEnabled, isTrue);
+      await tester.tap(daily);
+      await tester.pumpAndSettle();
+      expect((await db.load(now)).prayerTimes.notifications, isTrue);
+      expect((await db.load(now)).reminderEnabled, isFalse);
+      await tester.tap(prayer);
+      await tester.pumpAndSettle();
+      expect(find.text('Both reminders are off.'), findsOneWidget);
+      expect((await db.load(now)).prayerTimes.notifications, isFalse);
+      expect((await db.load(now)).reminderEnabled, isFalse);
+    } finally {
+      await tester.pumpWidget(const SizedBox());
+      listener.close();
+      container.dispose();
+      await db.close();
+    }
+  });
 }

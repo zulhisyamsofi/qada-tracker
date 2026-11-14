@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'controller.dart';
 import 'prayer_times_controller.dart';
 import 'prayer_times_models.dart';
-import 'reminders.dart';
 
-/// Place, source, and alert controls are reached from Settings.
+/// Location and timetable controls; notification choices live in Settings.
 class PrayerTimesSettings extends ConsumerStatefulWidget {
   const PrayerTimesSettings({super.key});
   @override
@@ -32,15 +31,15 @@ class _PrayerTimesSettingsState extends ConsumerState<PrayerTimesSettings> {
         );
       }
     } finally {
-      if (mounted) setState(() => busy = false);
+      if (mounted) {
+        setState(() => busy = false);
+      }
     }
   }
 
   Future<void> choose(PrayerPlace place) => ref
       .read(journalProvider.notifier)
       .change((j) => j.copy(prayerTimes: j.prayerTimes.copy(place: place)));
-  Future<void> notifications(bool enabled) =>
-      action(() => updatePrayerNotifications(ref, enabled: enabled));
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(journalProvider).requireValue.prayerTimes;
@@ -48,8 +47,6 @@ class _PrayerTimesSettingsState extends ConsumerState<PrayerTimesSettings> {
     final loading = data.isLoading || (data.asData?.value.refreshing ?? false);
     final calendar = data.asData?.value.calendar;
     final matching = calendar?.sourceKey == settings.place.key;
-    final service = ref.watch(reminderServiceProvider);
-    final access = ref.watch(reminderAccessProvider).asData?.value;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -137,41 +134,6 @@ class _PrayerTimesSettingsState extends ConsumerState<PrayerTimesSettings> {
             'Source: WaktuSolat API · JAKIM zone timetable. Check the selected zone against your local mosque or e-Solat, especially near zone boundaries.',
             style: TextStyle(fontSize: 12),
           ),
-          const SizedBox(height: 12),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Prayer-time notifications'),
-            subtitle: const Text(
-              'A notification at each of the five prayer times.',
-            ),
-            value: settings.notifications,
-            onChanged: busy || !service.supported ? null : notifications,
-          ),
-          if (access?.error != null) Text(access!.error!),
-          if (settings.notifications) ...[
-            const Text(
-              'Android refreshes downloaded times when internet is available. The last selected location is used; GPS is not tracked in the background.',
-              style: TextStyle(fontSize: 12),
-            ),
-            if (access != null &&
-                !(access.prayerTimesNotifications ?? access.notifications))
-              const Text(
-                'Notifications are blocked. Enable them in Android settings.',
-              ),
-            if (access != null && !access.exactAlarms) ...[
-              const Text(
-                'Allow alarms & reminders for on-time prayer alerts. Without access, Android may delay or skip alerts.',
-              ),
-              TextButton(
-                onPressed: () => action(service.openAlarmSettings),
-                child: const Text('Allow alarms & reminders'),
-              ),
-            ],
-            TextButton(
-              onPressed: () => action(service.openNotificationSettings),
-              child: const Text('Android notification settings'),
-            ),
-          ],
         ],
       ),
     );

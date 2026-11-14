@@ -111,7 +111,7 @@ Future<void> updatePrayerNotifications(
   if (enabled) {
     final allowed = await service.requestNotifications();
     final access = await service.access();
-    if (!allowed || !access.notifications) {
+    if (!allowed || !(access.appNotifications ?? access.notifications)) {
       throw const FormatException(
         'Notifications were not enabled. You can continue without them or allow them later in Settings.',
       );

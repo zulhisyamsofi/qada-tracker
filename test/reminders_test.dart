@@ -28,7 +28,12 @@ void main() {
       messenger.setMockMethodCallHandler(channel, (call) async {
         calls.add(call);
         if (call.method == 'access') {
-          return {'notifications': true, 'exactAlarms': false};
+          return {
+            'notifications': false,
+            'appNotifications': true,
+            'prayerNotifications': true,
+            'exactAlarms': false,
+          };
         }
         if (call.method == 'requestNotifications') return true;
         return null;
@@ -37,11 +42,16 @@ void main() {
       await service.sync(true);
       expect(calls.single.arguments, {'enabled': true});
       final access = await service.access();
-      expect(access.notifications, isTrue);
+      expect(access.notifications, isFalse);
+      expect(access.appNotifications, isTrue);
+      expect(access.prayerTimesNotifications, isTrue);
       expect(access.exactAlarms, isFalse);
       expect(await service.requestNotifications(), isTrue);
       await service.openAlarmSettings();
       await service.openNotificationSettings();
+      await service.openAppSettings();
+      await service.sendTestPrayerNotification();
+      expect(calls.any((c) => c.method == 'testPrayerNotification'), isTrue);
       await service.sync(false);
       expect(calls.last.arguments, {'enabled': false});
     },
@@ -56,6 +66,40 @@ void main() {
       final service = ReminderService(channel: channel, supported: true);
       await service.sync(true);
       expect((await service.access()).error, isNotNull);
+    },
+  );
+  test(
+    'daily and prayer scheduling failures stay visible independently',
+    () async {
+      var failPrayer = true;
+      var failDaily = false;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'syncPrayerTimes' && failPrayer) {
+          throw PlatformException(code: 'prayer');
+        }
+        if (call.method == 'sync' && failDaily) {
+          throw PlatformException(code: 'daily');
+        }
+        if (call.method == 'access') {
+          return {
+            'notifications': true,
+            'appNotifications': true,
+            'prayerNotifications': true,
+            'exactAlarms': true,
+          };
+        }
+        return null;
+      });
+      final service = ReminderService(channel: channel, supported: true);
+      await service.syncPrayerTimes();
+      await service.sync(true);
+      expect((await service.access()).error, contains('prayer-time'));
+      failPrayer = false;
+      failDaily = true;
+      await service.sync(true);
+      await service.syncPrayerTimes();
+      expect((await service.access()).error, contains('reminder'));
+      expect((await service.access()).error, isNot(contains('prayer-time')));
     },
   );
 }

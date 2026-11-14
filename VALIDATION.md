@@ -1,3 +1,62 @@
+# Validation record — v1.15.0
+
+Groups Prayer-time notifications and Daily check-in reminder in Settings → Notifications, preserving their independent choices. Location settings contain only place/timetable controls. Adds shared permission checks, a same-channel test alert, rescheduling, and Android alarm/notification/battery settings links. The 11 PM check-in now triggers when any prayer is unrecorded, and stays until all five are confirmed. Repairs cached prayer alarms on startup/resume, separates channel checks, and retains the existing 15-minute stale-delivery cutoff. Removes repeated Qada Tracker screen subtitles.
+
+Downloads:
+- **Realme GT Master / most recent Android phones:** `qada-tracker-v1.15.0-arm64-v8a.apk` (21.2 MB).
+- **Universal fallback:** `qada-tracker-v1.15.0.apk` (59.9 MB).
+- Other assets target older 32-bit ARM phones and x86-64 emulators. Choose one APK, then install it over the existing app to keep the journal. Package and signing certificate are unchanged.
+
+Validation: formatting, static analysis, **98 Flutter tests**, **49 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag. `SHA256SUMS` covers every download. Physical phone notification/Doze/battery behavior remains unverified.
+
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 mapping confirms the persisted WorkManager entry-point name is retained. The source is Flutter 3.38.5 with the pinned Android toolchain. Earlier checkpoint records below retain their original hashes and results.
+
+- `qada-tracker-v1.15.0-arm64-v8a.apk`: `d5e5e815a5a29f9a212410b8542b614bd83b4220504c86023d560b94116b935c`
+- `qada-tracker-v1.15.0-armeabi-v7a.apk`: `62dc6525708c465cb6681d7b3e52957ed8e15df524425642c8601a360808dc8e`
+- `qada-tracker-v1.15.0-x86_64.apk`: `7f19adfa1893b5800e21f28ca060a1fc23db22663add1a3723782179afdf7afa`
+- `qada-tracker-v1.15.0.apk`: `9786c93f8ac7717033f213a58500827d3c87071dc5671ffe94b108f70b4042d6`
+
+---
+
+# Development checkpoint — Unified notification settings
+
+The complete `scripts/validate.sh` passes: formatting (38 Dart files, zero changes), static analysis (no issues), **98 Flutter tests**, **49 Android JVM tests** (zero failures, errors, or skips), and universal Android debug APK compilation. Working APK: `build/app/outputs/flutter-apk/app-debug.apk`; SHA-256: `7dd0b8f9b88adc148d739f3590f211461ba741e7158bd71288d25d215df2afb9`. The existing debug certificate is retained: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. No version tag or release has been created for these working changes.
+
+The user identified the disabled in-app prayer notification switch as the cause of the observed missing alerts. Both independent switches are now visible together at Settings → Notifications; prayer-time location settings contain no notification controls. Tests verify enabling/disabling either preference preserves the other, daily-channel denial does not prevent prayer opt-in, offline disabling works, existing consent behavior remains, and the diagnostics/test/reschedule/settings actions use the shared group. Light/dark Settings and location-page raster previews were inspected; all four theme rendering tests also passed with capture enabled. Repeated screen-title/Settings footer branding is removed, while Today retains its date subtitle.
+
+The 11 PM native check-in tests cover one remaining unrecorded prayer, mixed performed/missed confirmations, retaining a displayed notification after partial app/widget edits, and clearing it after all five are confirmed. Missing daily slots count as unrecorded; no reminder changes prayer statuses or qada balances.
+
+Twenty new notification integration cases run on simulated Android API 33 and 35 (10 cases each), using native SQLite, AlarmManager, NotificationManager, and real pending-intent payloads. They verify posting and successor scheduling, permission/channel denial, early/stale/duplicate suppression, opt-out cancellation, forced alarm repair, isolated same-channel test alerts, and partial daily check-ins. The existing 17 launcher-widget, seven daily-policy, and five prayer-policy cases also pass. The established 15-minute stale-alert cutoff is unchanged. Cached alarm setup is independent of background refresh initialization, and startup/resume repairs cached schedules. No schema, backup format, permission, dependency, or API source change is introduced.
+
+No physical Realme or other Android device is connected. Robolectric component tests and APK compilation do not establish delivery under Realme battery restrictions, Doze, reboot, or Android system permission flows on a phone. Enable the prayer switch, send a test notification from the shared group, grant alarms/reminders access, and check the next actual prayer alert on the device. Earlier validation records below describe their own checkpoints and APKs.
+
+---
+
+# Development checkpoint — Focused Today screen
+
+`scripts/validate.sh` passes: formatting (38 Dart files, no changes), static analysis (no issues), **94 Flutter tests**, **29 Android JVM tests** (no failures/errors/skips), and universal Android debug APK compilation. Working APK: `build/app/outputs/flutter-apk/app-debug.apk`; SHA-256: `4f688564a08eec0f6bd042c99e8463d931849198cc8bad722e9f0a420aaa242a`. Previously tagged release checksums below describe their own APKs.
+
+Nine new widget tests verify all five checkboxes are visible, hit-testable, and at least 48 pixels across, with zero scroll extent on 390 × 844, 320 × 640, and 320 × 568 viewports in light/dark. Tests include 24-pixel Android-style top and bottom safe-area insets and actually mark all five prayers without scrolling. They also verify the review prompt is absent on Today and above History’s calendar, a saved device location appears in Settings without another GPS request and survives reopening, offline retry information remains available, and large text can scroll through every prayer without shrinking touch targets.
+
+Rendered Today previews in both themes and the saved-location Settings entry were inspected. Today uses an app-bar date, compact count/progress strip, and five prayer cards; location, review, large introductory/summary blocks, and the footer have been removed from the home checklist. Settings → Prayer times & location retains place/GPS/source/notification controls, while History owns the review prompt. The walkthrough and existing user-flow tests follow these paths. All earlier History badge/calendar, qada, prayer-time policy, backup, reminder, and native widget tests remain passing.
+
+No prayer status, start-time rule, qada calculation, saved place, schema, backup format, permission, dependency, or API change is introduced. Physical-device UI and OS notification delivery remain unverified in this environment; this validation uses Flutter rendering, simulated Android tests, and APK compilation.
+
+---
+
+# Development checkpoint — History review indicators
+
+`scripts/validate.sh` passes: formatting (37 Dart files, no changes), static analysis (no issues), **85 Flutter tests**, **29 Android JVM tests** (zero failures/errors/skips), and universal Android debug APK compilation. Working APK: `build/app/outputs/flutter-apk/app-debug.apk`; SHA-256: `abe50c9b2470866ec511615287624b155bb8dd23daf82dc7d11961098fc207ad`. Older release checksums below refer to their tagged APKs.
+
+Six new widget tests verify one count per unresolved past day rather than per prayer; two-date examples; exclusion of today, future dates, and untouched pre-start gaps; red outlines matching the badge; retained red selection outlines; partial updates and final resolution as performed/missed; re-opening a day by clearing a record; explicit backfilled dates; bulk review; hidden zero badge; midnight month rollover, resume/closed gaps; date input/jump/cancel; leap years and supported date bounds. Light/dark large-text tests verify exact long-gap counts above 999, accessible count/day labels, and matching marker colours. The existing file-backed history restart test also passes with the marked calendar.
+
+Flutter raster previews were inspected at 390 × 844 and 320 × 720 with 1.6× text/high contrast. Badge digits use the bundled Nunito font and retain the full count. Calendar day text scales within its seven-column grid; semantic labels retain full dates and review state. Month buttons and the date/year chooser remain available. The walkthrough explains the badge and date rings.
+
+Navigation, Today’s review prompt, and the History calendar share the same unresolved past-day set. The underlying statuses and qada rules are unchanged. Confirmed misses alone do not trigger this review badge, while unresolved prayers never add qada automatically. No schema, backup, dependency, permission, or API changes were introduced. Physical Android launcher/device validation remains unavailable.
+
+---
+
 # Validation record — v1.14.0
 
 Opens Today directly to all five prayer cards without scrolling at normal font sizes on the tested phone layouts. Moves saved location controls to Settings → Prayer times & location, keeps review above History’s calendar, and updates the walkthrough. Large text remains scrollable with full touch targets.

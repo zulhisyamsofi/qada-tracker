@@ -227,7 +227,7 @@ class PrayerHomeWidgetTest {
         assertNotEquals(broadcasts[0].data, broadcasts[1].data)
     }
 
-    @Test fun launcherClickSavesPrayerRefreshesBothWidgetsAndDismissesCheckIn() {
+    @Test fun launcherClickSavesPrayerRefreshesBothWidgetsAndKeepsCheckInUntilDayResolved() {
         bind(91); bind(92)
         val now = Calendar.getInstance()
         val date = ReminderPolicy.day(now)
@@ -249,6 +249,15 @@ class PrayerHomeWidgetTest {
         shadowOf(android.os.Looper.getMainLooper()).idle()
         assertEquals("performed", PrayerWidgetPolicy.status(PrayerWidgetStore.read(context)!!, date, "subuh"))
         for (id in listOf(91, 92)) assertEquals("✓", manager.getViewFor(id).findViewById<TextView>(R.id.widget_subuh_status).text.toString())
+        assertEquals(1, notifications.activeNotifications.size)
+        for (button in listOf(R.id.widget_zohor,R.id.widget_asar,R.id.widget_maghrib,R.id.widget_isyak)) {
+            assertTrue(manager.getViewFor(91).findViewById<View>(button).performClick())
+            shadowOf(android.os.Looper.getMainLooper()).idle()
+            val completed=CountDownLatch(1)
+            PrayerHomeWidget.execute { completed.countDown() }
+            assertTrue(completed.await(5, TimeUnit.SECONDS))
+            shadowOf(android.os.Looper.getMainLooper()).idle()
+        }
         assertTrue(notifications.activeNotifications.isEmpty())
         assertTrue(shadowOf(RuntimeEnvironment.getApplication()).broadcastIntents.any { it.action == PrayerHomeWidget.JOURNAL_CHANGED })
         assertTrue(manager.getViewFor(92).findViewById<View>(R.id.widget_subuh).performClick())

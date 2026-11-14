@@ -7,6 +7,7 @@ import 'package:qada_tracker/database.dart';
 import 'package:qada_tracker/main.dart';
 import 'package:qada_tracker/model.dart';
 import 'package:qada_tracker/reminders.dart';
+import 'package:qada_tracker/reminder_settings.dart';
 import 'package:qada_tracker/prayer_times_page.dart';
 import 'package:qada_tracker/prayer_times_api.dart';
 import 'package:qada_tracker/prayer_times_controller.dart';
@@ -58,6 +59,9 @@ void main() {
       await tester.tap(find.text('Prayer times & location'));
       await tester.pumpAndSettle();
       expect(find.text('Prayer times & location'), findsOneWidget);
+      expect(find.byType(PrayerTimesSettings), findsOneWidget);
+      expect(find.text('Prayer-time notifications'), findsNothing);
+      expect(find.text('Daily check-in reminder'), findsNothing);
       expect(
         find.text('Zone WLY01 · Times shown in Asia/Kuala_Lumpur'),
         findsOneWidget,
@@ -114,12 +118,21 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: Scaffold(body: PrayerTimesSettings())),
+          child: const MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(child: ReminderSettings()),
+            ),
+          ),
         ),
       );
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(find.byType(SwitchListTile), 120);
-      await tester.tap(find.byType(SwitchListTile));
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('prayer-notifications-toggle')),
+        120,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('prayer-notifications-toggle')),
+      );
       await tester.pumpAndSettle();
       // Turning off is always possible offline. A denied opt-in stays off.
       expect((await db.load(now)).prayerTimes.notifications, isFalse);
@@ -232,10 +245,93 @@ void main() {
       service.onOpenPrayerTimes!();
       await tester.pumpAndSettle();
       expect(find.text('0 of 5 prayers recorded today'), findsOneWidget);
+      final repairedBefore = service.repairs;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(service.repairs, greaterThan(repairedBefore));
       expect(find.text('Times'), findsNothing);
       await tester.pumpWidget(const SizedBox());
       api.client.close();
       await db.close();
+    },
+  );
+  testWidgets(
+    'prayer settings expose channel/timing diagnostics, test delivery, rescheduling and app battery settings',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final now = DateTime.utc(2026, 11, 13, 2);
+      final db = JournalDatabase(NativeDatabase.memory());
+      final service = _DiagnosticReminders();
+      final api = FakeTimesApi();
+      await db.save(
+        Journal(
+          startDate: dayOnly(now),
+          prayerTimes: const PrayerTimeSettings(notifications: true),
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWith((ref) async => db),
+          clockProvider.overrideWithValue(() => now),
+          prayerTimesApiProvider.overrideWithValue(api),
+          reminderServiceProvider.overrideWithValue(service),
+        ],
+      );
+      final listener = container.listen(journalProvider, (_, _) {});
+      try {
+        await container.read(journalProvider.future);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              home: Scaffold(
+                body: SingleChildScrollView(child: ReminderSettings()),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Notification permissions & testing'));
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.text('Prayer notifications: allowed'),
+          140,
+        );
+        expect(find.textContaining('Next saved prayer time:'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text('Send test notification'),
+          140,
+        );
+        await tester.tap(find.text('Send test notification'));
+        await tester.pumpAndSettle();
+        expect(service.tests, 1);
+        expect(
+          find.text('Test notification sent. Check your notification tray.'),
+          findsOneWidget,
+        );
+        await tester.pump(const Duration(seconds: 5));
+        await tester.pumpAndSettle();
+        final before = service.repairs;
+        await tester.tap(find.text('Reschedule alerts'));
+        await tester.pumpAndSettle();
+        expect(service.repairs, before + 1);
+        await tester.scrollUntilVisible(find.text('App battery settings'), 140);
+        await tester.tap(find.text('App battery settings'));
+        await tester.pumpAndSettle();
+        expect(service.batterySettings, 1);
+        expect((await db.load(now)).records, isEmpty);
+        expect((await db.load(now)).prayerTimes.notifications, isTrue);
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+        listener.close();
+        container.dispose();
+        await db.close();
+        api.client.close();
+      }
     },
   );
 }
@@ -244,8 +340,12 @@ class _TimesReminders extends ReminderService {
   _TimesReminders() : super(supported: true);
   @override
   Future<void> sync(bool enabled) async {}
+  int repairs = 0;
   @override
-  Future<void> syncPrayerTimes() async {}
+  Future<void> syncPrayerTimes() async {
+    repairs++;
+  }
+
   @override
   Future<bool> requestNotifications() async => false;
   @override
@@ -254,4 +354,32 @@ class _TimesReminders extends ReminderService {
     exactAlarms: false,
     prayerTimesNotifications: false,
   );
+}
+
+class _DiagnosticReminders extends ReminderService {
+  _DiagnosticReminders() : super(supported: true);
+  int tests = 0, repairs = 0, batterySettings = 0;
+  @override
+  Future<void> sync(bool enabled) async {}
+  @override
+  Future<void> syncPrayerTimes() async {
+    repairs++;
+  }
+
+  @override
+  Future<ReminderAccess> access() async => const ReminderAccess(
+    notifications: false,
+    appNotifications: true,
+    prayerTimesNotifications: true,
+    exactAlarms: false,
+  );
+  @override
+  Future<void> sendTestPrayerNotification() async {
+    tests++;
+  }
+
+  @override
+  Future<void> openAppSettings() async {
+    batterySettings++;
+  }
 }

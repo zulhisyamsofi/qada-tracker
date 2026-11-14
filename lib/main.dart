@@ -282,11 +282,6 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   fontWeight: FontWeight.w600,
                 ),
               ),
-            if (tab != 0)
-              const Text(
-                'Qada Tracker',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-              ),
           ],
         ),
         actions: [
@@ -1048,6 +1043,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   'Your journal, your way',
                   'Stored on this phone. No account or tracking.',
                 ),
+                const ReminderSettings(),
+                const SizedBox(height: 20),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.help_outline_rounded),
@@ -1133,8 +1130,6 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   },
                 ),
                 const SizedBox(height: 24),
-                const ReminderSettings(),
-                const SizedBox(height: 24),
                 const Text(
                   'Manual backups',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -1162,7 +1157,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  'Qada Tracker · Personal edition\nPrayer times from WaktuSolat / JAKIM. Cloud sync is not enabled.',
+                  'Personal edition\nPrayer times from WaktuSolat / JAKIM. Cloud sync is not enabled.',
                 ),
                 const SizedBox(height: 12),
               ],

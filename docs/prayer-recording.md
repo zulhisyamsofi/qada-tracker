@@ -1,5 +1,7 @@
 # Integrated prayer times — v1.5
 
+The previews below retain the v1.5 layout. In the current working draft, saved place/location is reached through **Settings → Prayer times & location**, and both reminder switches are together in **Settings → Notifications**; the review prompt is above History’s calendar. Today now shows a compact completion strip and five directly accessible prayer cards. The recording rules below still apply.
+
 ![Today in light mode](design/today-integrated-light.png)
 
 ![Today in dark mode](design/today-integrated-dark.png)

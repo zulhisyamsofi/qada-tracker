@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.15.0 — Unified notification settings
+
+Groups Prayer-time notifications and Daily check-in reminder in Settings → Notifications, preserving their independent choices. Location settings contain only place/timetable controls. Adds shared permission checks, a same-channel test alert, rescheduling, and Android alarm/notification/battery settings links. The 11 PM check-in now triggers when any prayer is unrecorded, and stays until all five are confirmed. Repairs cached prayer alarms on startup/resume, separates channel checks, and retains the existing 15-minute stale-delivery cutoff. Removes repeated Qada Tracker screen subtitles.
+
 ## release-tools-v1.1.0 — Private APK transfer fallback
 
 Lets the existing checked-release workflow read APKs from a temporary private GitHub transfer commit when the external 72-hour host is unavailable. Source tags, filenames, file sizes, SHA-256 hashes, draft status, and uploaded digests remain verified. No signing keys or personal data are transferred. The temporary branch is removed after successful publication; APKs are attached to private releases.

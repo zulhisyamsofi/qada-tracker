@@ -11,6 +11,7 @@ import 'package:qada_tracker/database.dart';
 import 'package:qada_tracker/main.dart';
 import 'package:qada_tracker/model.dart';
 import 'package:qada_tracker/prayer_times_controller.dart';
+import 'package:qada_tracker/reminders.dart';
 import 'prayer_times_controller_test.dart' show FakeTimesApi;
 
 final captureKey = GlobalKey();
@@ -45,6 +46,7 @@ Widget app(JournalDatabase db, FakeTimesApi api) => ProviderScope(
     databaseProvider.overrideWith((ref) async => db),
     clockProvider.overrideWithValue(() => now),
     prayerTimesApiProvider.overrideWithValue(api),
+    reminderServiceProvider.overrideWithValue(_PreviewReminders()),
   ],
   child: RepaintBoundary(key: captureKey, child: const QadaApp()),
 );
@@ -84,6 +86,9 @@ void main() {
       expect(find.byTooltip('Switch to light mode'), findsOneWidget);
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.widgetWithText(SwitchListTile, 'Dark mode'),
+      );
       await tester.tap(find.widgetWithText(SwitchListTile, 'Dark mode'));
       await tester.pumpAndSettle();
       expect((await db.load(now)).theme, AppTheme.light);
@@ -135,6 +140,7 @@ void main() {
         await tester.tap(find.text(tab).last);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
+        expect(find.text('Qada Tracker'), findsNothing);
         await capture(tester, '${tab.toLowerCase()}-${mode.name}');
         if (tab == 'History') {
           await tester.tap(find.text('12').first);
@@ -151,6 +157,7 @@ void main() {
       }
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
+      expect(find.textContaining('Qada Tracker'), findsNothing);
       await capture(tester, 'settings-${mode.name}');
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
@@ -195,4 +202,19 @@ void main() {
     api.client.close();
     await db.close();
   });
+}
+
+class _PreviewReminders extends ReminderService {
+  _PreviewReminders() : super(supported: true);
+  @override
+  Future<void> sync(bool enabled) async {}
+  @override
+  Future<void> syncPrayerTimes() async {}
+  @override
+  Future<ReminderAccess> access() async => const ReminderAccess(
+    notifications: true,
+    appNotifications: true,
+    prayerTimesNotifications: true,
+    exactAlarms: false,
+  );
 }

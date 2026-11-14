@@ -26,14 +26,18 @@ class JournalController extends AsyncNotifier<Journal> {
       databaseProvider.future,
     )).load(ref.read(clockProvider)());
     await ref.read(reminderServiceProvider).sync(journal.reminderEnabled);
+    await ref.read(reminderServiceProvider).syncPrayerTimes();
     await ref.read(homeWidgetServiceProvider).sync();
     return journal;
   }
 
-  Future<void> refreshReminders() async {
+  Future<void> refreshReminders({bool repairPrayerAlarms = false}) async {
     final journal = state.asData?.value;
     if (journal == null) return;
     await ref.read(reminderServiceProvider).sync(journal.reminderEnabled);
+    if (repairPrayerAlarms && ref.mounted) {
+      await ref.read(reminderServiceProvider).syncPrayerTimes();
+    }
     if (ref.mounted) ref.invalidate(reminderAccessProvider);
   }
 
@@ -79,7 +83,7 @@ class JournalController extends AsyncNotifier<Journal> {
       )).load(ref.read(clockProvider)());
       if (!ref.mounted) return;
       state = AsyncData(next);
-      await refreshReminders();
+      await refreshReminders(repairPrayerAlarms: true);
       await ref.read(homeWidgetServiceProvider).sync();
     });
     _queue = operation.catchError((Object _) {});
