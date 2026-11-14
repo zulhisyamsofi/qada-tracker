@@ -1158,28 +1158,6 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<AppTheme>(
-                  key: ValueKey(j.theme),
-                  initialValue: j.theme,
-                  decoration: const InputDecoration(labelText: 'Appearance'),
-                  items: [
-                    for (final theme in AppTheme.values)
-                      DropdownMenuItem(
-                        value: theme,
-                        child: Text(switch (theme) {
-                          AppTheme.system => 'Follow system',
-                          AppTheme.light => 'Light',
-                          AppTheme.dark => 'Dark',
-                        }),
-                      ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      act(() => controller.change((j) => j.copy(theme: value)));
-                    }
-                  },
-                ),
                 const SizedBox(height: 24),
                 const Text(
                   'Manual backups',

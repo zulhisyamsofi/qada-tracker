@@ -60,7 +60,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(fonts);
   testWidgets(
-    'quick dark-mode toggle persists and Settings retains system mode',
+    'dark-mode controls persist without redundant Appearance; existing system mode is preserved',
     (tester) async {
       final db = JournalDatabase(NativeDatabase.memory());
       final api = FakeTimesApi();
@@ -92,14 +92,15 @@ void main() {
       await tester.tap(find.widgetWithText(SwitchListTile, 'Dark mode'));
       await tester.pumpAndSettle();
       expect((await db.load(now)).theme, AppTheme.light);
-      await tester.ensureVisible(
-        find.byType(DropdownButtonFormField<AppTheme>),
-      );
-      await tester.tap(find.byType(DropdownButtonFormField<AppTheme>));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Follow system').last);
+      expect(find.byType(DropdownButtonFormField<AppTheme>), findsNothing);
+      expect(find.text('Appearance'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await db.save(seed(AppTheme.system));
+      await tester.pumpWidget(app(db, api));
       await tester.pumpAndSettle();
       expect((await db.load(now)).theme, AppTheme.system);
+      await tester.tap(find.byTooltip('Settings'));
+      await tester.pumpAndSettle();
       tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
       await tester.pumpAndSettle();
       expect(

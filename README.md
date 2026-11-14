@@ -57,7 +57,7 @@ The database migrates from schema 1 to 2 by adding a separate calendar cache tab
 
 ## Appearance (v1.3)
 
-Use the sun/moon button beside Settings for a quick light/dark toggle, or **Settings → Dark mode**. The selection is saved across restarts and included in backups. **Appearance → Follow system** restores automatic switching with the phone's theme.
+Use the sun/moon button beside Settings for a quick light/dark toggle, or **Settings → Dark mode**. The selection is saved across restarts and included in backups. The redundant Appearance dropdown is removed. Existing system-following preferences remain supported until you manually choose light or dark; backups retain all existing theme values.
 
 The redesigned screens use mint/emerald colors, rounded glass panels, bordered pill buttons, circular outlined controls, and bundled Nunito typography. High contrast uses solid surfaces and stronger borders; large text remains scrollable. Glass blur is limited to summary/navigation panels. See the [design reference and render comparison](docs/design/glass-ui.md).
 

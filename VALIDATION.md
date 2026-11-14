@@ -1,3 +1,23 @@
+# Validation record — v1.19.0
+
+Removes the redundant Appearance dropdown. The Settings Dark mode switch and app-bar shortcut remain, with persistent theme changes and backup compatibility. Existing system-following preferences remain supported until a manual light/dark selection is made.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.19.0-arm64-v8a.apk` (21.2 MB).
+- **Universal fallback:** `qada-tracker-v1.19.0.apk` (59.9 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **103 Flutter tests**, **49 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified. No database, backup-format, status, or qada-calculation migration is needed.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.19.0-arm64-v8a.apk` (21,157,082 bytes): `3b72cebf3a3cae7997c9592ccc8eeec6b4922f33812da1bbf9ada7b26d8cb9a3`.
+- `qada-tracker-v1.19.0-armeabi-v7a.apk` (18,783,566 bytes): `d95578e4032eb660d49fda3b84f5f56fb645d82febdf92b4c7f7af8ec310ddbd`.
+- `qada-tracker-v1.19.0-x86_64.apk` (22,636,610 bytes): `ebce899cb25fce637f63492f756ce6e07b49516279cc30a2522d8337381ebca0`.
+- `qada-tracker-v1.19.0.apk` (59,861,638 bytes): `cdf0067fc04cbbc9074d67dab20b7ffae460acaed578dd1d5aac11cff4dd421f`.
+
+---
+
 # Validation record — v1.18.0
 
 Restores Today’s original prayer-card padding, spacing, and rounded progress panel with a circular completion counter. Location controls stay in Settings and reviews stay in History. The tested 390 × 844 layout shows all five prayers without scrolling; shorter screens and enlarged text scroll without shrinking controls.

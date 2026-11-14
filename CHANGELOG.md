@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.19.0 — Simpler dark-mode settings
+
+Removes the redundant Appearance dropdown. The Settings Dark mode switch and app-bar shortcut remain, with persistent theme changes and backup compatibility. Existing system-following preferences remain supported until a manual light/dark selection is made.
+
 ## v1.18.0 — Restored roomy Today cards
 
 Restores Today’s original prayer-card padding, spacing, and rounded progress panel with a circular completion counter. Location controls stay in Settings and reviews stay in History. The tested 390 × 844 layout shows all five prayers without scrolling; shorter screens and enlarged text scroll without shrinking controls.
