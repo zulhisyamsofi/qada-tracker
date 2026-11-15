@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.23.0 — Exempt prayers and tracking pause
+
+Confirm individual exempt prayers, date ranges, or an ongoing tracking pause. Ranges preserve existing performed and missed records; resume from a chosen prayer today or tomorrow. Exempt prayers add no qada, do not need review, and are excluded from required-prayer totals. Their prayer-time alerts are silenced by default; daily check-ins ignore them. Widgets show a muted dash and open the app for exempt prayers. Includes configurable reminders and one-tap qada from v1.21.0–v1.22.0.
+
 ## v1.22.0 — Configurable reminders
 
 Choose a phone-local daily check-in time (11 PM by default) and select individual prayer-time alerts in the shared Notifications settings. Choices survive master-switch changes, restart, and backup/restore. Android reads preferences from SQLite when scheduling and delivering, rejects stale deselected alerts, and clears their displayed notifications. Includes the quick-qada action from v1.21.0.

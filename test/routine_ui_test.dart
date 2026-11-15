@@ -8,6 +8,7 @@ import 'package:qada_tracker/main.dart';
 import 'package:qada_tracker/model.dart';
 import 'package:qada_tracker/prayer_times_models.dart';
 import 'package:qada_tracker/reminders.dart';
+import 'package:qada_tracker/tracking_settings.dart';
 import 'support/prayer_times.dart';
 import 'theme_ui_test.dart' show fonts, capture, captureKey;
 
@@ -58,6 +59,12 @@ Future<void> tap(WidgetTester tester, Finder target) async {
   await tester.pumpAndSettle();
   await tester.tap(target);
   await tester.pumpAndSettle();
+}
+
+Future<void> management(WidgetTester tester) async {
+  await tap(tester, find.byTooltip('Settings'));
+  await tap(tester, find.text('Exempt dates & tracking pause'));
+  expect(find.byType(TrackingSettings), findsOneWidget);
 }
 
 void main() {
@@ -173,6 +180,174 @@ void main() {
         expect((await db.load(today)).reminderMinutes, 1335);
         expect((await db.load(today)).prayerTimes.notificationMask, 30);
         expect(reminders.prayerSyncs, greaterThan(1));
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+        await db.close();
+      }
+    },
+  );
+  testWidgets(
+    'pause confirms and preserves records; partial-day resume keeps earlier days exempt',
+    (tester) async {
+      phone(tester);
+      var now = today;
+      final db = JournalDatabase(NativeDatabase.memory());
+      final reminders = RoutineReminders();
+      await db.save(
+        Journal(
+          startDate: dayOnly(today),
+        ).setStatuses(today, {Prayer.subuh: PrayerStatus.performed}, today),
+      );
+      try {
+        await tester.pumpWidget(app(db, reminders, () => now));
+        await tester.pumpAndSettle();
+        await management(tester);
+        await tap(tester, find.text('Pause tracking'));
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect((await db.load(now)).trackingPauses, isEmpty);
+        await tap(tester, find.text('Pause tracking'));
+        await tester.tap(find.text('Confirm pause'));
+        await tester.pumpAndSettle();
+        var j = await db.load(now);
+        expect(j.status(today, Prayer.subuh), PrayerStatus.performed);
+        expect(j.status(today, Prayer.zohor), PrayerStatus.exempt);
+        await capture(tester, 'tracking-management-active');
+        Navigator.of(tester.element(find.byType(TrackingSettings))).pop();
+        await tester.pumpAndSettle();
+        expect(find.text('1/1'), findsOneWidget);
+        final zohor = find.byWidgetPredicate(
+          (w) =>
+              w is Checkbox &&
+              w.semanticLabel == 'Zohor exempt; no prayer to record',
+        );
+        expect(tester.widget<Checkbox>(zohor).onChanged, isNull);
+        await capture(tester, 'today-partially-exempt');
+        now = DateTime(2026, 11, 16, 18);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('No prayers to record today'), findsOneWidget);
+        await management(tester);
+        await tap(tester, find.text('Resume tracking'));
+        final resumeButton = find.widgetWithText(FilledButton, 'Resume');
+        expect(tester.widget<FilledButton>(resumeButton).onPressed, isNull);
+        await tester.tap(find.byType(DropdownButtonFormField<int>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Asar').last);
+        await tester.pumpAndSettle();
+        await tester.tap(resumeButton);
+        await tester.pumpAndSettle();
+        j = await db.load(now);
+        expect(j.status(now, Prayer.zohor), PrayerStatus.exempt);
+        expect(j.status(now, Prayer.asar), PrayerStatus.unrecorded);
+        expect(j.fullyExempt(DateTime(2026, 11, 15)), isTrue);
+        expect(j.outstanding, 0);
+        Navigator.of(tester.element(find.byType(TrackingSettings))).pop();
+        await tester.pumpAndSettle();
+        await tap(tester, find.text('History').last);
+        expect(
+          tester
+              .widget<Badge>(find.byKey(const ValueKey('history-review-badge')))
+              .isLabelVisible,
+          isFalse,
+        );
+        await capture(tester, 'history-exempt-dates');
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+        await db.close();
+      }
+    },
+  );
+  testWidgets(
+    'date-range exemptions require confirmation and preserve a confirmed miss',
+    (tester) async {
+      phone(tester);
+      final db = JournalDatabase(NativeDatabase.memory());
+      final reminders = RoutineReminders();
+      final yesterday = DateTime(2026, 11, 13);
+      await db.save(
+        Journal(
+          startDate: yesterday,
+        ).setStatuses(yesterday, {Prayer.subuh: PrayerStatus.missed}, today),
+      );
+      try {
+        await tester.pumpWidget(app(db, reminders, () => today));
+        await tester.pumpAndSettle();
+        await management(tester);
+        Future<void> select() async {
+          await tap(tester, find.text('Add exempt dates'));
+          await tester.tap(find.text('13').hitTestable().first);
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('14').hitTestable().first);
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Save'));
+          await tester.pumpAndSettle();
+        }
+
+        await select();
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect((await db.load(today)).trackingPauses, isEmpty);
+        await select();
+        await tester.tap(find.text('Confirm'));
+        await tester.pumpAndSettle();
+        final j = await db.load(today);
+        expect(j.trackingPauses.single.from, yesterday);
+        expect(j.trackingPauses.single.through, dayOnly(today));
+        expect(j.status(yesterday, Prayer.subuh), PrayerStatus.missed);
+        expect(j.status(yesterday, Prayer.zohor), PrayerStatus.exempt);
+        expect(j.outstanding, 1);
+        expect(j.unresolvedDays(today), isEmpty);
+        await tap(tester, find.text('Remove'));
+        await tester.tap(find.text('Confirm'));
+        await tester.pumpAndSettle();
+        expect((await db.load(today)).unresolvedDays(today), [yesterday]);
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+        await db.close();
+      }
+    },
+  );
+  testWidgets(
+    'individual exemption is available in History and replacement conflicts leave the journal unchanged',
+    (tester) async {
+      phone(tester);
+      final db = JournalDatabase(NativeDatabase.memory());
+      final reminders = RoutineReminders();
+      final yesterday = DateTime(2026, 11, 13);
+      final original = Journal(startDate: yesterday)
+          .setStatuses(yesterday, {Prayer.subuh: PrayerStatus.missed}, today)
+          .complete(Prayer.subuh, 1, today, 'qada');
+      await db.save(original);
+      try {
+        await tester.pumpWidget(app(db, reminders, () => today));
+        await tester.pumpAndSettle();
+        await tap(tester, find.text('History').last);
+        await tester.tap(find.byKey(const ValueKey('history-date-2026-11-13')));
+        await tester.pumpAndSettle();
+        await tap(tester, find.byTooltip('Update Subuh'));
+        await tester.tap(find.text('Mark exempt'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Confirm'));
+        await tester.pumpAndSettle();
+        expect((await db.load(today)).toJson(), original.toJson());
+        expect(find.textContaining('negative'), findsOneWidget);
+        await tester.pump(const Duration(seconds: 5));
+        await tester.pumpAndSettle();
+        await tap(tester, find.byTooltip('Update Zohor'));
+        await tester.tap(find.text('Mark exempt'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Confirm'));
+        await tester.pumpAndSettle();
+        expect(
+          (await db.load(today)).status(yesterday, Prayer.zohor),
+          PrayerStatus.exempt,
+        );
+        expect((await db.load(today)).outstanding, 0);
       } finally {
         await tester.pumpWidget(const SizedBox());
         await db.close();

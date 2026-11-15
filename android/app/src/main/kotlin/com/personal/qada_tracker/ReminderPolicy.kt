@@ -28,7 +28,7 @@ internal object ReminderPolicy {
         return target
     }
 
-    fun hasUnrecordedPrayer(statuses: List<String?>): Boolean = statuses.any { it != "performed" && it != "missed" }
+    fun hasUnrecordedPrayer(statuses: List<String?>): Boolean = statuses.any { it != "performed" && it != "missed" && it != "exempt" }
 
     fun shouldNotify(enabled: Boolean, expectedDay: String?, now: Calendar,
                      lastCheckedDay: String?, hasUnrecordedPrayer: Boolean,

@@ -11,10 +11,12 @@ class HistoryCalendar extends StatefulWidget {
     required this.today,
     required this.unrecordedDays,
     required this.onDateChanged,
+    this.exemptDays = const {},
     super.key,
   });
   final DateTime selectedDate, today;
   final Set<DateTime> unrecordedDays;
+  final Set<DateTime> exemptDays;
   final ValueChanged<DateTime> onDateChanged;
   @override
   State<HistoryCalendar> createState() => _HistoryCalendarState();
@@ -66,6 +68,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
     final isToday = date == widget.today;
     final pending =
         date.isBefore(widget.today) && widget.unrecordedDays.contains(date);
+    final exempt = widget.exemptDays.contains(date);
     final red = reviewIndicatorColor(context);
     final text = !enabled
         ? theme.colorScheme.onSurface.withValues(alpha: .35)
@@ -80,7 +83,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
     return Semantics(
       label:
           '${DateFormat.yMMMMEEEEd().format(date)}${isToday ? ', today' : ''}'
-          '${pending ? ', has unrecorded prayers, needs review' : ''}',
+          '${pending ? ', has unrecorded prayers, needs review' : ''}${exempt ? ', exempt, no prayers required' : ''}',
       button: true,
       enabled: enabled,
       selected: selected,
@@ -105,6 +108,8 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
                           ? pending
                                 ? red.withValues(alpha: .16)
                                 : theme.colorScheme.primary
+                          : exempt
+                          ? theme.colorScheme.surfaceContainerHighest
                           : null,
                       border: pending
                           ? Border.all(color: red, width: 2)
@@ -240,6 +245,22 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
             ),
           ),
           const SizedBox(height: 12),
+          if (widget.exemptDays.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.pause_circle_outline, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Shaded dates are exempt',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Row(

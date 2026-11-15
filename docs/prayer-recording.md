@@ -22,7 +22,7 @@ Today now shows the five prayer labels with parenthesized times. The compact loc
 
 `PrayerRecordingPolicy` checks new performed transitions in the serialized controller mutation path, covering today's History and generic app mutations as well as checkboxes/menus. SQLite reads the journal and calendar snapshot together; the guarded UPDATE compares both documents and retries/revalidates if either changed. This prevents concurrent widget edits or a background/foreground calendar refresh from bypassing the check. Restore intentionally replaces the validated snapshot rather than treating its confirmations as new check-ins.
 
-Native `PrayerWidgetStore` reads the journal and parsed timetable under the same SQLite write lock, verifies source/date and exact start instant, and only then applies the existing status/balance rules. Rejection or a write error never partially changes a journal. Existing records/settings/calendar backups need no migration or format change.
+Native `PrayerWidgetStore` reads the journal and parsed timetable under the same SQLite write lock, verifies source/date and exact start instant, and only then applies the existing status/balance rules. Rejection or a write error never partially changes a journal. The current journal/backup format is version 2 for explicit exemptions and reminder configuration; legacy version 1 backups remain readable. SQLite schema 2 and calendar cache format 1 are unchanged. Exempt widget boxes open the app, and stale toggle intents cannot overwrite an exemption. Individual exemption changes use the prayer menu with confirmation; ranges preserve existing performed/missed records.
 
 ## Verification
 

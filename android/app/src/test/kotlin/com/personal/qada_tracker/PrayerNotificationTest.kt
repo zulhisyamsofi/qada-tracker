@@ -188,7 +188,7 @@ class PrayerNotificationTest {
     }
 
     @Test fun configuredDailyTimeIsReadFromDiskAndNeverFiresBeforeTheNewTarget() {
-        val root = journal().put("reminderMinutes", 21 * 60 + 15)
+        val root = journal().put("version", 2).put("reminderMinutes", 21 * 60 + 15)
         save(root)
         val calendar = Calendar.getInstance().apply { timeInMillis = at(14, 20) }
         PrayerReminders.sync(context, true, calendar)
@@ -220,6 +220,45 @@ class PrayerNotificationTest {
         root.getJSONObject("prayerTimes").put("notificationMask", 0); save(root)
         PrayerTimeAlarms.configure(context, false, time)
         assertTrue(selected().isEmpty())
+    }
+    @Test fun ongoingPauseSuppressesOldBroadcastsAndPartialResumeSchedulesOnlyEligibleTimes() {
+        PrayerTimeAlarms.configure(context, true, time)
+        val stale = prayerIntent("zohor")
+        val root = journal().put("version", 2).put("trackingPauses", JSONArray().put(JSONObject()
+            .put("id", "pause").put("from", "2026-11-14").put("through", JSONObject.NULL).put("fromPrayer", 0).put("throughPrayer", 4)))
+        save(root); PrayerTimeAlarms.configure(context, false, time)
+        assertTrue(shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms.isEmpty())
+        PrayerTimeAlarms.deliver(context, stale, at(14, 13))
+        assertTrue(context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty())
+        root.getJSONArray("trackingPauses").getJSONObject(0).put("through", "2026-11-15").put("throughPrayer", 1)
+        save(root); PrayerTimeAlarms.configure(context, false, time)
+        assertEquals(at(15, 16), prayerIntent("asar").getLongExtra("at", 0))
+        assertEquals(at(16, 13), prayerIntent("zohor").getLongExtra("at", 0))
+    }
+    @Test fun individualExemptionSkipsOneOccurrenceAndExplicitAlertPreferenceCanKeepPrayerTimes() {
+        val root = journal().put("version", 2)
+        root.getJSONObject("records").put("2026-11-14", JSONObject().put("zohor", "exempt"))
+        save(root); PrayerTimeAlarms.configure(context, false, time)
+        assertEquals(at(15, 13), prayerIntent("zohor").getLongExtra("at", 0))
+        assertEquals(at(14, 20), prayerIntent("isyak").getLongExtra("at", 0))
+        root.put("mutePrayerAlertsWhenExempt", false); save(root)
+        PrayerTimeAlarms.configure(context, false, time)
+        assertEquals(at(14, 13), prayerIntent("zohor").getLongExtra("at", 0))
+    }
+    @Test fun dailyCheckInIgnoresExemptPrayersButAnExplicitRequiredExceptionStillNeedsReview() {
+        val root = journal().put("version", 2).put("trackingPauses", JSONArray().put(JSONObject()
+            .put("id", "days").put("from", "2026-11-14").put("through", "2026-11-15")))
+        root.getJSONObject("records").put("2026-11-14", JSONObject().put("subuh", "missed"))
+        save(root)
+        val calendar = Calendar.getInstance().apply { timeInMillis = at(14, 23) }
+        PrayerReminders.sync(context, true, calendar)
+        PrayerReminders.deliver(context, "2026-11-14", calendar)
+        val manager = context.getSystemService(NotificationManager::class.java)
+        assertTrue(manager.activeNotifications.isEmpty())
+        root.getJSONObject("records").put("2026-11-15", JSONObject().put("zohor", "unrecorded"))
+        save(root); calendar.timeInMillis = at(15, 23)
+        PrayerReminders.deliver(context, "2026-11-15", calendar)
+        assertTrue(manager.activeNotifications.any { it.id == 2300 })
     }
 
 }

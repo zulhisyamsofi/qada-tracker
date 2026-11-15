@@ -382,6 +382,39 @@ class PrayerHomeWidgetTest {
         assertCompact(view, 80)
     }
 
+
+    @Test fun exemptWidgetOpensAppAndStalePrayerTapsCannotWriteDuringPause() {
+        val root = journal().put("version", 2).put("trackingPauses", JSONArray().put(JSONObject()
+            .put("id", "pause").put("from", today).put("through", JSONObject.NULL)))
+        save(root)
+        val before = PrayerWidgetStore.read(context)!!.toString()
+        assertEquals(WidgetWriteResult.EXEMPT, PrayerWidgetStore.toggle(context, "zohor", today) { clock() })
+        assertEquals(before, PrayerWidgetStore.read(context)!!.toString())
+        for (theme in listOf("light", "dark")) {
+            root.put("theme", theme)
+            val view = PrayerHomeWidget.views(context, 7, root, clock()).apply(context, FrameLayout(context))
+            capture(view, "widget-exempt-$theme", 360, 88)
+            assertEquals("–", view.findViewById<TextView>(R.id.widget_zohor_status).text.toString())
+            assertTrue(view.findViewById<View>(R.id.widget_zohor).performClick())
+            assertEquals(MainActivity::class.java.name, shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity.component!!.className)
+        }
+        root.getJSONArray("trackingPauses").getJSONObject(0).put("through", today).put("throughPrayer", 1)
+        save(root)
+        assertEquals("exempt", PrayerWidgetPolicy.status(root, today, "zohor"))
+        assertEquals("unrecorded", PrayerWidgetPolicy.status(root, today, "asar"))
+        assertEquals(WidgetWriteResult.SAVED, PrayerWidgetStore.toggle(context, "asar", today) { clock() })
+        assertTrue(PrayerWidgetStore.read(context)!!.has("trackingPauses"))
+    }
+
+    @Test fun malformedExemptionMetadataCannotBeOverwrittenByAWidgetTap() {
+        val root = journal().put("version", 2).put("trackingPauses", JSONObject().put("from", today))
+        save(root)
+        val before = PrayerWidgetStore.read(context)!!.toString()
+        try { PrayerWidgetStore.toggle(context, "zohor", today) { clock() }; fail("Accepted malformed exemption data") }
+        catch (_: IllegalArgumentException) { }
+        assertEquals(before, PrayerWidgetStore.read(context)!!.toString())
+    }
+
     private fun tap(view: View, x: Float, y: Float) {
         val now = android.os.SystemClock.uptimeMillis()
         for (action in listOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP)) {

@@ -142,7 +142,7 @@ void main() {
         );
       }
 
-      invalid((j) => j['version'] = 2);
+      invalid((j) => j['version'] = 999);
       invalid((j) => j['startDate'] = '2026-02-30');
       invalid((j) => j['startDate'] = '2027-01-01');
       invalid((j) => j['theme'] = 'unknown');

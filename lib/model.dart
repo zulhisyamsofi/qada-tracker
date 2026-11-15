@@ -3,7 +3,7 @@ import 'prayer_times_models.dart';
 
 enum Prayer { subuh, zohor, asar, maghrib, isyak }
 
-enum PrayerStatus { unrecorded, performed, missed }
+enum PrayerStatus { unrecorded, performed, missed, exempt }
 
 enum AppTheme { system, light, dark }
 
@@ -47,6 +47,67 @@ class QadaEntry {
   };
 }
 
+/// Explicit calendar-date boundaries, with optional partial first/last days.
+/// A null end is an ongoing pause; it does not materialize future records.
+class TrackingPause {
+  TrackingPause({
+    required this.id,
+    required DateTime from,
+    DateTime? through,
+    this.fromPrayer = 0,
+    this.throughPrayer = 4,
+  }) : from = dayOnly(from),
+       through = through == null ? null : dayOnly(through);
+  final String id;
+  final DateTime from;
+  final DateTime? through;
+  final int fromPrayer, throughPrayer;
+  bool contains(DateTime day, Prayer prayer) {
+    final key = dateKey(day),
+        first = dateKey(from),
+        last = through == null ? null : dateKey(through!);
+    return key.compareTo(first) >= 0 &&
+        (last == null || key.compareTo(last) <= 0) &&
+        (key != first || prayer.index >= fromPrayer) &&
+        (key != last || prayer.index <= throughPrayer);
+  }
+
+  TrackingPause checked() {
+    if (id.isEmpty ||
+        id.length > 100 ||
+        from.isBefore(earliestJournalDay) ||
+        from.year > 2200 ||
+        fromPrayer < 0 ||
+        fromPrayer > 4 ||
+        throughPrayer < 0 ||
+        throughPrayer > 4 ||
+        (through != null &&
+            (through!.isBefore(from) ||
+                through!.year > 2200 ||
+                (through == from && throughPrayer < fromPrayer)))) {
+      throw const FormatException('Invalid exempt date range.');
+    }
+    return this;
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'from': dateKey(from),
+    'through': through == null ? null : dateKey(through!),
+    'fromPrayer': fromPrayer,
+    'throughPrayer': throughPrayer,
+  };
+  static TrackingPause fromJson(Map<String, dynamic> value) => TrackingPause(
+    id: value['id'] as String,
+    from: parseDay(value['from'] as String),
+    through: value['through'] == null
+        ? null
+        : parseDay(value['through'] as String),
+    fromPrayer: (value['fromPrayer'] ?? 0) as int,
+    throughPrayer: (value['throughPrayer'] ?? 4) as int,
+  ).checked();
+}
+
 class Journal {
   Journal({
     required this.startDate,
@@ -56,10 +117,13 @@ class Journal {
     this.theme = AppTheme.system,
     this.reminderEnabled = false,
     this.reminderMinutes = 23 * 60,
+    List<TrackingPause>? trackingPauses,
+    this.mutePrayerAlertsWhenExempt = true,
     // Legacy journals are treated as seen; new databases explicitly opt in.
     this.walkthroughSeen = true,
     this.prayerTimes = const PrayerTimeSettings(),
-  }) : records = Map.unmodifiable(
+  }) : trackingPauses = List.unmodifiable(trackingPauses ?? []),
+       records = Map.unmodifiable(
          (records ?? {}).map(
            (key, value) =>
                MapEntry(key, Map<Prayer, PrayerStatus>.unmodifiable(value)),
@@ -76,13 +140,28 @@ class Journal {
   final AppTheme theme;
   final bool reminderEnabled;
 
-  /// Minute of the phone’s local day for the daily check-in.
+  /// Minute of the phone's local calendar day for the daily check-in.
   final int reminderMinutes;
+  final List<TrackingPause> trackingPauses;
+  final bool mutePrayerAlertsWhenExempt;
   final bool walkthroughSeen;
   final PrayerTimeSettings prayerTimes;
 
   PrayerStatus status(DateTime day, Prayer p) =>
-      records[dateKey(day)]?[p] ?? PrayerStatus.unrecorded;
+      records[dateKey(day)]?[p] ??
+      (trackingPauses.any((pause) => pause.contains(day, p))
+          ? PrayerStatus.exempt
+          : PrayerStatus.unrecorded);
+  List<Prayer> requiredPrayers(DateTime day) => Prayer.values
+      .where((p) => status(day, p) != PrayerStatus.exempt)
+      .toList();
+  bool fullyExempt(DateTime day) => requiredPrayers(day).isEmpty;
+  bool fullyPerformed(DateTime day) {
+    final required = requiredPrayers(day);
+    return required.isNotEmpty &&
+        required.every((p) => status(day, p) == PrayerStatus.performed);
+  }
+
   int balance(Prayer p) =>
       (starting[p] ?? 0) +
       records.values.where((day) => day[p] == PrayerStatus.missed).length -
@@ -97,6 +176,8 @@ class Journal {
     AppTheme? theme,
     bool? reminderEnabled,
     int? reminderMinutes,
+    List<TrackingPause>? trackingPauses,
+    bool? mutePrayerAlertsWhenExempt,
     bool? walkthroughSeen,
     PrayerTimeSettings? prayerTimes,
   }) => Journal(
@@ -107,11 +188,24 @@ class Journal {
     theme: theme ?? this.theme,
     reminderEnabled: reminderEnabled ?? this.reminderEnabled,
     reminderMinutes: reminderMinutes ?? this.reminderMinutes,
+    trackingPauses: trackingPauses ?? this.trackingPauses,
+    mutePrayerAlertsWhenExempt:
+        mutePrayerAlertsWhenExempt ?? this.mutePrayerAlertsWhenExempt,
     walkthroughSeen: walkthroughSeen ?? this.walkthroughSeen,
     prayerTimes: prayerTimes ?? this.prayerTimes,
   );
 
   Journal checked() {
+    final pauseIds = <String>{};
+    var ongoing = 0;
+    for (final pause in trackingPauses) {
+      pause.checked();
+      if (!pauseIds.add(pause.id) || (pause.through == null && ++ongoing > 1)) {
+        throw const FormatException(
+          'Duplicate or overlapping ongoing tracking pauses.',
+        );
+      }
+    }
     if (prayerTimes.notificationMask < 0 || prayerTimes.notificationMask > 31) {
       throw const FormatException('Invalid prayer notification preferences.');
     }
@@ -126,6 +220,63 @@ class Journal {
       }
     }
     return this;
+  }
+
+  Journal addPause(TrackingPause pause) {
+    pause.checked();
+    final updated = {
+      for (final e in records.entries)
+        e.key: Map<Prayer, PrayerStatus>.of(e.value),
+    };
+    // Explicit confirmations survive. Clear only old unrecorded placeholders
+    // so the selected interval can supply their exempt state.
+    for (final e in updated.entries) {
+      final day = parseDay(e.key);
+      e.value.removeWhere(
+        (p, s) => s == PrayerStatus.unrecorded && pause.contains(day, p),
+      );
+    }
+    return copy(
+      records: updated,
+      trackingPauses: [...trackingPauses, pause],
+    ).checked();
+  }
+
+  Journal removePause(String id) => copy(
+    trackingPauses: trackingPauses.where((p) => p.id != id).toList(),
+  ).checked();
+
+  Journal resumePause(String id, DateTime now, int firstRequiredPrayer) {
+    if (firstRequiredPrayer < 0 || firstRequiredPrayer > 5) {
+      throw StateError('Choose the first prayer to track.');
+    }
+    final pause = trackingPauses.firstWhere((p) => p.id == id);
+    if (pause.through != null) {
+      throw StateError('This pause has already ended.');
+    }
+    final through = firstRequiredPrayer == 0
+        ? DateTime(now.year, now.month, now.day - 1)
+        : dayOnly(now);
+    final lastPrayer = firstRequiredPrayer == 0 || firstRequiredPrayer == 5
+        ? 4
+        : firstRequiredPrayer - 1;
+    if (through.isBefore(pause.from) ||
+        (through == pause.from && lastPrayer < pause.fromPrayer)) {
+      return removePause(id);
+    }
+    final ended = TrackingPause(
+      id: id,
+      from: pause.from,
+      fromPrayer: pause.fromPrayer,
+      through: through,
+      throughPrayer: lastPrayer,
+    );
+    return copy(
+      trackingPauses: [
+        for (final p in trackingPauses)
+          if (p.id == id) ended else p,
+      ],
+    ).checked();
   }
 
   Journal setStatuses(
@@ -209,11 +360,13 @@ class Journal {
       .toList();
 
   Map<String, dynamic> toJson() => {
-    'version': 1,
+    'version': 2,
     'startDate': dateKey(startDate),
     'theme': theme.name,
     'reminderEnabled': reminderEnabled,
     'reminderMinutes': reminderMinutes,
+    'trackingPauses': trackingPauses.map((p) => p.toJson()).toList(),
+    'mutePrayerAlertsWhenExempt': mutePrayerAlertsWhenExempt,
     'walkthroughSeen': walkthroughSeen,
     'prayerTimes': prayerTimes.toJson(),
     'starting': {for (final p in Prayer.values) p.name: starting[p] ?? 0},
@@ -230,10 +383,16 @@ class Journal {
       final root = jsonDecode(source);
       if (root is! Map<String, dynamic> ||
           root['version'] is! int ||
-          root['version'] != 1) {
+          (root['version'] != 1 && root['version'] != 2)) {
         throw const FormatException('Unsupported backup version.');
       }
       final start = parseDay(root['startDate'] as String);
+      if (root['version'] == 1 &&
+          ((root['trackingPauses'] ?? []) as List).isNotEmpty) {
+        throw const FormatException(
+          'Tracking pauses require backup version 2.',
+        );
+      }
       if (start.isBefore(earliestJournalDay) || start.isAfter(dayOnly(now))) {
         throw const FormatException('Invalid tracking start date.');
       }
@@ -256,6 +415,11 @@ class Journal {
           throw const FormatException('Record date outside supported period.');
         }
         final row = e.value as Map<String, dynamic>;
+        if (root['version'] == 1 && row.values.contains('exempt')) {
+          throw const FormatException(
+            'Exempt records require backup version 2.',
+          );
+        }
         records[e.key] = {
           for (final r in row.entries)
             Prayer.values.byName(r.key): PrayerStatus.values.byName(
@@ -301,6 +465,12 @@ class Journal {
         theme: AppTheme.values.byName(root['theme'] as String),
         reminderEnabled: (root['reminderEnabled'] ?? false) as bool,
         reminderMinutes: (root['reminderMinutes'] ?? 23 * 60) as int,
+        trackingPauses: [
+          for (final p in (root['trackingPauses'] ?? []) as List)
+            TrackingPause.fromJson(p as Map<String, dynamic>),
+        ],
+        mutePrayerAlertsWhenExempt:
+            (root['mutePrayerAlertsWhenExempt'] ?? true) as bool,
         walkthroughSeen: (root['walkthroughSeen'] ?? true) as bool,
         prayerTimes: root['prayerTimes'] == null
             ? const PrayerTimeSettings()

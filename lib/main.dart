@@ -10,6 +10,7 @@ import 'controller.dart';
 import 'model.dart';
 import 'reminders.dart';
 import 'reminder_settings.dart';
+import 'tracking_settings.dart';
 import 'prayer_times_page.dart';
 import 'prayer_times_controller.dart';
 import 'ui/app_theme.dart';
@@ -418,6 +419,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     final count = Prayer.values
         .where((p) => j.status(today, p) == PrayerStatus.performed)
         .length;
+    final required = j.requiredPrayers(today).length;
+    final exempt = 5 - required;
     final data = ref.watch(prayerTimesProvider);
     final valid =
         PrayerRecordingPolicy.timeFor(
@@ -448,7 +451,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$count of 5 prayers recorded today',
+                          required == 0
+                              ? 'No prayers to record today'
+                              : '$count of $required prayers recorded today',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -457,7 +462,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'A small moment to reflect and keep track.',
+                          required == 0
+                              ? 'Today is exempt. Your previous records are preserved.'
+                              : 'A small moment to reflect and keep track.',
                           style: Theme.of(
                             context,
                           ).textTheme.bodyMedium?.copyWith(fontSize: 13),
@@ -474,20 +481,21 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                       children: [
                         SizedBox.expand(
                           child: CircularProgressIndicator(
-                            value: count / 5,
+                            value: required == 0 ? 0 : count / required,
                             strokeWidth: 7,
                             strokeCap: StrokeCap.round,
                             backgroundColor: Theme.of(
                               context,
                             ).colorScheme.primary.withValues(alpha: .14),
                             semanticsLabel: 'Daily prayer progress',
-                            semanticsValue: '$count of 5 performed',
+                            semanticsValue:
+                                '$count of $required required prayers performed',
                           ),
                         ),
                         Text(
-                          '$count/5',
-                          style: const TextStyle(
-                            fontSize: 22,
+                          required == 0 ? 'Exempt' : '$count/$required',
+                          style: TextStyle(
+                            fontSize: required == 0 ? 14 : 22,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -498,7 +506,24 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               ),
             ),
           ),
-          if (!valid)
+          if (exempt > 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                children: [
+                  Text(
+                    '$exempt ${exempt == 1 ? 'prayer' : 'prayers'} exempt today',
+                  ),
+                  TextButton(
+                    onPressed: trackingSettings,
+                    child: const Text('Manage exemptions'),
+                  ),
+                ],
+              ),
+            ),
+          if (!valid && required > 0)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Text(
@@ -513,6 +538,18 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       ),
     );
   }
+
+  Future<void> trackingSettings() => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * .85,
+        child: const TrackingSettings(),
+      ),
+    ),
+  );
 
   Future<void> prayerTimeSettings() => showModalBottomSheet<void>(
     context: context,
@@ -545,6 +582,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         Icons.error_outline_rounded,
         'Missed · added to qada',
       ),
+      PrayerStatus.exempt => (Icons.pause_circle_outline, 'Exempt · no qada'),
       PrayerStatus.unrecorded => (
         early ? Icons.schedule : Icons.radio_button_unchecked,
         early ? 'Starts at ${time.time} · Unrecorded' : 'Unrecorded',
@@ -604,14 +642,18 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               scale: 1.2,
               child: Checkbox(
                 value: status == PrayerStatus.performed,
-                semanticLabel: '${p.label} performed',
-                onChanged: (checked) => act(
-                  () => controller.statuses(date, {
-                    p: checked!
-                        ? PrayerStatus.performed
-                        : PrayerStatus.unrecorded,
-                  }),
-                ),
+                semanticLabel: status == PrayerStatus.exempt
+                    ? '${p.label} exempt; no prayer to record'
+                    : '${p.label} performed',
+                onChanged: status == PrayerStatus.exempt
+                    ? null
+                    : (checked) => act(
+                        () => controller.statuses(date, {
+                          p: checked!
+                              ? PrayerStatus.performed
+                              : PrayerStatus.unrecorded,
+                        }),
+                      ),
               ),
             ),
             Expanded(
@@ -673,6 +715,13 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                     )) {
                   return;
                 }
+                if (status == PrayerStatus.exempt &&
+                    !await confirm(
+                      'Mark ${p.label} exempt?',
+                      'This prayer will be excluded from qada and review totals. Existing qada replacements must be corrected first if removing a confirmed miss would make the balance negative.',
+                    )) {
+                  return;
+                }
                 await act(() => controller.statuses(date, {p: status}));
               },
               itemBuilder: (_) => [
@@ -680,9 +729,13 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   PopupMenuItem(
                     value: s,
                     child: Text(switch (s) {
-                      PrayerStatus.unrecorded => 'Leave unrecorded',
+                      PrayerStatus.unrecorded =>
+                        status == PrayerStatus.exempt
+                            ? 'Mark required (unrecorded)'
+                            : 'Leave unrecorded',
                       PrayerStatus.performed => 'Mark performed',
                       PrayerStatus.missed => 'Mark missed',
+                      PrayerStatus.exempt => 'Mark exempt',
                     }),
                   ),
               ],
@@ -725,6 +778,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             selectedDate: selected,
             today: today,
             unrecordedDays: unrecordedDays,
+            exemptDays: j.days(today).where(j.fullyExempt).toSet(),
             onDateChanged: (date) => setState(() => selectedDay = date),
           ),
         ),
@@ -1056,13 +1110,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 .where((p) => j.status(day, p) == PrayerStatus.performed)
                 .length,
       );
-      final full = days
-          .where(
-            (day) => Prayer.values.every(
-              (p) => j.status(day, p) == PrayerStatus.performed,
-            ),
-          )
-          .length;
+      final full = days.where(j.fullyPerformed).length;
       final unresolved = days.fold(
         0,
         (sum, day) =>
@@ -1085,7 +1133,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           const SizedBox(height: 12),
           metric(
             'Prayers performed',
-            '$performed / ${days.length * 5}',
+            '$performed / ${days.fold<int>(0, (n, day) => n + j.requiredPrayers(day).length)}',
             detail: '$full fully completed days',
           ),
           metric('Qada replacements completed', '$replacements'),
@@ -1154,6 +1202,19 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ),
                 const ReminderSettings(),
                 const SizedBox(height: 20),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.pause_circle_outline),
+                  title: const Text('Exempt dates & tracking pause'),
+                  subtitle: const Text(
+                    'Manage exempt prayers and pause or resume tracking.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    trackingSettings();
+                  },
+                ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.help_outline_rounded),

@@ -1,4 +1,5 @@
 import 'support/prayer_times.dart';
+import 'package:qada_tracker/prayer_times_models.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,12 +32,29 @@ void main() {
     testWidgets('backup $scenario respects existing data', (tester) async {
       final now = DateTime(2026, 11, 13);
       final db = JournalDatabase(NativeDatabase.memory());
-      final original = Journal(
-        startDate: now,
-      ).setStatuses(now, {Prayer.asar: PrayerStatus.performed}, now);
-      final replacement = Journal(
-        startDate: now,
-      ).setStarting({for (final p in Prayer.values) p: 3});
+      final original =
+          Journal(
+            startDate: now,
+            reminderMinutes: 21 * 60 + 15,
+            prayerTimes: const PrayerTimeSettings(notificationMask: 17),
+          ).setStatuses(now, {
+            Prayer.asar: PrayerStatus.performed,
+            Prayer.subuh: PrayerStatus.exempt,
+          }, now);
+      final replacement =
+          Journal(
+                startDate: now,
+                reminderMinutes: 22 * 60,
+                prayerTimes: const PrayerTimeSettings(notificationMask: 5),
+              )
+              .setStarting({for (final p in Prayer.values) p: 3})
+              .addPause(
+                TrackingPause(
+                  id: 'restore-period',
+                  from: now,
+                  through: DateTime(now.year, now.month, now.day + 2),
+                ),
+              );
       await db.save(original);
       final files = FakeBackupFiles()
         ..contents = switch (scenario) {

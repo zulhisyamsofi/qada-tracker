@@ -69,6 +69,7 @@ class ReminderPolicyTest {
         assertTrue(ReminderPolicy.shouldNotify(true, "2026-11-13", time(22), null, true, minutes))
         assertFalse(ReminderPolicy.shouldNotify(true, "2026-11-13", time(0, day=14), null, true, minutes))
         assertEquals("2026-11-14", ReminderPolicy.day(ReminderPolicy.next(time(22), "2026-11-13", minutes)))
+        assertFalse(ReminderPolicy.hasUnrecordedPrayer(List(5) { "exempt" }))
     }
 
 }

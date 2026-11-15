@@ -6,7 +6,7 @@ import org.json.JSONObject
 import java.io.File
 import java.util.Calendar
 
-internal enum class WidgetWriteResult { SAVED, CLEARED, STALE_DAY, BALANCE_CONFLICT, UNAVAILABLE, NOT_STARTED, TIMES_UNAVAILABLE }
+internal enum class WidgetWriteResult { SAVED, CLEARED, STALE_DAY, BALANCE_CONFLICT, UNAVAILABLE, NOT_STARTED, TIMES_UNAVAILABLE, EXEMPT }
 
 internal object PrayerWidgetStore {
     private fun database(context: Context, writable: Boolean): SQLiteDatabase? {
@@ -38,6 +38,7 @@ internal object PrayerWidgetStore {
                 if (date != expectedDay) return WidgetWriteResult.STALE_DAY
                 val root = read(db) ?: return WidgetWriteResult.UNAVAILABLE
                 PrayerWidgetPolicy.validate(root, date)
+                if (PrayerWidgetPolicy.status(root, date, prayer) == "exempt") return WidgetWriteResult.EXEMPT
                 val clearing = PrayerWidgetPolicy.status(root, date, prayer) == "performed"
                 if (!clearing) {
                     // Check the saved source and dated timetable under the same

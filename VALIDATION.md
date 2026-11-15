@@ -1,3 +1,36 @@
+# Validation record — v1.23.0
+
+Confirm individual exempt prayers, date ranges, or an ongoing tracking pause. Ranges preserve existing performed and missed records; resume from a chosen prayer today or tomorrow. Exempt prayers add no qada, do not need review, and are excluded from required-prayer totals. Their prayer-time alerts are silenced by default; daily check-ins ignore them. Widgets show a muted dash and open the app for exempt prayers. Includes configurable reminders and one-tap qada from v1.21.0–v1.22.0.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.23.0-arm64-v8a.apk` (21.6 MB).
+- **Universal fallback:** `qada-tracker-v1.23.0.apk` (61.0 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **119 Flutter tests**, **60 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified; no Android device is connected. Journal/backup format is now version 2. Version 1 backups remain supported with safe defaults, but older app versions cannot read a version 2 journal/backup; export a pre-update backup before downgrading. SQLite schema 2 and calendar cache format 1 are unchanged. No new dependency, permission, or API is introduced.
+
+New coverage verifies:
+
+- Configurable phone-local check-in time, picker cancellation, per-prayer alert selection, master-switch preference preservation, restart persistence, stale broadcasts after a time/mask change, and clearing deselected displayed alerts.
+- Immediate +1 qada recording, unique replacement IDs even under a frozen clock, exact-entry Undo, zero-balance disabling, negative-balance protection, and unchanged daily/historical prayer records.
+- Individual exempt prayers, confirmed date ranges, preservation of performed/missed records, partial first/last dates, ongoing pauses, selected-prayer/tomorrow resume, overlapping periods, removal, and explicit required exceptions. Future intervals do not create daily rows.
+- Required-only progress and Today counts; review badges exclude exempt prayers. Native alarm filtering suppresses exempt slots and rechecks stale deliveries. Widget dash boxes open the app, and stale widget intents cannot change exemptions or overwrite malformed exemption metadata.
+- Journal/backup version 2 round trips and strict validation, legacy version 1 defaults, file-backed SQLite restart/write-failure rollback, picker/confirmation cancellation, and atomic restore with the new preferences/periods.
+
+The journal/backup format changes to version 2. SQLite schema 2 and calendar-cache format 1 are unchanged. Earlier apps cannot read a version 2 journal/backup; keep a pre-update backup before downgrading. Existing master notification opt-ins and prayer confirmations are preserved.
+
+Flutter-rendered reminder settings, quick qada (light/dark and narrow enlarged text), active-pause management, partial exemptions on Today, and shaded History dates were inspected. Native RemoteViews captures show all five exempt dash boxes in light/dark without changing widget dimensions. Captures are reproducible with `QADA_CAPTURE_UI=1 flutter test test/routine_ui_test.dart` and `QADA_CAPTURE_WIDGET=1` during Android tests.
+
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.23.0-arm64-v8a.apk` (21,550,610 bytes): `3934e705bf1a1a28b621d8e3e550a06a31e2de25104c95878aa83d1bc40dce8b`.
+- `qada-tracker-v1.23.0-armeabi-v7a.apk` (19,177,094 bytes): `2afc78c6aa405ecb8a6303b0446143408fedb29fc9bcb3aa28641438e9e01f54`.
+- `qada-tracker-v1.23.0-x86_64.apk` (23,030,134 bytes): `12df3e655dc122fd46d4c50154c88f27e24627509bb457a386ef560ef5a1d841`.
+- `qada-tracker-v1.23.0.apk` (61,041,594 bytes): `68ecad3ca4357691bd7f6320c6e08f0876b935575d314015803b146446afb726`.
+
+---
+
 # Validation record — v1.22.0
 
 Choose a phone-local daily check-in time (11 PM by default) and select individual prayer-time alerts in the shared Notifications settings. Choices survive master-switch changes, restart, and backup/restore. Android reads preferences from SQLite when scheduling and delivering, rejects stale deselected alerts, and clears their displayed notifications. Includes the quick-qada action from v1.21.0.

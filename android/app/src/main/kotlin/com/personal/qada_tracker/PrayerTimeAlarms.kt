@@ -58,18 +58,18 @@ internal object PrayerTimeAlarms {
             return
         }
         val calendar = PrayerTimeStore.calendar(context)?.takeIf { it.key == config.key }
-        val stamp = "${config.key}|${calendar?.fetchedAt}|${PrayerReminders.exactAllowed(context)}|${config.notificationMask}"
+        val stamp = "${config.key}|${calendar?.fetchedAt}|${PrayerReminders.exactAllowed(context)}|${config.notificationMask}|${config.journal?.let { PrayerExemptions.stamp(it) }}"
         if (!force && prefs(context).getString("stamp", null) == stamp) return
         val sourceChanged = prefs(context).getString("source", null) != config.key
         cancel(context, clearNotifications = sourceChanged)
         for ((index, prayer) in PrayerTimePolicy.names.withIndex()) {
-            if (!config.allows(prayer)) {
+            if (!config.allows(prayer) || config.journal?.let { !PrayerExemptions.alertAllowed(it, now, prayer) } == true) {
                 notifications(context).cancel(10001 + index)
             }
         }
         // Only five alarms are pending. Each delivery schedules the next occurrence.
         // This avoids OS alarm-count limits and works offline through the cache.
-        if (calendar != null) for (slot in PrayerTimePolicy.next(calendar.entries.filter { config.allows(it.prayer) }, now)) {
+        if (calendar != null) for (slot in PrayerTimePolicy.next(calendar.entries.filter { config.allows(it) }, now)) {
             val index = PrayerTimePolicy.names.indexOf(slot.prayer)
             val exact = PrayerReminders.exactAllowed(context)
             val operation = pending(context, index, slot, config.key)
@@ -115,7 +115,7 @@ internal object PrayerTimeAlarms {
         val token = "$at|$source|$name"
         val sent = prefs(context).getStringSet("sent", emptySet())!!.toMutableSet()
         val eligible = config?.enabled == true && config.allows(name) && config.key == source && calendar != null && calendar.key == source && slot != null &&
-            PrayerTimePolicy.timely(at, now) && token !in sent && notificationsAllowed(context)
+            config.allows(slot) && PrayerTimePolicy.timely(at, now) && token !in sent && notificationsAllowed(context)
         // Schedule successors first. Do not dismiss the notification we are about to post.
         configure(context, force = true, now = now)
         if (!eligible) return

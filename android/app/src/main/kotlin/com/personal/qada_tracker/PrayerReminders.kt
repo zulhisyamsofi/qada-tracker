@@ -101,7 +101,8 @@ internal object PrayerReminders {
             SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY).use { db ->
                 db.rawQuery("SELECT document FROM journal WHERE id = 1", null).use { cursor ->
                     if (!cursor.moveToFirst()) null else JSONObject(cursor.getString(0)).takeIf {
-                    it.optInt("version") == 1 && it.optJSONObject("records") != null &&
+                    PrayerExemptions.validate(it)
+                    it.optInt("version") in 1..2 && it.optJSONObject("records") != null &&
                         (!it.has("reminderMinutes") || (it.opt("reminderMinutes") is Int && it.getInt("reminderMinutes") in 0..1439))
                     }
                 }
@@ -114,8 +115,7 @@ internal object PrayerReminders {
     }
 
     private fun hasUnrecordedPrayer(journal: JSONObject, date: String): Boolean {
-        val row = journal.optJSONObject("records")?.optJSONObject(date)
-        return ReminderPolicy.hasUnrecordedPrayer(prayers.map { row?.optString(it) })
+        return ReminderPolicy.hasUnrecordedPrayer(prayers.map { PrayerExemptions.status(journal, date, it) })
     }
 
     @Synchronized

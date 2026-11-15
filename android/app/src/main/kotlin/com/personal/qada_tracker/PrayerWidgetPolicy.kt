@@ -7,11 +7,10 @@ import java.util.Locale
 
 internal class WidgetBalanceConflict : IllegalStateException()
 
-/** Shared journal v1 rules for the native launcher writer. No qada is recorded. */
+/** Shared journal v1/v2 rules for the native launcher writer. No qada is recorded. */
 internal object PrayerWidgetPolicy {
     val prayers = listOf("subuh", "zohor", "asar", "maghrib", "isyak")
     val labels = listOf("Subuh", "Zohor", "Asar", "Maghrib", "Isyak")
-    private val statuses = setOf("unrecorded", "performed", "missed")
 
     fun nextMidnight(now: Calendar): Calendar = (now.clone() as Calendar).apply {
         add(Calendar.DAY_OF_MONTH, 1)
@@ -26,7 +25,8 @@ internal object PrayerWidgetPolicy {
     }
 
     fun validate(root: JSONObject, date: String) {
-        require(root.getInt("version") == 1 && validDay(date))
+        PrayerExemptions.validate(root)
+        require(validDay(date))
         val start = root.getString("startDate")
         require(validDay(start) && start >= "1900-01-01" && start <= date)
         root.getJSONObject("records")
@@ -34,11 +34,8 @@ internal object PrayerWidgetPolicy {
 
     fun status(root: JSONObject, date: String, prayer: String): String {
         require(prayer in prayers)
-        val records = root.getJSONObject("records")
-        val row = if (records.has(date)) records.getJSONObject(date) else null
-        val value = if (row?.has(prayer) == true) row.getString(prayer) else "unrecorded"
-        require(value in statuses)
-        return value
+        return PrayerExemptions.status(root, date, prayer)
+
     }
 
     /** Copy before editing so rejection cannot change even the caller's object. */

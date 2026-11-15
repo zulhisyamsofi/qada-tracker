@@ -39,7 +39,7 @@ const walkthroughSteps = [
     Icons.check_box_outlined,
     'Record a prayer on Today',
     'Tap a prayer’s checkbox after performing it. Tap again to return it to Unrecorded. You can record today’s prayers once their prayer time has started.',
-    'Use the three-dot menu beside a prayer to confirm a miss. An unticked prayer is unrecorded, never automatically missed.',
+    'Use the three-dot menu beside a prayer to confirm a miss. An unticked prayer is unrecorded, never automatically missed. Use Mark exempt for a prayer you confirm is not required; manage exempt date ranges and pauses in Settings.',
   ),
   WalkthroughStep(
     0,
@@ -87,7 +87,7 @@ const walkthroughSteps = [
     'settings',
     Icons.settings_outlined,
     'Make it yours in Settings',
-    'Tap the gear for past qada starting balances, appearance, the home-screen widget, and the Notifications group, including a daily check-in at your chosen time if any prayer is still unrecorded.',
+    'Tap the gear for past qada starting balances, appearance, the home-screen widget, and the Notifications group, including a daily check-in at your chosen time if any required prayer is still unrecorded.',
     'Export a manual backup regularly. Restore replaces your journal after confirmation. You can replay this tour here with App walkthrough.',
   ),
 ];
