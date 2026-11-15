@@ -883,20 +883,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           ),
         ),
       ),
-      for (final p in Prayer.values)
-        GlassCard(
-          child: ListTile(
-            title: Text(
-              p.label,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text('${j.balance(p)} outstanding'),
-            trailing: FilledButton.tonal(
-              onPressed: j.balance(p) > 0 ? () => recordReplacement(p) : null,
-              child: const Text('Record'),
-            ),
-          ),
-        ),
+      for (final p in Prayer.values) qadaPrayerCard(j, p),
       const SizedBox(height: 12),
       Text(
         'Replacement history',
@@ -931,6 +918,77 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         ),
     ],
   );
+
+  Widget qadaPrayerCard(Journal j, Prayer p) => GlassCard(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final details = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                p.label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 17,
+                ),
+              ),
+              Text('${j.balance(p)} outstanding'),
+            ],
+          );
+          final actions = Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Semantics(
+                label: 'Record one ${p.label} qada completed',
+                child: OutlinedButton(
+                  key: ValueKey('qada-quick-${p.name}'),
+                  onPressed: j.balance(p) > 0 ? () => completeOne(p) : null,
+                  child: const Text('+1'),
+                ),
+              ),
+              FilledButton.tonal(
+                onPressed: j.balance(p) > 0 ? () => recordReplacement(p) : null,
+                child: const Text('Record'),
+              ),
+            ],
+          );
+          if (constraints.maxWidth >= 300 &&
+              MediaQuery.textScalerOf(context).scale(14) <= 18) {
+            return Row(
+              children: [
+                Expanded(child: details),
+                const SizedBox(width: 8),
+                actions,
+              ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [details, const SizedBox(height: 10), actions],
+          );
+        },
+      ),
+    ),
+  );
+
+  Future<void> completeOne(Prayer p) => act(() async {
+    final id = await controller.complete(p, 1);
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('1 ${p.label} qada recorded.'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () => act(() => controller.change((j) => j.undo(id))),
+        ),
+      ),
+    );
+  });
 
   Future<void> recordReplacement(Prayer p) async {
     final text = TextEditingController(text: '1');

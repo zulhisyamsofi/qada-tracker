@@ -23,7 +23,7 @@ Existing journals are not interrupted after updating. Use **Settings → App wal
 - **Today:** performed cards have green borders and softer text; confirmed misses use bold red styling. Past unrecorded cards use amber borders and an explicit needs-review label, excluding them from qada until confirmed. Each prayer shows its time, e.g. `Subuh (05:48)`. Tick it once its time has started; early taps explain when you can record it. Untick to leave it unrecorded, or use the menu to confirm a miss. Today uses generously padded prayer cards and a rounded progress panel with a circular completion count. The date remains in the app bar; short screens and large text can scroll. Pull down to refresh times.
 - **Review:** use the prompt above History’s calendar to open previous unrecorded days; mark prayers individually or confirm all remaining prayers for a day.
 - **History:** the red navigation badge counts past days with at least one unrecorded prayer, excluding today. Matching red calendar rings identify those days, and both update as records are corrected; the badge hides at zero. Select any past date (from 1900) and maintain its records. Days before first launch are optional: recording a prayer includes only that day, leaving untouched gaps outside review and totals. Earlier records remain saved when Today rolls over at local midnight or the app resumes.
-- **Qada:** tap the info icon beside Outstanding qada for the balance formula. Enter optional old balances in Settings, record replacements by prayer and quantity, or undo entries. Replacements never tick today's obligatory prayers.
+- **Qada:** tap the info icon beside Outstanding qada for the balance formula. Enter optional old balances in Settings, tap **+1** beside a prayer for an immediate replacement, or use **Record** for a quantity. The quick action offers Undo for that exact entry and is disabled at zero outstanding. Replacements never tick today's obligatory prayers.
 - **Progress:** full-width cards for weekly/monthly performed totals, fully completed days, replacements, and unrecorded prayer totals.
 - **Settings:** open **Prayer times & location** to view/change the saved place or device location, and timetable source; manage both reminder switches together under **Notifications**, add a home-screen widget, change appearance, or export/restore a versioned JSON backup using Android's document picker.
 
@@ -109,7 +109,7 @@ Verified in the cloud instance:
 
 - Pinned Flutter/Dart and JDK setup, with checksum verification and TLS trust intact.
 - Frozen dependency resolution with `pubspec.lock`, and repeatable `scripts/setup.sh` execution.
-- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **103 passing Flutter tests and 47 passing Android tests**, and a successful Android debug APK build.
+- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **106 passing Flutter tests and 47 passing Android tests**, and a successful Android debug APK build.
 
 Prayer-time validation tests cover before/exactly-at/after start, checkboxes and menus, source/date mismatches, absent or malformed caches, atomic bulk changes, concurrent calendar refresh, notification routing, and historical/restore behavior.
 

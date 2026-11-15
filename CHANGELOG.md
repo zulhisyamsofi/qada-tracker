@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.21.0 — One-tap qada completions
+
+Adds a +1 action beside each prayer’s outstanding qada count, with immediate saving and Undo for the exact replacement entry. The action is disabled at zero and serialized balance checks prevent over-recording. Existing quantity entry and replacement history remain available. Daily prayer records and historical misses stay separate.
+
 ## v1.20.0 — Cleaner notification settings
 
 Removes the notification testing/diagnostics expander and unused test-alert interfaces. Both reminder switches remain together. Android notification/alarm settings links appear only when an enabled reminder needs access; daily and prayer-channel permission checks remain independent. Includes the v1.16–v1.19 qada tooltip polish, titled/padded 4 × 1 widget, restored Today cards/circular progress panel, and simpler Dark mode settings. Existing widgets may need a small vertical resize or re-adding to accommodate the title.

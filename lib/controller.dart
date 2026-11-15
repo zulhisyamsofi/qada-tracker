@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'database.dart';
 import 'model.dart';
@@ -92,15 +93,18 @@ class JournalController extends AsyncNotifier<Journal> {
 
   Future<void> statuses(DateTime day, Map<Prayer, PrayerStatus> changes) =>
       change((j) => j.setStatuses(day, changes, ref.read(clockProvider)()));
-  Future<void> complete(Prayer p, int count) => change((j) {
-    final now = ref.read(clockProvider)();
-    return j.complete(
-      p,
-      count,
-      now,
-      '${now.microsecondsSinceEpoch}-${j.replacements.length}',
-    );
-  });
+  Future<String> complete(Prayer p, int count) async {
+    // An Undo action must identify this entry even after earlier entries are
+    // deleted or the phone clock changes.
+    final random = Random.secure();
+    final id = List.generate(
+      4,
+      (_) => random.nextInt(1 << 32).toRadixString(16).padLeft(8, '0'),
+    ).join();
+    await change((j) => j.complete(p, count, ref.read(clockProvider)(), id));
+    return id;
+  }
+
   // Restores preserve already confirmed records; they are not new check-ins.
   Future<void> restore(Journal validated) =>
       _change((_) => validated, restoring: true);

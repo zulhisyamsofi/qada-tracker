@@ -1,3 +1,23 @@
+# Validation record — v1.21.0
+
+Adds a +1 action beside each prayer’s outstanding qada count, with immediate saving and Undo for the exact replacement entry. The action is disabled at zero and serialized balance checks prevent over-recording. Existing quantity entry and replacement history remain available. Daily prayer records and historical misses stay separate.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.21.0-arm64-v8a.apk` (21.2 MB).
+- **Universal fallback:** `qada-tracker-v1.21.0.apk` (59.9 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **106 Flutter tests**, **47 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified; no Android device is connected. No database schema, backup format, or prayer-status migration is needed.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.21.0-arm64-v8a.apk` (21,157,050 bytes): `963ddc0c39f1524678e5542527c65cad84cc8af0f35bdb7d4bb679455bf9684c`.
+- `qada-tracker-v1.21.0-armeabi-v7a.apk` (18,783,534 bytes): `2d76317ac3d515946482a326846e51ce6752aa5f24de8ce6a141f51b60685591`.
+- `qada-tracker-v1.21.0-x86_64.apk` (22,636,574 bytes): `fe2d0d2ca9dc1e1ad0614053ac269def63b4d7d6861ff126f4c968686c65871f`.
+- `qada-tracker-v1.21.0.apk` (59,861,606 bytes): `3177bfddccb323eaf4a10028ff62bb4e90f10c5be09be5167ea657455931a39b`.
+
+---
+
 # Validation record — v1.20.0
 
 Publication completed: v1.16.0–v1.20.0 have separate feature commits, annotated tags, private GitHub releases, optimized APKs, and checksum files. [The upload workflow](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43618983708) passed. All 20 APK digests/sizes and all five checksum files were independently verified before publication. v1.20.0 is latest, and the temporary private transfer branch was deleted. No signing keys or journal data were transferred. The final ARM64 download is **21,157,054 bytes (21.2 MB)**; the universal fallback is 59,828,842 bytes.

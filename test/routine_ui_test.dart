@@ -1,0 +1,118 @@
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:qada_tracker/controller.dart';
+import 'package:qada_tracker/database.dart';
+import 'package:qada_tracker/main.dart';
+import 'package:qada_tracker/model.dart';
+import 'package:qada_tracker/reminders.dart';
+import 'support/prayer_times.dart';
+import 'theme_ui_test.dart' show fonts, capture, captureKey;
+
+class RoutineReminders extends ReminderService {
+  RoutineReminders() : super(supported: true);
+  int prayerSyncs = 0;
+  @override
+  Future<void> sync(bool enabled) async {}
+  @override
+  Future<void> syncPrayerTimes() async {
+    prayerSyncs++;
+  }
+
+  @override
+  Future<bool> requestNotifications() async => true;
+  @override
+  Future<ReminderAccess> access() async => const ReminderAccess(
+    notifications: true,
+    appNotifications: true,
+    prayerTimesNotifications: true,
+    exactAlarms: true,
+  );
+}
+
+final today = DateTime(2026, 11, 14, 23);
+Widget app(
+  JournalDatabase db,
+  RoutineReminders reminders,
+  DateTime Function() clock,
+) => ProviderScope(
+  overrides: [
+    databaseProvider.overrideWith((ref) async => db),
+    clockProvider.overrideWithValue(clock),
+    fakePrayerTimes,
+    reminderServiceProvider.overrideWithValue(reminders),
+  ],
+  child: RepaintBoundary(key: captureKey, child: const QadaApp()),
+);
+void phone(WidgetTester tester, {bool narrow = false}) {
+  tester.view.physicalSize = Size(narrow ? 320 : 390, 844);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+}
+
+Future<void> tap(WidgetTester tester, Finder target) async {
+  await tester.ensureVisible(target);
+  await tester.pumpAndSettle();
+  await tester.tap(target);
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  setUpAll(fonts);
+  for (final mode in [AppTheme.light, AppTheme.dark]) {
+    testWidgets(
+      '+1 qada has exact Undo, does not change daily records, and stops at zero ${mode.name}',
+      (tester) async {
+        phone(tester, narrow: mode == AppTheme.dark);
+        if (mode == AppTheme.dark) {
+          tester.platformDispatcher.textScaleFactorTestValue = 1.6;
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        }
+        final db = JournalDatabase(NativeDatabase.memory());
+        final reminders = RoutineReminders();
+        final yesterday = DateTime(2026, 11, 13);
+        await db.save(
+          Journal(startDate: yesterday, theme: mode)
+              .setStarting({
+                for (final p in Prayer.values) p: p == Prayer.subuh ? 1 : 0,
+              })
+              .setStatuses(yesterday, {
+                Prayer.subuh: PrayerStatus.missed,
+              }, today),
+        );
+        try {
+          await tester.pumpWidget(app(db, reminders, () => today));
+          await tester.pumpAndSettle();
+          await tap(tester, find.text('Qada').last);
+          final plus = find.byKey(const ValueKey('qada-quick-subuh'));
+          await tap(tester, plus);
+          await tap(tester, plus);
+          var j = await db.load(today);
+          expect(j.balance(Prayer.subuh), 0);
+          expect(j.replacements.length, 2);
+          expect(j.status(today, Prayer.subuh), PrayerStatus.unrecorded);
+          expect(j.status(yesterday, Prayer.subuh), PrayerStatus.missed);
+          expect(tester.widget<OutlinedButton>(plus).onPressed, isNull);
+          await capture(tester, 'qada-quick-${mode.name}');
+          await tester.tap(
+            find.descendant(
+              of: find.byType(SnackBar),
+              matching: find.text('Undo'),
+            ),
+          );
+          await tester.pumpAndSettle();
+          j = await db.load(today);
+          expect(j.balance(Prayer.subuh), 1);
+          expect(j.replacements.length, 1);
+          expect(tester.widget<OutlinedButton>(plus).onPressed, isNotNull);
+          expect(tester.takeException(), isNull);
+        } finally {
+          await tester.pumpWidget(const SizedBox());
+          await db.close();
+        }
+      },
+    );
+  }
+}
