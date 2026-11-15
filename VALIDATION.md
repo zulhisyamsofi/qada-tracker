@@ -1,5 +1,7 @@
 # Validation record — v1.23.0
 
+Publication completed: v1.21.0–v1.23.0 have separate feature commits, annotated tags, private GitHub releases, optimized APKs, and checksum files. [The upload workflow](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43687274221) passed. All 12 APK digests/sizes and three checksum files were independently verified before publication. v1.23.0 is latest, and the temporary private transfer branch was deleted. The ARM64 download is **21,550,610 bytes (21.6 MB)**; app ID and signing certificate match previous releases.
+
 Confirm individual exempt prayers, date ranges, or an ongoing tracking pause. Ranges preserve existing performed and missed records; resume from a chosen prayer today or tomorrow. Exempt prayers add no qada, do not need review, and are excluded from required-prayer totals. Their prayer-time alerts are silenced by default; daily check-ins ignore them. Widgets show a muted dash and open the app for exempt prayers. Includes configurable reminders and one-tap qada from v1.21.0–v1.22.0.
 
 Downloads:
@@ -7,7 +9,7 @@ Downloads:
 - **Universal fallback:** `qada-tracker-v1.23.0.apk` (61.0 MB).
 - Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
 
-Validation: formatting, static analysis, **119 Flutter tests**, **60 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified; no Android device is connected. Journal/backup format is now version 2. Version 1 backups remain supported with safe defaults, but older app versions cannot read a version 2 journal/backup; export a pre-update backup before downgrading. SQLite schema 2 and calendar cache format 1 are unchanged. No new dependency, permission, or API is introduced.
+Validation: formatting, static analysis, **119 Flutter tests**, **60 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified; no Android device is connected. Journal/backup format is now version 2. Version 1 backups remain supported with safe defaults, but older app versions cannot read a version 2 journal/backup. Export a backup before updating if you may need to downgrade later. SQLite schema 2 and calendar cache format 1 are unchanged. No new dependency, permission, or API is introduced.
 
 New coverage verifies:
 

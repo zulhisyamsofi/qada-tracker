@@ -52,3 +52,9 @@ The v1.12.0–v1.15.0 upload completed successfully in [GitHub Actions](https://
 ## UI polish publication — v1.16.0–v1.20.0
 
 The five feature editions are published, with v1.20.0 marked latest. [The uploader workflow](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43618983708) passed; all 20 optimized APKs and five checksum files were independently verified before publication. Its private transfer branch has been removed. The latest ARM64 APK is 21.2 MB, with the same app ID and signing certificate for in-place updates. Existing widgets may need a small vertical resize or re-adding for the title.
+
+## Routine tracking publication — v1.21.0–v1.23.0
+
+The three feature editions are published, with v1.23.0 marked latest: one-tap qada completions (v1.21.0), configurable reminders (v1.22.0), and exempt prayers/tracking pauses (v1.23.0). [The uploader workflow](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43687274221) passed. All 12 optimized APKs and three checksum files were independently verified; the temporary private transfer branch was removed. The latest ARM64 APK is 21.6 MB and retains the existing signer for in-place updates.
+
+v1.23.0 reads legacy version 1 backups and writes journal/backup version 2. Older apps cannot read version 2; export a backup before updating if you may need to downgrade later. SQLite schema 2 and calendar-cache format 1 are unchanged. Final checks passed 119 Flutter and 60 Android JVM tests, formatting, analysis, and debug/optimized builds. Physical-device delivery remains unverified.
