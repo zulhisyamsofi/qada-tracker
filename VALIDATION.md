@@ -1,5 +1,7 @@
 # Validation record — v1.24.0
 
+Publication completed: v1.24.0 has a separate feature commit, annotated tag, and private GitHub release marked latest. [The upload workflow](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43740478374) passed. All four APK digests/sizes and the checksum file were independently verified before publication; the temporary private transfer branch was removed. The ARM64 download is **21,550,762 bytes (21.6 MB)**, with the existing app ID and signing certificate for in-place updates.
+
 Keeps current-day prayer editing on Today. History defaults to yesterday and supports earlier-date review and corrections; choosing today from its calendar or date picker opens Today. The first tracking day shows a helper message with a Go to Today action while earlier dates remain available for optional backfill. Review badges, exempt dates, rollover handling, and the separate qada replacement ledger are retained.
 
 Downloads:
