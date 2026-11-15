@@ -1,3 +1,25 @@
+# Validation record — v1.24.0
+
+Keeps current-day prayer editing on Today. History defaults to yesterday and supports earlier-date review and corrections; choosing today from its calendar or date picker opens Today. The first tracking day shows a helper message with a Go to Today action while earlier dates remain available for optional backfill. Review badges, exempt dates, rollover handling, and the separate qada replacement ledger are retained.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.24.0-arm64-v8a.apk` (21.6 MB).
+- **Universal fallback:** `qada-tracker-v1.24.0.apk` (61.0 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **125 Flutter tests**, **60 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified; no Android device is connected. No database schema, backup format, prayer status, qada calculation, permission, dependency, or API change is introduced. Journal/backup version 2, SQLite schema 2, and calendar-cache format 1 remain unchanged.
+
+Six new navigation cases cover light/dark yesterday defaults, past edits leaving today unchanged, calendar/date-picker routing to Today, cancelled selection, the first-day helper with optional older-record entry, open midnight across a month boundary, reopening after a multi-day gap, and app resume. The large-text first-day helper and both themed calendar views were rendered and inspected. Existing review-ring assertions now distinguish today’s green navigation ring from red past-day review rings. No physical Android device is connected; no new emulator validation was performed.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.24.0-arm64-v8a.apk` (21,550,762 bytes): `3336c82755a00b93fd2965d6662a7d11d60de94f2d68fc1b08c3b5d892b37e35`.
+- `qada-tracker-v1.24.0-armeabi-v7a.apk` (19,177,242 bytes): `b122020214bb7abb2d1b85573915600b89185e28e947d495b700b3dcbe896e5a`.
+- `qada-tracker-v1.24.0-x86_64.apk` (23,030,286 bytes): `91fe097d48424b1f2736fd7146f66cff727ddd1453886bb979c65171423cedb1`.
+- `qada-tracker-v1.24.0.apk` (61,041,746 bytes): `3941847704e79bc7a1776ac2866236f08dc4dfab1778f0cdf6a70b650528fe4a`.
+
+---
+
 # Validation record — v1.23.0
 
 Publication completed: v1.21.0–v1.23.0 have separate feature commits, annotated tags, private GitHub releases, optimized APKs, and checksum files. [The upload workflow](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43687274221) passed. All 12 APK digests/sizes and three checksum files were independently verified before publication. v1.23.0 is latest, and the temporary private transfer branch was deleted. The ARM64 download is **21,550,610 bytes (21.6 MB)**; app ID and signing certificate match previous releases.

@@ -63,7 +63,7 @@ const walkthroughSteps = [
     'nav-1',
     Icons.calendar_month_outlined,
     'Maintain your History',
-    'History’s red badge counts past days with unrecorded prayers. Red rings identify those dates in the calendar. Select a date to edit its prayers.',
+    'History opens on yesterday for reviewing and correcting earlier days. Its red badge counts past days with unrecorded prayers; red rings identify those dates. Tap today’s calendar date to return to Today.',
     'The review prompt above History’s calendar opens earlier unrecorded prayers. Review one prayer at a time or confirm the remaining prayers together. Untouched dates before tracking began do not create debt.',
   ),
   WalkthroughStep(

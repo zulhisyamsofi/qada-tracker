@@ -43,6 +43,8 @@ Future<void> checkbox(WidgetTester tester, Prayer prayer) async {
     140,
     scrollable: find.byType(Scrollable).first,
   );
+  await tester.ensureVisible(target);
+  await tester.pumpAndSettle();
   await tester.tap(target);
   await tester.pumpAndSettle();
 }
@@ -86,7 +88,10 @@ void main() {
         final red = badge(tester).backgroundColor;
         expect(day(tester, '2026-11-13').border!.top.color, red);
         expect(day(tester, '2026-11-12').border!.top.color, red);
-        expect(day(tester, '2026-11-14').border, isNull); // Today excluded.
+        expect(
+          day(tester, '2026-11-14').border!.top.color,
+          isNot(red),
+        ); // Today opens the checklist; no review ring.
         expect(
           day(tester, '2026-11-10').border,
           isNull,
@@ -215,9 +220,7 @@ void main() {
         expectCount(tester, 1);
         await tester.tap(find.text('History').last);
         await tester.pumpAndSettle();
-        expect(find.text('February 2026'), findsOneWidget);
-        await tester.tap(find.byTooltip('Previous month'));
-        await tester.pumpAndSettle();
+        expect(find.text('January 2026'), findsOneWidget);
         expect(
           day(tester, '2026-01-31').border!.top.color,
           badge(tester).backgroundColor,

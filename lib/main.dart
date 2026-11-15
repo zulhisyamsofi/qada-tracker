@@ -747,12 +747,18 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   }
 
   Widget historyPage(Journal j, Set<DateTime> unrecordedDays) {
-    final selected =
+    final yesterday = DateTime(today.year, today.month, today.day - 1);
+    final hasSelection =
         selectedDay != null &&
-            !selectedDay!.isBefore(earliestJournalDay) &&
-            !selectedDay!.isAfter(today)
-        ? selectedDay!
-        : today;
+        !selectedDay!.isBefore(earliestJournalDay) &&
+        selectedDay!.isBefore(today);
+    final selected = hasSelection ? selectedDay! : yesterday;
+    final firstDay =
+        !hasSelection && !j.days(today).any((day) => day.isBefore(today));
+    void openToday() => setState(() {
+      tab = 0;
+      selectedDay = null;
+    });
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -773,37 +779,70 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               onTap: review,
             ),
           ),
+        if (firstDay)
+          GlassCard(
+            key: const ValueKey('history-first-day'),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.history_rounded),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Your prayer history will appear here tomorrow.',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Record today’s prayers on Today. You can select an earlier date to add older records.',
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: openToday,
+                    child: const Text('Go to Today'),
+                  ),
+                ],
+              ),
+            ),
+          ),
         GlassCard(
           child: HistoryCalendar(
-            selectedDate: selected,
+            selectedDate: firstDay ? today : selected,
+            showSelection: !firstDay,
             today: today,
             unrecordedDays: unrecordedDays,
             exemptDays: j.days(today).where(j.fullyExempt).toSet(),
-            onDateChanged: (date) => setState(() => selectedDay = date),
+            onDateChanged: (date) {
+              if (date.isBefore(today)) setState(() => selectedDay = date);
+            },
+            onTodaySelected: openToday,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Text(
-            DateFormat('EEEE, d MMMM').format(selected),
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-        ),
-        if (selected.isBefore(j.startDate))
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
+        if (!firstDay) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
-              'Optional history before tracking began. Saving a prayer adds '
-              'this day only; other earlier dates stay outside your totals.',
-              style: TextStyle(fontSize: 12),
+              DateFormat('EEEE, d MMMM').format(selected),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
-        for (final p in Prayer.values) prayerCard(j, selected, p),
-        OutlinedButton.icon(
-          onPressed: review,
-          icon: const Icon(Icons.fact_check_outlined),
-          label: const Text('Review unrecorded days'),
-        ),
+          if (selected.isBefore(j.startDate))
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Text(
+                'Optional history before tracking began. Saving a prayer adds '
+                'this day only; other earlier dates stay outside your totals.',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          for (final p in Prayer.values) prayerCard(j, selected, p),
+          OutlinedButton.icon(
+            onPressed: review,
+            icon: const Icon(Icons.fact_check_outlined),
+            label: const Text('Review unrecorded days'),
+          ),
+        ],
       ],
     );
   }

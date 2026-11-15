@@ -12,12 +12,16 @@ class HistoryCalendar extends StatefulWidget {
     required this.unrecordedDays,
     required this.onDateChanged,
     this.exemptDays = const {},
+    this.onTodaySelected,
+    this.showSelection = true,
     super.key,
   });
   final DateTime selectedDate, today;
   final Set<DateTime> unrecordedDays;
   final Set<DateTime> exemptDays;
   final ValueChanged<DateTime> onDateChanged;
+  final VoidCallback? onTodaySelected;
+  final bool showSelection;
   @override
   State<HistoryCalendar> createState() => _HistoryCalendarState();
 }
@@ -57,14 +61,22 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
     );
     if (!mounted || picked == null) return;
     setState(() => month = monthOf(picked));
-    widget.onDateChanged(picked);
+    selectDate(picked);
+  }
+
+  void selectDate(DateTime date) {
+    if (date == widget.today && widget.onTodaySelected != null) {
+      widget.onTodaySelected!();
+    } else {
+      widget.onDateChanged(date);
+    }
   }
 
   Widget dayCell(DateTime date) {
     final theme = Theme.of(context);
     final enabled =
         !date.isBefore(earliestJournalDay) && !date.isAfter(widget.today);
-    final selected = date == widget.selectedDate;
+    final selected = widget.showSelection && date == widget.selectedDate;
     final isToday = date == widget.today;
     final pending =
         date.isBefore(widget.today) && widget.unrecordedDays.contains(date);
@@ -79,10 +91,10 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
         : isToday
         ? theme.colorScheme.primary
         : theme.colorScheme.onSurface;
-    final onTap = enabled ? () => widget.onDateChanged(date) : null;
+    final onTap = enabled ? () => selectDate(date) : null;
     return Semantics(
       label:
-          '${DateFormat.yMMMMEEEEd().format(date)}${isToday ? ', today' : ''}'
+          '${DateFormat.yMMMMEEEEd().format(date)}${isToday ? ', today' : ''}${isToday && widget.onTodaySelected != null ? ', opens Today' : ''}'
           '${pending ? ', has unrecorded prayers, needs review' : ''}${exempt ? ', exempt, no prayers required' : ''}',
       button: true,
       enabled: enabled,
@@ -245,6 +257,14 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
             ),
           ),
           const SizedBox(height: 12),
+          if (widget.onTodaySelected != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Text(
+                'Tap today’s date to open Today.',
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
           if (widget.exemptDays.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
