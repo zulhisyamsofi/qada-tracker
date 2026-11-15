@@ -187,4 +187,39 @@ class PrayerNotificationTest {
         assertTrue(manager.activeNotifications.isEmpty())
     }
 
+    @Test fun configuredDailyTimeIsReadFromDiskAndNeverFiresBeforeTheNewTarget() {
+        val root = journal().put("reminderMinutes", 21 * 60 + 15)
+        save(root)
+        val calendar = Calendar.getInstance().apply { timeInMillis = at(14, 20) }
+        PrayerReminders.sync(context, true, calendar)
+        val alarm = shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms.single()
+        assertEquals(at(14, 21, 15), alarm.triggerAtTime)
+        calendar.timeInMillis = at(14, 21, 14)
+        PrayerReminders.deliver(context, "2026-11-14", calendar)
+        val manager = context.getSystemService(NotificationManager::class.java)
+        assertTrue(manager.activeNotifications.isEmpty())
+        calendar.timeInMillis = at(14, 21, 15)
+        PrayerReminders.deliver(context, "2026-11-14", calendar)
+        assertTrue(manager.activeNotifications.any { it.id == 2300 })
+        assertEquals(at(15, 21, 15), shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms.single().triggerAtTime)
+    }
+    @Test fun perPrayerChoicesCancelDeselectedAlarmsAndRejectStaleDeliveries() {
+        PrayerTimeAlarms.configure(context, true, time)
+        val oldIsyak = prayerIntent("isyak")
+        PrayerTimeAlarms.deliver(context, prayerIntent("zohor"), at(14, 13))
+        assertTrue(context.getSystemService(NotificationManager::class.java).activeNotifications.any { it.id == 10002 })
+        val root = journal(); root.getJSONObject("prayerTimes").put("notificationMask", 5); save(root)
+        PrayerTimeAlarms.configure(context, false, time)
+        fun selected() = shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms.map {
+            shadowOf(it.operation).savedIntent.getStringExtra("prayer")
+        }.toSet()
+        assertEquals(setOf("subuh", "asar"), selected())
+        assertTrue(context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty())
+        PrayerTimeAlarms.deliver(context, oldIsyak, at(14, 20))
+        assertTrue(context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty())
+        root.getJSONObject("prayerTimes").put("notificationMask", 0); save(root)
+        PrayerTimeAlarms.configure(context, false, time)
+        assertTrue(selected().isEmpty())
+    }
+
 }

@@ -56,6 +56,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Prayer times & location'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Prayer times & location'));
       await tester.pumpAndSettle();
       expect(find.text('Prayer times & location'), findsOneWidget);

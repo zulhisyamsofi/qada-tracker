@@ -32,7 +32,7 @@ internal object PrayerReminders {
         if (Build.VERSION.SDK_INT >= 26) {
             manager(context).createNotificationChannel(NotificationChannel(
                 CHANNEL, "Daily prayer check-in", NotificationManager.IMPORTANCE_DEFAULT
-            ).apply { description = "A reminder at 11 PM when any prayer is still unrecorded today." })
+            ).apply { description = "A check-in at your chosen time when any prayer is still unrecorded today." })
         }
     }
 
@@ -76,7 +76,8 @@ internal object PrayerReminders {
     @Synchronized
     fun schedule(context: Context, now: Calendar = Calendar.getInstance()) {
         if (!prefs(context).getBoolean("enabled", false)) return
-        val target = ReminderPolicy.next(now, prefs(context).getString("lastChecked", null))
+        val minutes = journal(context)?.optInt("reminderMinutes", 23 * 60) ?: 23 * 60
+        val target = ReminderPolicy.next(now, prefs(context).getString("lastChecked", null), minutes)
         val operation = pending(context, ReminderPolicy.day(target))
         // Notification permission can be revoked in Settings without opening the app.
         // Keep the next check, but the receiver rechecks access before posting.
@@ -100,7 +101,8 @@ internal object PrayerReminders {
             SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY).use { db ->
                 db.rawQuery("SELECT document FROM journal WHERE id = 1", null).use { cursor ->
                     if (!cursor.moveToFirst()) null else JSONObject(cursor.getString(0)).takeIf {
-                        it.optInt("version") == 1 && it.optJSONObject("records") != null
+                    it.optInt("version") == 1 && it.optJSONObject("records") != null &&
+                        (!it.has("reminderMinutes") || (it.opt("reminderMinutes") is Int && it.getInt("reminderMinutes") in 0..1439))
                     }
                 }
             }
@@ -121,12 +123,13 @@ internal object PrayerReminders {
         if (!prefs(context).getBoolean("enabled", false)) return
         val date = ReminderPolicy.day(now)
         val journal = journal(context)
+        val minutes = journal?.optInt("reminderMinutes", 23 * 60) ?: 23 * 60
         val notify = journal != null && ReminderPolicy.shouldNotify(
             journal.optBoolean("reminderEnabled", false), expectedDay, now,
-            prefs(context).getString("lastChecked", null), hasUnrecordedPrayer(journal, date)
+            prefs(context).getString("lastChecked", null), hasUnrecordedPrayer(journal, date), minutes
         ) && notificationsAllowed(context)
         // A delayed yesterday alarm must not suppress today's future check.
-        if (expectedDay == date && now.get(Calendar.HOUR_OF_DAY) == 23) {
+        if (expectedDay == date && now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE) >= minutes) {
             prefs(context).edit().putString("lastChecked", date).commit()
         }
         if (notify) {

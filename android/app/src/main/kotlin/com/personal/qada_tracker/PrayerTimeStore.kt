@@ -10,7 +10,12 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-internal data class PrayerTimeConfig(val key: String, val label: String, val latitude: Double, val longitude: Double, val enabled: Boolean)
+internal data class PrayerTimeConfig(val key: String, val label: String, val latitude: Double, val longitude: Double, val enabled: Boolean, val notificationMask: Int = 31) {
+    fun allows(prayer: String?): Boolean {
+        val index = PrayerTimePolicy.names.indexOf(prayer)
+        return index >= 0 && (notificationMask and (1 shl index)) != 0
+    }
+}
 internal data class SavedPrayerCalendar(val key: String, val timezone: String, val fetchedAt: Long, val entries: List<PrayerSlot>, val zone: String = "") {
     fun fresh(now: Long): Boolean {
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone(timezone) }.format(Date(now))
@@ -29,11 +34,13 @@ internal object PrayerTimeStore {
     private fun config(db: SQLiteDatabase): PrayerTimeConfig? = db.rawQuery("SELECT document FROM journal WHERE id = 1", null).use { cursor ->
         if (!cursor.moveToFirst()) return@use null
         val root = JSONObject(cursor.getString(0))
+        require(root.getInt("version") == 1)
         val settings = root.optJSONObject("prayerTimes") ?: return@use null
         val place = settings.getJSONObject("place")
         val lat = place.getDouble("latitude"); val lon = place.getDouble("longitude")
         require(lat.isFinite() && lon.isFinite() && lat in -90.0..90.0 && lon in -180.0..180.0)
-        PrayerTimeConfig(place.getString("key"), place.getString("label"), lat, lon, settings.getBoolean("notifications"))
+        val mask = if (settings.has("notificationMask")) settings.get("notificationMask").also { require(it is Int && it in 0..31) } as Int else 31
+        PrayerTimeConfig(place.getString("key"), place.getString("label"), lat, lon, settings.getBoolean("notifications"), mask)
     }
     fun config(context: Context): PrayerTimeConfig? = try { database(context)?.use { config(it) } } catch (_: Exception) { null }
     fun calendar(context: Context): SavedPrayerCalendar? = try {

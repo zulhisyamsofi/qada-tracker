@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'controller.dart';
+import 'model.dart';
 import 'prayer_times_controller.dart';
 import 'reminders.dart';
 
@@ -51,12 +52,45 @@ class _ReminderSettingsState extends ConsumerState<ReminderSettings> {
         .change((j) => j.copy(reminderEnabled: enabled));
   });
 
+  Future<void> chooseDailyTime() async {
+    final minutes = ref.read(journalProvider).requireValue.reminderMinutes;
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
+      helpText: 'Daily check-in time',
+    );
+    if (selected == null || !mounted) return;
+    await action(
+      () => ref
+          .read(journalProvider.notifier)
+          .change(
+            (j) =>
+                j.copy(reminderMinutes: selected.hour * 60 + selected.minute),
+          ),
+    );
+  }
+
+  Future<void> prayer(Prayer p, bool enabled) => action(() async {
+    await ref.read(journalProvider.notifier).change((j) {
+      final bit = 1 << p.index;
+      final mask = enabled
+          ? j.prayerTimes.notificationMask | bit
+          : j.prayerTimes.notificationMask & ~bit;
+      return j.copy(prayerTimes: j.prayerTimes.copy(notificationMask: mask));
+    });
+    await ref.read(reminderServiceProvider).syncPrayerTimes();
+  });
+
   @override
   Widget build(BuildContext context) {
     final j = ref.watch(journalProvider).requireValue;
     final service = ref.watch(reminderServiceProvider);
     final access = ref.watch(reminderAccessProvider).asData?.value;
     final enabled = j.reminderEnabled || j.prayerTimes.notifications;
+    final dailyTime = TimeOfDay(
+      hour: j.reminderMinutes ~/ 60,
+      minute: j.reminderMinutes % 60,
+    ).format(context);
     final notificationBlocked =
         service.supported &&
         enabled &&
@@ -72,13 +106,13 @@ class _ReminderSettingsState extends ConsumerState<ReminderSettings> {
         Text('Notifications', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 6),
         const Text(
-          'Choose prayer-time alerts, a nightly check-in, or both. Android permission alone does not turn these reminders on.',
+          'Choose prayer-time alerts, a daily check-in, or both. Android permission alone does not turn these reminders on.',
         ),
         SwitchListTile(
           key: const ValueKey('prayer-notifications-toggle'),
           contentPadding: EdgeInsets.zero,
           title: const Text('Prayer-time notifications'),
-          subtitle: const Text('A reminder at each of the five prayer times.'),
+          subtitle: const Text('Alerts for your selected prayers.'),
           value: j.prayerTimes.notifications,
           onChanged: busy || !service.supported
               ? null
@@ -90,12 +124,44 @@ class _ReminderSettingsState extends ConsumerState<ReminderSettings> {
           key: const ValueKey('daily-check-in-toggle'),
           contentPadding: EdgeInsets.zero,
           title: const Text('Daily check-in reminder'),
-          subtitle: const Text(
-            '11:00 PM · if any of today’s prayers are still unrecorded.',
+          subtitle: Text(
+            '$dailyTime · if any of today’s prayers are still unrecorded.',
           ),
           value: j.reminderEnabled,
           onChanged: busy || !service.supported ? null : daily,
         ),
+        ListTile(
+          key: const ValueKey('daily-reminder-time'),
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.schedule_outlined),
+          title: const Text('Daily check-in time'),
+          subtitle: Text('$dailyTime · phone local time'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: busy || !service.supported ? null : chooseDailyTime,
+        ),
+        if (j.prayerTimes.notifications) ...[
+          const Text('Notify me for'),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final p in Prayer.values)
+                FilterChip(
+                  key: ValueKey('prayer-alert-${p.name}'),
+                  label: Text(p.label),
+                  selected:
+                      (j.prayerTimes.notificationMask & (1 << p.index)) != 0,
+                  onSelected: busy || !service.supported
+                      ? null
+                      : (enabled) => prayer(p, enabled),
+                ),
+            ],
+          ),
+          if (j.prayerTimes.notificationMask == 0)
+            const Text('No prayer alerts selected.'),
+          const SizedBox(height: 12),
+        ],
         if (!service.supported)
           const Text('Reminders are available on Android.'),
         if (!enabled) const Text('Both reminders are off.'),
@@ -105,8 +171,7 @@ class _ReminderSettingsState extends ConsumerState<ReminderSettings> {
             !(access.appNotifications ?? access.notifications))
           const Text('Android notification permission is blocked.'),
         if (j.prayerTimes.notifications &&
-            access != null &&
-            access.prayerTimesNotifications == false)
+            access?.prayerTimesNotifications == false)
           const Text('The Prayer times notification channel is blocked.'),
         if (j.reminderEnabled && access != null && !access.notifications)
           const Text(

@@ -179,6 +179,8 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Saved device location'), findsOneWidget);
         await capture(tester, 'settings-saved-prayer-location');
+        await tester.ensureVisible(find.text('Prayer times & location'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Prayer times & location'));
         await tester.pumpAndSettle();
         expect(find.text('Saved device location'), findsOneWidget);

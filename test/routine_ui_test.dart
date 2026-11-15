@@ -6,6 +6,7 @@ import 'package:qada_tracker/controller.dart';
 import 'package:qada_tracker/database.dart';
 import 'package:qada_tracker/main.dart';
 import 'package:qada_tracker/model.dart';
+import 'package:qada_tracker/prayer_times_models.dart';
 import 'package:qada_tracker/reminders.dart';
 import 'support/prayer_times.dart';
 import 'theme_ui_test.dart' show fonts, capture, captureKey;
@@ -115,4 +116,67 @@ void main() {
       },
     );
   }
+  testWidgets(
+    'daily time picker and selective prayer alerts persist and cancellation preserves settings',
+    (tester) async {
+      phone(tester);
+      final db = JournalDatabase(NativeDatabase.memory());
+      final reminders = RoutineReminders();
+      await db.save(
+        Journal(
+          startDate: dayOnly(today),
+          prayerTimes: const PrayerTimeSettings(notifications: true),
+        ),
+      );
+      try {
+        await tester.pumpWidget(app(db, reminders, () => today));
+        await tester.pumpAndSettle();
+        await tap(tester, find.byTooltip('Settings'));
+        await tap(tester, find.byKey(const ValueKey('prayer-alert-subuh')));
+        expect((await db.load(today)).prayerTimes.notificationMask, 30);
+        await tap(tester, find.byKey(const ValueKey('daily-reminder-time')));
+        await tester.tap(find.byTooltip('Switch to text input mode'));
+        await tester.pumpAndSettle();
+        final fields = find.byType(TextField);
+        await tester.enterText(fields.at(0), '10');
+        await tester.enterText(fields.at(1), '15');
+        await tester.tap(find.text('PM').last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+        expect((await db.load(today)).reminderMinutes, 22 * 60 + 15);
+        await tap(tester, find.byKey(const ValueKey('daily-reminder-time')));
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect((await db.load(today)).reminderMinutes, 1335);
+        await tap(
+          tester,
+          find.byKey(const ValueKey('prayer-notifications-toggle')),
+        );
+        expect((await db.load(today)).prayerTimes.notificationMask, 30);
+        await tap(
+          tester,
+          find.byKey(const ValueKey('prayer-notifications-toggle')),
+        );
+        expect(
+          tester
+              .widget<FilterChip>(
+                find.byKey(const ValueKey('prayer-alert-subuh')),
+              )
+              .selected,
+          isFalse,
+        );
+        await capture(tester, 'routine-notifications');
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(app(db, reminders, () => today));
+        await tester.pumpAndSettle();
+        expect((await db.load(today)).reminderMinutes, 1335);
+        expect((await db.load(today)).prayerTimes.notificationMask, 30);
+        expect(reminders.prayerSyncs, greaterThan(1));
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+        await db.close();
+      }
+    },
+  );
 }

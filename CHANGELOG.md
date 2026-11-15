@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.22.0 — Configurable reminders
+
+Choose a phone-local daily check-in time (11 PM by default) and select individual prayer-time alerts in the shared Notifications settings. Choices survive master-switch changes, restart, and backup/restore. Android reads preferences from SQLite when scheduling and delivering, rejects stale deselected alerts, and clears their displayed notifications. Includes the quick-qada action from v1.21.0.
+
 ## v1.21.0 — One-tap qada completions
 
 Adds a +1 action beside each prayer’s outstanding qada count, with immediate saving and Undo for the exact replacement entry. The action is disabled at zero and serialized balance checks prevent over-recording. Existing quantity entry and replacement history remain available. Daily prayer records and historical misses stay separate.

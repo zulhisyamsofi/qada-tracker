@@ -87,7 +87,7 @@ const walkthroughSteps = [
     'settings',
     Icons.settings_outlined,
     'Make it yours in Settings',
-    'Tap the gear for past qada starting balances, appearance, the home-screen widget, and the Notifications group, including the daily reminder at 11 PM if any prayer is still unrecorded.',
+    'Tap the gear for past qada starting balances, appearance, the home-screen widget, and the Notifications group, including a daily check-in at your chosen time if any prayer is still unrecorded.',
     'Export a manual backup regularly. Restore replaces your journal after confirmation. You can replay this tour here with App walkthrough.',
   ),
 ];

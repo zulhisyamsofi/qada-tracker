@@ -1,3 +1,23 @@
+# Validation record — v1.22.0
+
+Choose a phone-local daily check-in time (11 PM by default) and select individual prayer-time alerts in the shared Notifications settings. Choices survive master-switch changes, restart, and backup/restore. Android reads preferences from SQLite when scheduling and delivering, rejects stale deselected alerts, and clears their displayed notifications. Includes the quick-qada action from v1.21.0.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.22.0-arm64-v8a.apk` (21.4 MB).
+- **Universal fallback:** `qada-tracker-v1.22.0.apk` (60.6 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **110 Flutter tests**, **52 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified; no Android device is connected. The journal/backup remains version 1 with backward-compatible optional preferences. SQLite schema and calendar cache format are unchanged. Existing master opt-ins are preserved.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.22.0-arm64-v8a.apk` (21,353,818 bytes): `153f77d07215b5ac870f08d060afe2c04b78fff6f44b5e668bce17dd8b00c486`.
+- `qada-tracker-v1.22.0-armeabi-v7a.apk` (19,029,458 bytes): `2e618e1883e4cfbd3309b67c3299fc7e3495ca98fc9f3465dc953cc16d432eac`.
+- `qada-tracker-v1.22.0-x86_64.apk` (22,898,882 bytes): `1a41538199dbbb21af8ce3571616d8596235a476b5ba58eea8ad19ec01a978f1`.
+- `qada-tracker-v1.22.0.apk` (60,566,278 bytes): `0ba50a9261c81c8147e79ba6e7ee64a6ef74b7ee7f0ead48588bbd20ddbd5caf`.
+
+---
+
 # Validation record — v1.21.0
 
 Adds a +1 action beside each prayer’s outstanding qada count, with immediate saving and Undo for the exact replacement entry. The action is disabled at zero and serialized balance checks prevent over-recording. Existing quantity entry and replacement history remain available. Daily prayer records and historical misses stay separate.

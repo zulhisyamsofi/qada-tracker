@@ -80,23 +80,38 @@ class PrayerTimeSettings {
       101.6869,
     ),
     this.notifications = false,
+    this.notificationMask = 31,
   });
   final PrayerPlace place;
   final bool notifications;
-  PrayerTimeSettings copy({PrayerPlace? place, bool? notifications}) =>
-      PrayerTimeSettings(
-        place: place ?? this.place,
-        notifications: notifications ?? this.notifications,
-      );
+
+  /// One bit per prayer in prayerApiNames order. Preferences survive master-off.
+  final int notificationMask;
+  PrayerTimeSettings copy({
+    PrayerPlace? place,
+    bool? notifications,
+    int? notificationMask,
+  }) => PrayerTimeSettings(
+    place: place ?? this.place,
+    notifications: notifications ?? this.notifications,
+    notificationMask: notificationMask ?? this.notificationMask,
+  );
   Map<String, dynamic> toJson() => {
     'place': place.toJson(),
     'notifications': notifications,
+    'notificationMask': notificationMask,
   };
-  static PrayerTimeSettings fromJson(Map<String, dynamic> json) =>
-      PrayerTimeSettings(
-        place: PrayerPlace.fromJson(json['place'] as Map<String, dynamic>),
-        notifications: json['notifications'] as bool,
-      );
+  static PrayerTimeSettings fromJson(Map<String, dynamic> json) {
+    final mask = json['notificationMask'] ?? 31;
+    if (mask is! int || mask < 0 || mask > 31) {
+      throw const FormatException('Invalid prayer notification preferences.');
+    }
+    return PrayerTimeSettings(
+      place: PrayerPlace.fromJson(json['place'] as Map<String, dynamic>),
+      notifications: json['notifications'] as bool,
+      notificationMask: mask,
+    );
+  }
 }
 
 class PrayerTime {

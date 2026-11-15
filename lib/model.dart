@@ -55,6 +55,7 @@ class Journal {
     List<QadaEntry>? replacements,
     this.theme = AppTheme.system,
     this.reminderEnabled = false,
+    this.reminderMinutes = 23 * 60,
     // Legacy journals are treated as seen; new databases explicitly opt in.
     this.walkthroughSeen = true,
     this.prayerTimes = const PrayerTimeSettings(),
@@ -74,6 +75,9 @@ class Journal {
   final List<QadaEntry> replacements;
   final AppTheme theme;
   final bool reminderEnabled;
+
+  /// Minute of the phone’s local day for the daily check-in.
+  final int reminderMinutes;
   final bool walkthroughSeen;
   final PrayerTimeSettings prayerTimes;
 
@@ -92,6 +96,7 @@ class Journal {
     List<QadaEntry>? replacements,
     AppTheme? theme,
     bool? reminderEnabled,
+    int? reminderMinutes,
     bool? walkthroughSeen,
     PrayerTimeSettings? prayerTimes,
   }) => Journal(
@@ -101,11 +106,18 @@ class Journal {
     replacements: replacements ?? this.replacements,
     theme: theme ?? this.theme,
     reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+    reminderMinutes: reminderMinutes ?? this.reminderMinutes,
     walkthroughSeen: walkthroughSeen ?? this.walkthroughSeen,
     prayerTimes: prayerTimes ?? this.prayerTimes,
   );
 
   Journal checked() {
+    if (prayerTimes.notificationMask < 0 || prayerTimes.notificationMask > 31) {
+      throw const FormatException('Invalid prayer notification preferences.');
+    }
+    if (reminderMinutes < 0 || reminderMinutes >= 24 * 60) {
+      throw StateError('Choose a valid daily reminder time.');
+    }
     for (final p in Prayer.values) {
       if (balance(p) < 0) {
         throw StateError(
@@ -201,6 +213,7 @@ class Journal {
     'startDate': dateKey(startDate),
     'theme': theme.name,
     'reminderEnabled': reminderEnabled,
+    'reminderMinutes': reminderMinutes,
     'walkthroughSeen': walkthroughSeen,
     'prayerTimes': prayerTimes.toJson(),
     'starting': {for (final p in Prayer.values) p.name: starting[p] ?? 0},
@@ -287,6 +300,7 @@ class Journal {
         replacements: replacements,
         theme: AppTheme.values.byName(root['theme'] as String),
         reminderEnabled: (root['reminderEnabled'] ?? false) as bool,
+        reminderMinutes: (root['reminderMinutes'] ?? 23 * 60) as int,
         walkthroughSeen: (root['walkthroughSeen'] ?? true) as bool,
         prayerTimes: root['prayerTimes'] == null
             ? const PrayerTimeSettings()

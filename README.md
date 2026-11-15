@@ -29,13 +29,13 @@ Existing journals are not interrupted after updating. Use **Settings → App wal
 
 **Unticked does not mean missed.** Only confirmed misses add to qada. Balance = starting count + confirmed misses − replacements. Corrections cannot make balances negative; undo the conflicting replacement first. There is no “Not required” status.
 
-## Daily check-in reminder (v1.1)
+## Daily check-in reminder
 
-Enable **Settings → Notifications → Daily check-in reminder** and allow Android notifications. On Android 12+, use **Allow alarms & reminders** for reliable timing. The reminder targets **11:00 PM in the phone's local timezone** and only appears when at least one of that day's five prayers is still unrecorded. Qada replacements and settings changes do not count as daily prayer records. Notifications never add qada debt or change prayer statuses.
+Enable **Settings → Notifications → Daily check-in reminder** and allow Android notifications. On Android 12+, use **Allow alarms & reminders** for reliable timing. Choose **Daily check-in time** in the same Settings group; it defaults to **11:00 PM in the phone's local timezone**. The reminder only appears when at least one prayer that day is still unrecorded. Choose a time after your last prayer for an end-of-day check-in. Qada replacements and settings changes do not count as daily prayer records. Notifications never add qada debt or change prayer statuses.
 
-The Android alarm receiver reads the saved SQLite journal at delivery, so it works when Flutter is not running. Confirming all five prayers as performed or missed dismisses an already displayed reminder; a partial check-in leaves it visible. A reminder is attempted at most once per calendar day; delayed reminders are suppressed after midnight. Reboot, app update, clock/timezone changes, permission changes, and app resume reschedule the check. Enabling after 11 PM schedules an immediate check if that day has not already been checked.
+The Android alarm receiver reads the saved SQLite journal at delivery, so it works when Flutter is not running. Confirming all five prayers as performed or missed dismisses an already displayed reminder; a partial check-in leaves it visible. A reminder is attempted at most once per calendar day; delayed reminders are suppressed after midnight. Reboot, app update, clock/timezone changes, permission changes, and app resume reschedule the check. Enabling after the selected time schedules an immediate check if that day has not already been checked.
 
-Reminders are off until enabled. Without alarm access, Android's inexact fallback may be delayed or skipped; it cannot guarantee 11 PM delivery. Force-stopping the app in Android settings suppresses alarms until you reopen it. Battery restrictions may also affect delivery. This is a local notification: no server, account, or network connection is used. The preference is included in backups; backups from v1.0 default to reminders off. A notification tap opens Today.
+Reminders are off until enabled. Without alarm access, Android's inexact fallback may be delayed or skipped; it cannot guarantee delivery at the selected time. Force-stopping the app in Android settings suppresses alarms until you reopen it. Battery restrictions may also affect delivery. This is a local notification: no server, account, or network connection is used. The preference is included in backups; backups from v1.0 default to reminders off. A notification tap opens Today.
 
 ## Prayer times on Today (v1.5)
 
@@ -43,11 +43,11 @@ The first tab integrates the five daily records and their times; navigation now 
 
 Open **Settings → Prayer times & location**. Select a place from the Malaysia dropdown or tap **Use device location**. Location is requested only on that action, at medium accuracy, rounded to three decimals. No background GPS or location history is collected. The saved point is reused for refreshes; tap the button again after travelling. Coordinates are sent to WaktuSolat and included in the plaintext journal backup along with the selected place and notification preference.
 
-For on-time alerts, enable **Prayer-time notifications** during the walkthrough or in **Settings → Notifications**, then grant Android notifications and **alarms & reminders** access. These alerts use a separate Android channel from the 11 PM check-in; neither feature ticks prayers or adds qada. Notification taps open Today. Disabling is possible even while offline or when the API is unavailable.
+For on-time alerts, enable **Prayer-time notifications** during the walkthrough or in **Settings → Notifications**, then grant Android notifications and **alarms & reminders** access. Select the individual prayers under **Notify me for**; all five are selected by default, and selections are kept when the master switch is off. These alerts use a separate Android channel from the daily check-in; neither feature ticks prayers or adds qada. Notification taps open Today. Disabling is possible even while offline or when the API is unavailable.
 
 Both reminder preferences are grouped in **Settings → Notifications**. Android permission does not enable either in-app switch. Only essential Android notification/alarm permission links appear when an enabled reminder needs access. Testing, rescheduling, and diagnostics controls are removed. The prayer-time location page contains only place, timetable, source, and refresh controls. Existing opt-outs are preserved.
 
-Downloaded times are cached in SQLite and remain available offline. Android keeps only the next occurrence of each of the five prayers scheduled, then schedules successors after each alarm. WorkManager checks for refreshes every 12 hours when connected and downloads new months when fewer than 14 days remain. Refreshes use the last selected location, not a new GPS fix. Reboot, app updates, clock/timezone changes, and alarm-access grants reschedule alerts. Delayed broadcasts over 15 minutes old are discarded rather than replayed.
+Downloaded times are cached in SQLite and remain available offline. Android keeps only the next eligible occurrence of each selected prayer scheduled, then schedules successors after each alarm. WorkManager checks for refreshes every 12 hours when connected and downloads new months when fewer than 14 days remain. Refreshes use the last selected location, not a new GPS fix. Reboot, app updates, clock/timezone changes, and alarm-access grants reschedule alerts. Delayed broadcasts over 15 minutes old are discarded rather than replayed.
 
 A network outage preserves an existing matching-place cache. Changing place immediately cancels the old place’s alarms; old responses cannot overwrite the new selection. Cached times for another place are never presented as the current result. When downloaded coverage runs out, alerts stop until a refresh succeeds; the app does not invent times. Android battery restrictions, denied permissions, or force-stop can delay/suppress delivery. Foreground refresh and background retry recover when access returns.
 
@@ -109,7 +109,7 @@ Verified in the cloud instance:
 
 - Pinned Flutter/Dart and JDK setup, with checksum verification and TLS trust intact.
 - Frozen dependency resolution with `pubspec.lock`, and repeatable `scripts/setup.sh` execution.
-- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **106 passing Flutter tests and 47 passing Android tests**, and a successful Android debug APK build.
+- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **110 passing Flutter tests and 52 passing Android tests**, and a successful Android debug APK build.
 
 Prayer-time validation tests cover before/exactly-at/after start, checkboxes and menus, source/date mismatches, absent or malformed caches, atomic bulk changes, concurrent calendar refresh, notification routing, and historical/restore behavior.
 

@@ -60,4 +60,15 @@ class ReminderPolicyTest {
         assertEquals(23, next.get(Calendar.HOUR_OF_DAY))
         assertEquals("2026-11-01", ReminderPolicy.day(next))
     }
+    @Test fun customTimeAndDelayedDeliveryStayWithinTheSameLocalDay() {
+        val minutes = 21 * 60 + 15
+        val next = ReminderPolicy.next(time(12), null, minutes)
+        assertEquals(21, next.get(Calendar.HOUR_OF_DAY)); assertEquals(15, next.get(Calendar.MINUTE))
+        assertFalse(ReminderPolicy.shouldNotify(true, "2026-11-13", time(21, 14), null, true, minutes))
+        assertTrue(ReminderPolicy.shouldNotify(true, "2026-11-13", time(21, 15), null, true, minutes))
+        assertTrue(ReminderPolicy.shouldNotify(true, "2026-11-13", time(22), null, true, minutes))
+        assertFalse(ReminderPolicy.shouldNotify(true, "2026-11-13", time(0, day=14), null, true, minutes))
+        assertEquals("2026-11-14", ReminderPolicy.day(ReminderPolicy.next(time(22), "2026-11-13", minutes)))
+    }
+
 }

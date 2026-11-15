@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:qada_tracker/prayer_times_models.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,6 +54,71 @@ void main() {
         listener.close();
         container.dispose();
         await db.close();
+      }
+    },
+  );
+  test(
+    'legacy backups default to eleven PM and all selected prayer alerts',
+    () {
+      final root = Journal(startDate: start, reminderEnabled: true).toJson()
+        ..remove('reminderMinutes');
+      (root['prayerTimes'] as Map).remove('notificationMask');
+      final j = Journal.decode(jsonEncode(root), now);
+      expect(j.reminderEnabled, isTrue);
+      expect(j.reminderMinutes, 1380);
+      expect(j.prayerTimes.notificationMask, 31);
+    },
+  );
+  test('reminder backups round trip and reject invalid times and masks', () {
+    final j = Journal(
+      startDate: start,
+      reminderMinutes: 1275,
+      prayerTimes: const PrayerTimeSettings(
+        notifications: true,
+        notificationMask: 9,
+      ),
+    );
+    expect(Journal.decode(j.export(), now).toJson(), j.toJson());
+    for (final value in [-1, 1440, '23:00', true]) {
+      final root = j.toJson()..['reminderMinutes'] = value;
+      expect(
+        () => Journal.decode(jsonEncode(root), now),
+        throwsA(anyOf(isA<FormatException>(), isA<StateError>())),
+      );
+    }
+    for (final value in [-1, 32, '31', true]) {
+      final root = j.toJson();
+      (root['prayerTimes'] as Map)['notificationMask'] = value;
+      expect(
+        () => Journal.decode(jsonEncode(root), now),
+        throwsFormatException,
+      );
+    }
+  });
+  test(
+    'reminder preferences survive SQLite reopening and invalid writes roll back',
+    () async {
+      final dir = Directory.systemTemp.createTempSync('qada-reminder-release-');
+      final file = File('${dir.path}/journal.sqlite');
+      var db = JournalDatabase(NativeDatabase(file));
+      try {
+        final j = Journal(
+          startDate: start,
+          reminderMinutes: 1290,
+          prayerTimes: const PrayerTimeSettings(notificationMask: 17),
+        );
+        await db.save(j);
+        await db.close();
+        db = JournalDatabase(NativeDatabase(file));
+        expect((await db.load(now)).toJson(), j.toJson());
+        await expectLater(
+          db.change(now, (j) => j.copy(reminderMinutes: -1)),
+          throwsStateError,
+        );
+        expect((await db.load(now)).toJson(), j.toJson());
+      } finally {
+        await db.close();
+        dir.deleteSync(recursive: true);
       }
     },
   );
