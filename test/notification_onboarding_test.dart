@@ -120,7 +120,7 @@ void main() {
         expect(service.requests, 0);
         await press(tester, 'Enable & continue');
         expect(service.requests, 1);
-        expect(find.text('Maintain your History'), findsOneWidget);
+        expect(find.text('Review your Records'), findsOneWidget);
         var journal = await db.load(now);
         expect(journal.prayerTimes.notifications, isTrue);
         expect(journal.prayerTimes.place.id, 'johor_bahru');
@@ -167,7 +167,7 @@ void main() {
         await tester.pumpAndSettle();
         await openConsent(tester);
         await press(tester, 'Enable & continue');
-        expect(find.text('Maintain your History'), findsOneWidget);
+        expect(find.text('Review your Records'), findsOneWidget);
         expect((await db.load(now)).prayerTimes.notifications, isTrue);
         expect((await db.load(now)).reminderEnabled, isFalse);
         await press(tester, 'Skip tour');
@@ -208,7 +208,7 @@ void main() {
             findsOneWidget,
           );
           await press(tester, 'Next');
-          expect(find.text('Maintain your History'), findsOneWidget);
+          expect(find.text('Review your Records'), findsOneWidget);
           expect(service.requests, 1);
           expect((await db.load(now)).prayerTimes.notifications, isFalse);
           await press(tester, 'Skip tour');
@@ -324,7 +324,7 @@ void main() {
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
           await press(tester, 'Next');
-          expect(find.text('Maintain your History'), findsOneWidget);
+          expect(find.text('Review your Records'), findsOneWidget);
           await press(tester, 'Skip tour');
         } finally {
           await tester.pumpWidget(const SizedBox());

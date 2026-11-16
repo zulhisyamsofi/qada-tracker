@@ -57,9 +57,14 @@ void main() {
         try {
           await tester.pumpWidget(app(db, () => now));
           await tester.pumpAndSettle();
-          await tap(tester, find.text('History').last);
+          await tap(tester, find.text('Records').last);
           expect(calendar(tester).selectedDate, yesterday);
           expect(card(dayOnly(now), Prayer.subuh), findsNothing);
+          await tester.scrollUntilVisible(
+            card(yesterday, Prayer.subuh),
+            180,
+            scrollable: find.byType(Scrollable).first,
+          );
           expect(card(yesterday, Prayer.subuh), findsOneWidget);
           expect(find.byKey(const ValueKey('history-first-day')), findsNothing);
           await capture(tester, 'history-yesterday-${mode.name}');
@@ -82,7 +87,7 @@ void main() {
           expect(card(dayOnly(now), Prayer.subuh), findsOneWidget);
           saved = await db.load(now);
           expect(saved.records.length, 2);
-          await tap(tester, find.text('History').last);
+          await tap(tester, find.text('Records').last);
           expect(calendar(tester).selectedDate, yesterday);
           expect(card(dayOnly(now), Prayer.subuh), findsNothing);
           expect(tester.takeException(), isNull);
@@ -105,7 +110,7 @@ void main() {
       try {
         await tester.pumpWidget(app(db, () => now));
         await tester.pumpAndSettle();
-        await tap(tester, find.text('History').last);
+        await tap(tester, find.text('Records').last);
         expect(
           find.text('Your prayer history will appear here tomorrow.'),
           findsOneWidget,
@@ -120,7 +125,7 @@ void main() {
         await capture(tester, 'history-first-day-dark-large-text');
         await tap(tester, find.text('Go to Today'));
         expect(card(dayOnly(now), Prayer.subuh), findsOneWidget);
-        await tap(tester, find.text('History').last);
+        await tap(tester, find.text('Records').last);
         await tester.scrollUntilVisible(
           cell(yesterday),
           180,
@@ -160,7 +165,7 @@ void main() {
       try {
         await tester.pumpWidget(app(db, () => now));
         await tester.pumpAndSettle();
-        await tap(tester, find.text('History').last);
+        await tap(tester, find.text('Records').last);
         await tap(tester, find.byKey(const ValueKey('history-choose-date')));
         await tester.tap(find.text('Cancel'));
         await tester.pumpAndSettle();
@@ -191,7 +196,7 @@ void main() {
       try {
         await tester.pumpWidget(app(db, () => clock));
         await tester.pumpAndSettle();
-        await tap(tester, find.text('History').last);
+        await tap(tester, find.text('Records').last);
         expect(find.byKey(const ValueKey('history-first-day')), findsOneWidget);
         clock = DateTime(2026, 2, 1);
         await tester.pump(const Duration(seconds: 2));
@@ -200,6 +205,11 @@ void main() {
         expect(find.text('January 2026'), findsOneWidget);
         expect(find.byKey(const ValueKey('history-first-day')), findsNothing);
         expect(card(clock, Prayer.subuh), findsNothing);
+        await tester.scrollUntilVisible(
+          card(DateTime(2026, 1, 31), Prayer.subuh),
+          180,
+          scrollable: find.byType(Scrollable).first,
+        );
         expect(card(DateTime(2026, 1, 31), Prayer.subuh), findsOneWidget);
         expect((await db.load(clock)).records, isEmpty);
         expect((await db.load(clock)).outstanding, 0);
@@ -224,7 +234,7 @@ void main() {
         clock = DateTime(2026, 11, 17, 12);
         await tester.pumpWidget(app(db, () => clock));
         await tester.pumpAndSettle();
-        await tap(tester, find.text('History').last);
+        await tap(tester, find.text('Records').last);
         expect(calendar(tester).selectedDate, DateTime(2026, 11, 16));
         tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
         clock = DateTime(2026, 11, 18, 12);

@@ -37,6 +37,7 @@ Each feature edition is represented by a separate commit and annotated tag. The 
 | v1.28.0 | Simpler prayer cards | 125 / 60 | [v1.28.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.28.0) |
 | v1.29.0 | Menstrual period date settings | 125 / 60 | [v1.29.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.29.0) |
 | v1.30.0 | English and Malay language selection | 128 / 62 | [v1.30.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.30.0) |
+| v1.31.0 | Unified Records and dated qada | 128 / 63 | [v1.31.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.31.0) |
 
 Every version passed formatting, static analysis, its Flutter tests, and an Android debug APK build. Versions with native test suites also passed those checks. Native widget tests use Robolectric. Actual launcher placement, GPS, notification delivery, reboot/Doze behavior, and OEM battery restrictions remain unverified on a physical phone.
 

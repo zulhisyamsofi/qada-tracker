@@ -11,14 +11,24 @@ import java.util.Locale
 internal object PrayerExemptions {
     private val names = listOf("subuh", "zohor", "asar", "maghrib", "isyak")
     fun validate(root: JSONObject) {
-        require(root.opt("version") is Int && root.getInt("version") in 1..2)
+        require(root.opt("version") is Int && root.getInt("version") in 1..3)
         if (!root.isNull("mutePrayerAlertsWhenExempt")) require(root.opt("mutePrayerAlertsWhenExempt") is Boolean)
         val ids = mutableSetOf<String>()
         var ongoing = 0
+        val links = mutableSetOf<String>()
+        val replacements = root.optJSONArray("replacements") ?: JSONArray()
+        for (i in 0 until replacements.length()) {
+            val entry = replacements.getJSONObject(i)
+            if (entry.isNull("missedDate")) continue
+            require(root.getInt("version") == 3 && entry.opt("missedDate") is String && entry.opt("quantity") is Int && entry.getInt("quantity") == 1)
+            val day = entry.getString("missedDate"); val prayer = entry.getString("prayer")
+            require(validDate(day) && prayer in names && links.add("$day/$prayer"))
+            require(root.getJSONObject("records").getJSONObject(day).getString(prayer) == "missed")
+        }
         if (root.isNull("trackingPauses")) return
         require(root.opt("trackingPauses") is JSONArray)
         val periods = root.getJSONArray("trackingPauses")
-        require(root.getInt("version") == 2 || periods.length() == 0)
+        require(root.getInt("version") >= 2 || periods.length() == 0)
         for (i in 0 until periods.length()) {
             val p = periods.getJSONObject(i)
             require(p.opt("id") is String && p.getString("id").length in 1..100 && ids.add(p.getString("id")))
@@ -57,7 +67,7 @@ internal object PrayerExemptions {
         if (row?.has(prayer) == true) {
             val value = row.getString(prayer)
             require(value in setOf("unrecorded", "performed", "missed", "exempt"))
-            require(value != "exempt" || root.getInt("version") == 2)
+            require(value != "exempt" || root.getInt("version") >= 2)
             return value
         }
         return if (covered(root, date, prayer)) "exempt" else "unrecorded"

@@ -102,7 +102,7 @@ internal object PrayerReminders {
                 db.rawQuery("SELECT document FROM journal WHERE id = 1", null).use { cursor ->
                     if (!cursor.moveToFirst()) null else JSONObject(cursor.getString(0)).takeIf {
                     PrayerExemptions.validate(it)
-                    it.optInt("version") in 1..2 && it.optJSONObject("records") != null &&
+                    it.optInt("version") in 1..3 && it.optJSONObject("records") != null &&
                         (!it.has("reminderMinutes") || (it.opt("reminderMinutes") is Int && it.getInt("reminderMinutes") in 0..1439))
                     }
                 }

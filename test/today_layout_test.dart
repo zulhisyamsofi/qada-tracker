@@ -130,7 +130,7 @@ void main() {
             expect(find.text('5/5'), findsOneWidget);
             if (size.width == 390) visibleCheckboxes(tester);
             expect((await db.load(now)).outstanding, 0);
-            await tester.tap(find.text('History').last);
+            await tester.tap(find.text('Records').last);
             await tester.pumpAndSettle();
             expect(find.text('3 days need review'), findsOneWidget);
             expect(

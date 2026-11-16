@@ -26,8 +26,12 @@ abstract final class PrayerRecordingPolicy {
     DateTime now,
   ) {
     for (final prayer in Prayer.values) {
-      if (after.status(now, prayer) != PrayerStatus.performed ||
-          before.status(now, prayer) == PrayerStatus.performed) {
+      final newLinkedCompletion =
+          after.replacementFor(now, prayer) != null &&
+          before.replacementFor(now, prayer) == null;
+      if (!newLinkedCompletion &&
+          (after.status(now, prayer) != PrayerStatus.performed ||
+              before.status(now, prayer) == PrayerStatus.performed)) {
         continue;
       }
       final time = timeFor(calendar, after.prayerTimes.place.key, now, prayer);

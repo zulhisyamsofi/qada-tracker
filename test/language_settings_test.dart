@@ -76,11 +76,9 @@ void main() {
             labels
                 .evaluate()
                 .map((e) => (e.widget as Text).data)
-                .where(
-                  (s) => ['Today', 'Qada', 'History', 'Progress'].contains(s),
-                )
+                .where((s) => ['Today', 'Records', 'Progress'].contains(s))
                 .toList(),
-            ['Today', 'Qada', 'History', 'Progress'],
+            ['Today', 'Records', 'Progress'],
           );
           expect(find.textContaining('Starts at'), findsNothing);
           await tap(t, find.byTooltip('Settings'));
@@ -96,7 +94,7 @@ void main() {
           await capture(t, 'language-settings-${mode.name}');
           Navigator.of(t.element(find.text('Jurnal mengikut cara anda'))).pop();
           await t.pumpAndSettle();
-          for (final tab in ['Qada', 'Sejarah', 'Kemajuan', 'Hari Ini']) {
+          for (final tab in ['Rekod', 'Kemajuan', 'Hari Ini']) {
             await tap(t, find.text(tab).last);
             expect(t.takeException(), isNull);
             await capture(
@@ -112,13 +110,13 @@ void main() {
           await t.pumpAndSettle();
           await tap(t, find.byTooltip('Tetapan'));
           await tap(t, find.text('Panduan aplikasi'));
-          for (var step = 0; step < 8; step++) {
+          for (var step = 0; step < 7; step++) {
             expect(t.takeException(), isNull);
             await tap(
               t,
               find.widgetWithText(
                 FilledButton,
-                step == 7 ? 'Mula' : 'Seterusnya',
+                step == 6 ? 'Mula' : 'Seterusnya',
               ),
             );
           }

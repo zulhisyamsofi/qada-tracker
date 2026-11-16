@@ -51,6 +51,11 @@ internal object PrayerWidgetPolicy {
         validate(root, date)
         val status = status(root, date, prayer)
         if (status == "performed") return root
+        val entries = root.getJSONArray("replacements")
+        for (index in 0 until entries.length()) {
+            val entry = entries.getJSONObject(index)
+            if (entry.optString("missedDate") == date && entry.getString("prayer") == prayer) throw WidgetBalanceConflict()
+        }
         if (status == "missed" && balance(root, prayer) < 1L) throw WidgetBalanceConflict()
         return JSONObject(root.toString()).apply {
             val records = getJSONObject("records")

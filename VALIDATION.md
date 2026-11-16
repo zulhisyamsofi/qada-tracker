@@ -1,3 +1,27 @@
+# Validation record — v1.31.0
+
+Combines Qada and History into Records, with Today and Progress as the other tabs. Complete qada on a missed prayer saves a one-unit replacement linked to that exact date. Shows Qada completed, provides Undo, and supports transactional correction to Performed. A missed-prayer list and replacement history sit alongside the calendar and review flow. Removes starting-balance input and generic +1/quantity controls. Existing starting balances remain read-only; older replacements can be explicitly linked without a second deduction. Widgets display linked completions and send corrections to the app. Includes all UI and English/Malay changes.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.31.0-arm64-v8a.apk` (22.3 MB).
+- **Universal fallback:** `qada-tracker-v1.31.0.apk` (63.4 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **128 Flutter tests**, **63 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified; no Android device is connected. Journal/backup format is now version 3; version 1/2 backups remain readable. Older apps cannot read version 3, so keep a pre-update backup if downgrading may be needed. Existing balances, quantities, timestamps, and original misses are preserved. SQLite schema 2 and calendar-cache format 1 are unchanged.
+
+Install v1.31.0 directly over your current APK using the same processor variant; installing the intermediate editions is unnecessary. Export a backup before updating if you may need to return to an older app.
+
+The main flow is Today → mark a miss → Complete qada on that prayer → Qada completed. Records provides the same action for earlier dates. A replacement is recorded once and its date is saved automatically. For an older undated entry, Use existing replacement associates one unit without a second deduction. Original misses stay in the journal; correcting one to Performed removes its linked replacement after confirmation in one transaction. Unrecorded prayers never add debt.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.31.0-arm64-v8a.apk` (22,271,654 bytes): `1f07c3c5bd66edc3fa26409a7f5d9d8ee7ec212379c2f1920261eb9b15b8b515`.
+- `qada-tracker-v1.31.0-armeabi-v7a.apk` (20,078,362 bytes): `c8d7b886411021d4d1e3bf4f348c243f6bea2553f3055e2a07ccbbd7564e959b`.
+- `qada-tracker-v1.31.0-x86_64.apk` (23,751,182 bytes): `6d88dbb7fd9b71d3bc2644329961b5b5ab2bd4c9f43b5e90ab7f8cb7ee1b3f60`.
+- `qada-tracker-v1.31.0.apk` (63,384,658 bytes): `54d2a2be72965c4f95bad4ad530203cd92bc80dfe77b83c7d8bab456366d460a`.
+
+---
+
 # Validation record — v1.30.0
 
 Adds Settings → Language / Bahasa with persistent English/Bahasa Melayu selection, localized interface, dates, pickers, new prayer/check-in alerts and widget feedback. Choices survive restart and backup. Includes the prior UI editions; retained master opt-ins and prayer records are unchanged.

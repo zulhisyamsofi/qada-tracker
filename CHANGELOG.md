@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.31.0 — Unified Records and dated qada
+
+Combines Qada and History into Records, with Today and Progress as the other tabs. Complete qada on a missed prayer saves a one-unit replacement linked to that exact date. Shows Qada completed, provides Undo, and supports transactional correction to Performed. A missed-prayer list and replacement history sit alongside the calendar and review flow. Removes starting-balance input and generic +1/quantity controls. Existing starting balances remain read-only; older replacements can be explicitly linked without a second deduction. Widgets display linked completions and send corrections to the app. Includes all UI and English/Malay changes.
+
 ## v1.30.0 — English and Malay language selection
 
 Adds Settings → Language / Bahasa with persistent English/Bahasa Melayu selection, localized interface, dates, pickers, new prayer/check-in alerts and widget feedback. Choices survive restart and backup. Includes the prior UI editions; retained master opt-ins and prayer records are unchanged.

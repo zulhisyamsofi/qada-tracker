@@ -389,4 +389,61 @@ const malay = <String, String>{
   ", has unrecorded prayers, needs review":
       ", ada solat belum direkod, perlu disemak",
   ", exempt, no prayers required": ", dikecualikan, tiada solat wajib",
+  "Records": "Rekod",
+  "Review your Records": "Semak Rekod anda",
+  "Complete qada": "Tunaikan qada",
+  "Qada completed": "Qada ditunaikan",
+  "Undo qada": "Batalkan qada",
+  "Undo qada?": "Batalkan qada?",
+  "Record new completion": "Rekod penggantian baharu",
+  "Earlier records": "Rekod terdahulu",
+  "Earlier replacement · date not linked":
+      "Penggantian terdahulu · tarikh belum dipaut",
+  "No replacements recorded yet.": "Belum ada penggantian direkod.",
+  "Confirmed misses minus completed replacements. Unrecorded prayers are excluded.":
+      "Solat disahkan tertinggal ditolak penggantian ditunaikan. Solat belum direkod tidak dikira.",
+  "Correct the original record?": "Betulkan rekod asal?",
+  "Mark this prayer performed and remove its linked qada replacement? Your outstanding balance will stay unchanged.":
+      "Tandakan solat ditunaikan dan buang penggantian qada yang dipaut? Baki qada kekal sama.",
+  "This will reopen the missed prayer and restore one outstanding qada.":
+      "Ini membuka semula solat tertinggal dan menambah satu baki qada.",
+  "Use existing replacement: {value} × {value}":
+      "Guna penggantian sedia ada: {value} × {value}",
+  "For {value}": "Untuk {value}",
+  "Already recorded this replacement? Use an existing entry to avoid counting it twice.":
+      "Sudah merekod penggantian ini? Gunakan entri sedia ada supaya tidak dikira dua kali.",
+  "No balance is available for a new completion. Review earlier replacement entries first.":
+      "Tiada baki untuk penggantian baharu. Semak entri penggantian terdahulu dahulu.",
+  "Existing balances and undated replacements are preserved. They do not identify which dates were settled. Use an existing replacement from a missed prayer to link it without reducing the balance again. Older starting balances are read-only until reconciled.":
+      "Baki dan penggantian terdahulu tanpa tarikh dikekalkan. Ia tidak menentukan tarikh yang telah diganti. Pautkan penggantian sedia ada dari solat tertinggal tanpa mengurangkan baki semula. Baki permulaan lama hanya boleh dibaca sehingga diselaraskan.",
+  "Choose a missed prayer that has not been replaced.":
+      "Pilih solat tertinggal yang belum diganti.",
+  "This replacement cannot cover the selected prayer.":
+      "Penggantian ini tidak boleh dipaut kepada solat yang dipilih.",
+  "Invalid or duplicate linked qada replacement.":
+      "Penggantian qada dipaut tidak sah atau berulang.",
+  "Records, {value} past day with unrecorded prayers":
+      "Rekod, {value} hari terdahulu dengan solat belum direkod",
+  "Records, {value} past days with unrecorded prayers":
+      "Rekod, {value} hari terdahulu dengan solat belum direkod",
+  "Records · {value} day needs review": "Rekod · {value} hari perlu disemak",
+  "Records · {value} days need review": "Rekod · {value} hari perlu disemak",
+  "Missed prayer records": "Rekod solat tertinggal",
+  "Complete a specific prayer below. Earlier unlinked replacements may already cover some records.":
+      "Tunaikan qada bagi solat tertentu di bawah. Penggantian terdahulu yang belum dipaut mungkin telah meliputi sesetengah rekod.",
+  "Preserved older balances + confirmed misses − completed replacements. Unrecorded prayers are excluded.":
+      "Baki terdahulu dikekalkan + solat disahkan tertinggal − penggantian ditunaikan. Solat belum direkod tidak dikira.",
+  "Undo qada and change this record?": "Batalkan qada dan ubah rekod ini?",
+  "The linked replacement will be removed and this prayer will become unrecorded.":
+      "Penggantian dipaut akan dibuang dan solat ini menjadi belum direkod.",
+  "Use the three tabs at the bottom to move around. The tour never changes your prayer records.":
+      "Gunakan tiga tab di bawah untuk navigasi. Panduan ini tidak mengubah rekod solat anda.",
+  "Keep track of your five daily prayers, review earlier days, and complete qada directly from a missed prayer. This short tour shows you where to tap.":
+      "Rekod lima solat harian, semak hari terdahulu dan tunaikan qada terus dari solat tertinggal. Panduan ini menunjukkan tempat untuk ditekan.",
+  "Records opens on yesterday for reviewing and correcting earlier days. Its red badge counts past days with unrecorded prayers; red rings identify those dates. Tap today’s calendar date to return to Today.":
+      "Rekod dibuka pada tarikh semalam untuk menyemak hari terdahulu. Lencana merah mengira hari dengan solat belum direkod; bulatan merah menandakan tarikhnya. Tekan tarikh hari ini untuk kembali ke Hari Ini.",
+  "The review prompt above Records’ calendar opens earlier unrecorded prayers. Review one prayer at a time or confirm the remaining prayers together. Untouched dates before tracking began do not create debt.":
+      "Pautan semakan di atas kalendar Rekod membuka solat terdahulu yang belum direkod. Semak satu solat atau sahkan baki solat serentak. Tarikh sebelum mula merekod yang tidak diubah tidak mewujudkan hutang.",
+  "Tap the gear for language, appearance, the home-screen widget, and the Notifications group, including a daily check-in at your chosen time if any required prayer is still unrecorded.":
+      "Tekan ikon tetapan untuk bahasa, paparan, widget dan pemberitahuan, termasuk peringatan harian pada waktu pilihan jika ada solat wajib belum direkod.",
 };

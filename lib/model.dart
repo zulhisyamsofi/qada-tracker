@@ -36,16 +36,19 @@ class QadaEntry {
     required this.prayer,
     required this.quantity,
     required this.completedAt,
+    this.missedDate,
   });
   final String id;
   final Prayer prayer;
   final int quantity;
   final DateTime completedAt;
+  final DateTime? missedDate;
   Map<String, dynamic> toJson() => {
     'id': id,
     'prayer': prayer.name,
     'quantity': quantity,
     'completedAt': completedAt.toIso8601String(),
+    if (missedDate != null) 'missedDate': dateKey(missedDate!),
   };
 }
 
@@ -201,7 +204,108 @@ class Journal {
     prayerTimes: prayerTimes ?? this.prayerTimes,
   );
 
+  QadaEntry? replacementFor(DateTime day, Prayer prayer) => replacements
+      .where(
+        (e) =>
+            e.prayer == prayer &&
+            e.missedDate != null &&
+            dateKey(e.missedDate!) == dateKey(day),
+      )
+      .firstOrNull;
+  Journal completeMiss(DateTime day, Prayer prayer, DateTime now, String id) {
+    if (status(day, prayer) != PrayerStatus.missed ||
+        replacementFor(day, prayer) != null) {
+      throw StateError('Choose a missed prayer that has not been replaced.');
+    }
+    if (dayOnly(day).isAfter(dayOnly(now))) {
+      throw StateError('Choose a past or current date.');
+    }
+    final updated = complete(prayer, 1, now, id);
+    return updated
+        .copy(
+          replacements: [
+            for (final e in updated.replacements)
+              if (e.id == id)
+                QadaEntry(
+                  id: id,
+                  prayer: prayer,
+                  quantity: 1,
+                  completedAt: now,
+                  missedDate: dayOnly(day),
+                )
+              else
+                e,
+          ],
+        )
+        .checked();
+  }
+
+  Journal linkReplacement(
+    DateTime day,
+    Prayer prayer,
+    String entryId,
+    String splitId,
+  ) {
+    if (status(day, prayer) != PrayerStatus.missed ||
+        replacementFor(day, prayer) != null) {
+      throw StateError('Choose a missed prayer that has not been replaced.');
+    }
+    final source = replacements.firstWhere((e) => e.id == entryId);
+    if (source.prayer != prayer ||
+        source.missedDate != null ||
+        dayOnly(source.completedAt.toLocal()).isBefore(dayOnly(day))) {
+      throw StateError('This replacement cannot cover the selected prayer.');
+    }
+    if (replacements.any((e) => e.id == splitId)) {
+      throw StateError('Duplicate replacement entry.');
+    }
+    return copy(
+      replacements: [
+        for (final e in replacements)
+          if (e.id != source.id)
+            e
+          else ...[
+            if (e.quantity > 1)
+              QadaEntry(
+                id: e.id,
+                prayer: e.prayer,
+                quantity: e.quantity - 1,
+                completedAt: e.completedAt,
+              ),
+            QadaEntry(
+              id: e.quantity == 1 ? e.id : splitId,
+              prayer: prayer,
+              quantity: 1,
+              completedAt: e.completedAt,
+              missedDate: dayOnly(day),
+            ),
+          ],
+      ],
+    ).checked();
+  }
+
+  Journal correctReplacedMiss(DateTime day, Prayer prayer, DateTime now) {
+    final entry = replacementFor(day, prayer);
+    if (entry == null) throw StateError('No linked replacement found.');
+    return undo(
+      entry.id,
+    ).setStatuses(day, {prayer: PrayerStatus.performed}, now);
+  }
+
   Journal checked() {
+    final linked = <String>{};
+    for (final entry in replacements.where((e) => e.missedDate != null)) {
+      final day = entry.missedDate!;
+      if (entry.quantity != 1 ||
+          !linked.add('${dateKey(day)}/${entry.prayer.name}') ||
+          records[dateKey(day)]?[entry.prayer] != PrayerStatus.missed ||
+          dayOnly(entry.completedAt.toLocal()).isBefore(dayOnly(day))) {
+        throw const FormatException(
+          'Invalid or duplicate linked qada replacement.',
+        );
+      }
+    }
+
     final pauseIds = <String>{};
     var ongoing = 0;
     for (final pause in trackingPauses) {
@@ -366,7 +470,7 @@ class Journal {
       .toList();
 
   Map<String, dynamic> toJson() => {
-    'version': 2,
+    'version': 3,
     'startDate': dateKey(startDate),
     'theme': theme.name,
     'language': language.name,
@@ -390,7 +494,9 @@ class Journal {
       final root = jsonDecode(source);
       if (root is! Map<String, dynamic> ||
           root['version'] is! int ||
-          (root['version'] != 1 && root['version'] != 2)) {
+          (root['version'] != 1 &&
+              root['version'] != 2 &&
+              root['version'] != 3)) {
         throw const FormatException('Unsupported backup version.');
       }
       final start = parseDay(root['startDate'] as String);
@@ -455,12 +561,20 @@ class Journal {
             dayOnly(time.toLocal()).isAfter(dayOnly(now))) {
           throw const FormatException('Invalid replacement entry.');
         }
+        if (e['missedDate'] != null && root['version'] != 3) {
+          throw const FormatException(
+            'Linked replacements require backup version 3.',
+          );
+        }
         replacements.add(
           QadaEntry(
             id: id,
             prayer: Prayer.values.byName(e['prayer'] as String),
             quantity: n,
             completedAt: time,
+            missedDate: e['missedDate'] == null
+                ? null
+                : parseDay(e['missedDate'] as String),
           ),
         );
       }

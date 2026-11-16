@@ -454,4 +454,13 @@ class PrayerHomeWidgetTest {
         File(dir, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         bitmap.recycle()
     }
+    @Test fun linkedVersionThreeMissCannotBeOverwrittenEvenWithAnotherOutstandingBalance() {
+        val root = journal().put("version", 3)
+        root.getJSONObject("records").put("2026-11-13", JSONObject().put("subuh", "missed"))
+        root.getJSONObject("starting").put("subuh", 2)
+        root.getJSONArray("replacements").put(JSONObject().put("id", "linked").put("prayer", "subuh").put("quantity", 1).put("completedAt", "2026-11-13T12:00:00").put("missedDate", "2026-11-13"))
+        save(root)
+        assertEquals(WidgetWriteResult.BALANCE_CONFLICT, PrayerWidgetStore.toggle(context, "subuh", "2026-11-13") { clock() })
+        assertEquals(root.toString(), PrayerWidgetStore.read(context).toString())
+    }
 }

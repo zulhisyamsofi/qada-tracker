@@ -69,60 +69,6 @@ Future<void> management(WidgetTester tester) async {
 
 void main() {
   setUpAll(fonts);
-  for (final mode in [AppTheme.light, AppTheme.dark]) {
-    testWidgets(
-      '+1 qada has exact Undo, does not change daily records, and stops at zero ${mode.name}',
-      (tester) async {
-        phone(tester, narrow: mode == AppTheme.dark);
-        if (mode == AppTheme.dark) {
-          tester.platformDispatcher.textScaleFactorTestValue = 1.6;
-          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-        }
-        final db = JournalDatabase(NativeDatabase.memory());
-        final reminders = RoutineReminders();
-        final yesterday = DateTime(2026, 11, 13);
-        await db.save(
-          Journal(startDate: yesterday, theme: mode)
-              .setStarting({
-                for (final p in Prayer.values) p: p == Prayer.subuh ? 1 : 0,
-              })
-              .setStatuses(yesterday, {
-                Prayer.subuh: PrayerStatus.missed,
-              }, today),
-        );
-        try {
-          await tester.pumpWidget(app(db, reminders, () => today));
-          await tester.pumpAndSettle();
-          await tap(tester, find.text('Qada').last);
-          final plus = find.byKey(const ValueKey('qada-quick-subuh'));
-          await tap(tester, plus);
-          await tap(tester, plus);
-          var j = await db.load(today);
-          expect(j.balance(Prayer.subuh), 0);
-          expect(j.replacements.length, 2);
-          expect(j.status(today, Prayer.subuh), PrayerStatus.unrecorded);
-          expect(j.status(yesterday, Prayer.subuh), PrayerStatus.missed);
-          expect(tester.widget<OutlinedButton>(plus).onPressed, isNull);
-          await capture(tester, 'qada-quick-${mode.name}');
-          await tester.tap(
-            find.descendant(
-              of: find.byType(SnackBar),
-              matching: find.text('Undo'),
-            ),
-          );
-          await tester.pumpAndSettle();
-          j = await db.load(today);
-          expect(j.balance(Prayer.subuh), 1);
-          expect(j.replacements.length, 1);
-          expect(tester.widget<OutlinedButton>(plus).onPressed, isNotNull);
-          expect(tester.takeException(), isNull);
-        } finally {
-          await tester.pumpWidget(const SizedBox());
-          await db.close();
-        }
-      },
-    );
-  }
   testWidgets(
     'daily time picker and selective prayer alerts persist and cancellation preserves settings',
     (tester) async {
@@ -247,7 +193,7 @@ void main() {
         expect(j.outstanding, 0);
         Navigator.of(tester.element(find.byType(TrackingSettings))).pop();
         await tester.pumpAndSettle();
-        await tap(tester, find.text('History').last);
+        await tap(tester, find.text('Records').last);
         expect(
           tester
               .widget<Badge>(find.byKey(const ValueKey('history-review-badge')))

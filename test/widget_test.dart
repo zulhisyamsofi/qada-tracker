@@ -34,7 +34,7 @@ void main() {
       await tester.tap(find.byType(Checkbox).first);
       await tester.pumpAndSettle();
       expect(find.text('1 of 5 prayers recorded today'), findsOneWidget);
-      await tester.tap(find.text('History').last);
+      await tester.tap(find.text('Records').last);
       await tester.pumpAndSettle();
       await tester.tap(find.text('1 day needs review'));
       await tester.pumpAndSettle();
@@ -48,19 +48,18 @@ void main() {
       );
       Navigator.of(tester.element(find.text('A moment to review'))).pop();
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Qada').last);
-      await tester.pumpAndSettle();
-      expect(find.text('5'), findsOneWidget);
-      await tester.tap(find.text('Record').first);
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.descendant(
-          of: find.byType(AlertDialog),
-          matching: find.widgetWithText(FilledButton, 'Record'),
-        ),
+      final complete = find.byKey(
+        const ValueKey('complete-qada-2026-11-12-subuh'),
       );
+      await tester.scrollUntilVisible(
+        complete,
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(complete);
       await tester.pumpAndSettle();
-      expect(find.text('4'), findsOneWidget);
+      await tester.tap(complete);
+      await tester.pumpAndSettle();
       final stored = await db.load(now);
       expect(
         stored.status(DateTime(2026, 11, 12), Prayer.subuh),
@@ -100,7 +99,7 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
     expect(find.text('0 of 5 prayers recorded today'), findsOneWidget);
-    await tester.tap(find.text('History').last);
+    await tester.tap(find.text('Records').last);
     await tester.pumpAndSettle();
     expect(find.text('1 day needs review'), findsOneWidget);
     now = DateTime(2026, 11, 17);

@@ -82,7 +82,7 @@ void main() {
         await container.read(journalProvider.notifier).restore(twoDays);
         await tester.pumpAndSettle();
         expectCount(tester, 2);
-        await tester.tap(find.text('History').last);
+        await tester.tap(find.text('Records').last);
         await tester.pumpAndSettle();
         await capture(tester, 'history-calendar-standard');
         final red = badge(tester).backgroundColor;
@@ -159,7 +159,7 @@ void main() {
         await tester.pumpWidget(app(db));
         await tester.pumpAndSettle();
         expectCount(tester, 2);
-        await tester.tap(find.text('History').last);
+        await tester.tap(find.text('Records').last);
         await tester.pumpAndSettle();
         await tester.tap(find.text('2 days need review'));
         await tester.pumpAndSettle();
@@ -177,7 +177,7 @@ void main() {
         expect((await db.load(now)).outstanding, 4);
         Navigator.of(tester.element(find.text('A moment to review'))).pop();
         await tester.pumpAndSettle();
-        await tester.tap(find.text('History').last);
+        await tester.tap(find.text('Records').last);
         await tester.pumpAndSettle();
         expect(day(tester, '2026-11-05').border, isNull);
         expect(day(tester, '2026-11-10').border, isNull);
@@ -218,7 +218,7 @@ void main() {
         await tester.pump(const Duration(seconds: 2));
         await tester.pumpAndSettle();
         expectCount(tester, 1);
-        await tester.tap(find.text('History').last);
+        await tester.tap(find.text('Records').last);
         await tester.pumpAndSettle();
         expect(find.text('January 2026'), findsOneWidget);
         expect(
@@ -351,13 +351,18 @@ void main() {
           expect(expected, greaterThan(999));
           expect(
             find.bySemanticsLabel(
-              'History, $expected past days with unrecorded prayers',
+              'Records, $expected past days with unrecorded prayers',
             ),
             findsOneWidget,
           );
           await capture(tester, 'history-badge-narrow-${mode.name}');
-          await tester.tap(find.text('History').last);
+          await tester.tap(find.text('Records').last);
           await tester.pumpAndSettle();
+          await tester.scrollUntilVisible(
+            date('2026-11-13'),
+            180,
+            scrollable: find.byType(Scrollable).first,
+          );
           expect(
             day(tester, '2026-11-13').border!.top.color,
             badge(tester).backgroundColor,

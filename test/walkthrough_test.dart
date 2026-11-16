@@ -101,12 +101,7 @@ void main() {
             find.descendant(
               of: find.byWidget(bar),
               matching: find.text(
-                [
-                  'Today',
-                  'Qada',
-                  'History',
-                  'Progress',
-                ][walkthroughSteps[i].tab],
+                ['Today', 'Records', 'Progress'][walkthroughSteps[i].tab],
               ),
             ),
             findsOneWidget,

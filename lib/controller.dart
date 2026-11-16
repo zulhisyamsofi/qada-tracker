@@ -105,6 +105,27 @@ class JournalController extends AsyncNotifier<Journal> {
     return id;
   }
 
+  Future<String> completeMiss(DateTime day, Prayer prayer) async {
+    final id =
+        '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}';
+    await change(
+      (j) => j.completeMiss(day, prayer, ref.read(clockProvider)(), id),
+    );
+    return id;
+  }
+
+  Future<void> linkReplacement(
+    DateTime day,
+    Prayer prayer,
+    String id,
+  ) => change(
+    (j) => j.linkReplacement(
+      day,
+      prayer,
+      id,
+      '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}',
+    ),
+  );
   // Restores preserve already confirmed records; they are not new check-ins.
   Future<void> restore(Journal validated) =>
       _change((_) => validated, restoring: true);

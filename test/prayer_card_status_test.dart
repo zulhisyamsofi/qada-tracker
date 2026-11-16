@@ -81,7 +81,7 @@ void main() {
           await tester.tap(checkbox);
           await tester.pumpAndSettle();
           expect(appearance(now, Prayer.subuh).borderColor, done.borderColor);
-          await tester.tap(find.text('History').last);
+          await tester.tap(find.text('Records').last);
           await tester.pumpAndSettle();
           await tester.tap(find.text('13').first);
           await tester.pumpAndSettle();

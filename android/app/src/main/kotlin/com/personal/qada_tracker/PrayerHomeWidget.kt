@@ -141,7 +141,9 @@ class PrayerHomeWidget : AppWidgetProvider() {
                 setTextColor(R.id.widget_title, ink)
                 for ((index, prayer) in PrayerWidgetPolicy.prayers.withIndex()) {
                     val status = if (root != null) PrayerWidgetPolicy.status(root, date, prayer) else "unrecorded"
-                    val performed = status == "performed"
+                    val entries = root?.optJSONArray("replacements")
+                    val replaced = entries != null && (0 until entries.length()).any { i -> entries.getJSONObject(i).let { it.optString("prayer") == prayer && it.optString("missedDate") == date } }
+                    val performed = status == "performed" || replaced
                     val exempt = status == "exempt"
                     val background = when {
                         performed -> R.drawable.widget_box_done
@@ -153,10 +155,10 @@ class PrayerHomeWidget : AppWidgetProvider() {
                     setInt(boxes[index], "setBackgroundResource", background)
                     setTextColor(names[index], if (exempt) muted else if (performed) doneInk else ink)
                     setTextColor(symbols[index], if (performed) doneInk else muted)
-                    setTextViewText(symbols[index], when (status) { "performed" -> "✓"; "missed" -> "!"; "exempt" -> "–"; else -> "○" })
+                    setTextViewText(symbols[index], if (replaced) "✓" else when (status) { "performed" -> "✓"; "missed" -> "!"; "exempt" -> "–"; else -> "○" })
                     val label = PrayerWidgetPolicy.labels[index]
-                    setContentDescription(boxes[index], if (root == null) "$label. Open Qada Tracker to start or refresh." else "$label, $status. ${if (exempt) "No qada. Tap to open the app." else if (performed) "Tap to leave unrecorded." else "Tap to mark performed for today."}")
-                    val action = if (root == null || exempt) open else PendingIntent.getBroadcast(context, 0,
+                    setContentDescription(boxes[index], if (root == null) "$label. Open Qada Tracker to start or refresh." else if (replaced) (if (root.optString("language") == "ms") "$label, qada ditunaikan. Buka aplikasi untuk semakan." else "$label, qada completed. Open the app to review.") else "$label, $status. ${if (exempt) "No qada. Tap to open the app." else if (performed) "Tap to leave unrecorded." else "Tap to mark performed for today."}")
+                    val action = if (root == null || exempt || replaced) open else PendingIntent.getBroadcast(context, 0,
                         Intent(context, PrayerHomeWidget::class.java).apply {
                             this.action = MARK
                             data = Uri.Builder().scheme("qada-widget").authority("perform").appendPath(widgetId.toString()).appendPath(date).appendPath(prayer).build()

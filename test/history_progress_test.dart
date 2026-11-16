@@ -66,62 +66,6 @@ void main() {
     await db.close();
   });
 
-  for (final mode in [AppTheme.light, AppTheme.dark]) {
-    for (final spec in [
-      (width: 390.0, scale: 1.0),
-      (width: 320.0, scale: 1.0),
-      (width: 320.0, scale: 1.6),
-    ]) {
-      testWidgets(
-        'qada formula popup stays padded on ${spec.width}/${spec.scale} ${mode.name}',
-        (tester) async {
-          phoneSize(tester);
-          tester.view.physicalSize = Size(spec.width, 844);
-          tester.platformDispatcher.textScaleFactorTestValue = spec.scale;
-          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-          final db = JournalDatabase(NativeDatabase.memory());
-          await db.save(Journal(startDate: dayOnly(now), theme: mode));
-          await tester.pumpWidget(journalApp(db));
-          await tester.pumpAndSettle();
-          await tester.tap(find.text('Qada').last);
-          await tester.pumpAndSettle();
-          const formula =
-              'Starting balances + confirmed misses − replacements. Unrecorded prayers are excluded.';
-          expect(find.text(formula), findsNothing);
-          final icon = find.byKey(const ValueKey('qada-formula-info'));
-          final label = tester.getRect(find.text('Outstanding qada'));
-          expect(
-            tester.getRect(icon).left - label.right,
-            inInclusiveRange(0, 12),
-          );
-          expect(tester.getSize(icon), const Size(48, 48));
-          await tester.tap(icon);
-          await tester.pumpAndSettle();
-          expect(find.text(formula), findsOneWidget);
-          final popup = tester.getRect(
-            find
-                .ancestor(
-                  of: find.text(formula),
-                  matching: find.byType(DecoratedBox),
-                )
-                .first,
-          );
-          final text = tester.getRect(find.text(formula));
-          expect(popup.width, lessThanOrEqualTo(320));
-          expect(popup.left, greaterThanOrEqualTo(24));
-          expect(popup.right, lessThanOrEqualTo(spec.width - 24));
-          expect(text.left - popup.left, greaterThanOrEqualTo(16));
-          expect(popup.right - text.right, greaterThanOrEqualTo(16));
-          expect(text.top - popup.top, greaterThanOrEqualTo(12));
-          expect(popup.bottom - text.bottom, greaterThanOrEqualTo(12));
-          expect(tester.takeException(), isNull);
-          await tester.pumpWidget(const SizedBox());
-          await db.close();
-        },
-      );
-    }
-  }
-
   testWidgets(
     'past calendar dates can be maintained and survive a restart without filling gaps',
     (tester) async {
@@ -134,7 +78,7 @@ void main() {
       try {
         await tester.pumpWidget(journalApp(db));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('History').last);
+        await tester.tap(find.text('Records').last);
         await tester.pumpAndSettle();
         await tester.tap(find.text('12').first);
         await tester.pumpAndSettle();
@@ -181,7 +125,7 @@ void main() {
         expect(j.status(old, Prayer.subuh), PrayerStatus.performed);
         expect(j.status(old, Prayer.zohor), PrayerStatus.missed);
         expect(Journal.decode(j.export(), now).toJson(), j.toJson());
-        await tester.tap(find.text('History').last);
+        await tester.tap(find.text('Records').last);
         await tester.pumpAndSettle();
         expect(find.text('1 day needs review'), findsOneWidget);
         await tester.tap(find.text('12').first);

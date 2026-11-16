@@ -83,11 +83,10 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   final walkthroughTargets = {
     for (final key in ['prayer', 'settings']) key: GlobalKey(),
   };
-  final navigationKeys = List.generate(4, (_) => GlobalKey());
-  final qadaFormulaTooltip = GlobalKey<TooltipState>();
+  final navigationKeys = List.generate(3, (_) => GlobalKey());
   late final ReminderService reminders;
   late final HomeWidgetService homeWidget;
-  final titles = const ['Today', 'Qada', 'History', 'Progress'];
+  final titles = const ['Today', 'Records', 'Progress'];
   @override
   void initState() {
     super.initState();
@@ -356,8 +355,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             constraints: const BoxConstraints(maxWidth: 680),
             child: switch (tab) {
               0 => todayPage(j),
-              1 => qadaPage(j),
-              2 => historyPage(j, unrecordedDays),
+              1 => historyPage(j, unrecordedDays),
               _ => progressPage(j),
             },
           ),
@@ -439,7 +437,11 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   );
   Widget todayPage(Journal j) {
     final count = Prayer.values
-        .where((p) => j.status(today, p) == PrayerStatus.performed)
+        .where(
+          (p) =>
+              j.status(today, p) == PrayerStatus.performed ||
+              j.replacementFor(today, p) != null,
+        )
         .length;
     final required = j.requiredPrayers(today).length;
     final exempt = 5 - required;
@@ -607,6 +609,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
 
   Widget prayerCard(Journal j, DateTime date, Prayer p) {
     final status = j.status(date, p);
+    final replacement = j.replacementFor(date, p);
+    final replaced = replacement != null;
     final isToday = dateKey(date) == dateKey(today);
     final calendar = isToday
         ? ref.watch(prayerTimesProvider).asData?.value.calendar
@@ -618,23 +622,28 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       p,
     );
     final early = time != null && ref.read(clockProvider)().isBefore(time.at);
-    final (icon, label) = switch (status) {
-      PrayerStatus.performed => (Icons.check_circle_outline, 'Performed'),
-      PrayerStatus.missed => (
-        Icons.error_outline_rounded,
-        'Missed · added to qada',
-      ),
-      PrayerStatus.exempt => (Icons.pause_circle_outline, 'Exempt · no qada'),
-      PrayerStatus.unrecorded => (
-        early ? Icons.schedule : Icons.radio_button_unchecked,
-        'Unrecorded',
-      ),
-    };
+    final (icon, label) = replaced
+        ? (Icons.task_alt, 'Qada completed')
+        : switch (status) {
+            PrayerStatus.performed => (Icons.check_circle_outline, 'Performed'),
+            PrayerStatus.missed => (
+              Icons.error_outline_rounded,
+              'Missed · added to qada',
+            ),
+            PrayerStatus.exempt => (
+              Icons.pause_circle_outline,
+              'Exempt · no qada',
+            ),
+            PrayerStatus.unrecorded => (
+              early ? Icons.schedule : Icons.radio_button_unchecked,
+              'Unrecorded',
+            ),
+          };
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
     final highContrast = MediaQuery.highContrastOf(context);
-    final performed = status == PrayerStatus.performed;
-    final missed = status == PrayerStatus.missed;
+    final performed = status == PrayerStatus.performed || replaced;
+    final missed = status == PrayerStatus.missed && !replaced;
     final needsReview = !isToday && status == PrayerStatus.unrecorded;
     final green = dark ? const Color(0xff80d6ae) : const Color(0xff2b8058);
     final red = dark ? const Color(0xffffb4ab) : const Color(0xffb3261e);
@@ -683,14 +692,16 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   : null,
               scale: 1.2,
               child: Checkbox(
-                value: status == PrayerStatus.performed,
+                value: status == PrayerStatus.performed || replaced,
                 semanticLabel: tr(
                   context,
                   status == PrayerStatus.exempt
                       ? '${p.label} exempt; no prayer to record'
                       : '${p.label} performed',
                 ),
-                onChanged: status == PrayerStatus.exempt
+                onChanged: replaced
+                    ? (_) => undoLinkedReplacement(replacement)
+                    : status == PrayerStatus.exempt
                     ? null
                     : (checked) => act(
                         () => controller.statuses(date, {
@@ -742,6 +753,17 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                       ),
                     ],
                   ),
+                  if (status == PrayerStatus.missed)
+                    TextButton.icon(
+                      key: ValueKey('complete-qada-${dateKey(date)}-${p.name}'),
+                      onPressed: replaced
+                          ? () => undoLinkedReplacement(replacement)
+                          : () => completeDatedPrayer(date, p),
+                      icon: Icon(replaced ? Icons.undo : Icons.task_alt),
+                      label: Text(
+                        tr(context, replaced ? 'Undo qada' : 'Complete qada'),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -759,6 +781,37 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ),
               ),
               onSelected: (status) async {
+                if (replaced && status != PrayerStatus.missed) {
+                  if (status == PrayerStatus.performed &&
+                      await confirm(
+                        'Correct the original record?',
+                        'Mark this prayer performed and remove its linked qada replacement? Your outstanding balance will stay unchanged.',
+                      )) {
+                    await act(
+                      () => controller.change(
+                        (j) => j.correctReplacedMiss(
+                          date,
+                          p,
+                          ref.read(clockProvider)(),
+                        ),
+                      ),
+                    );
+                  } else if (status != PrayerStatus.performed &&
+                      await confirm(
+                        'Undo qada and change this record?',
+                        'The linked replacement will be removed and this prayer will become unrecorded.',
+                      )) {
+                    await act(
+                      () => controller.change(
+                        (j) => j.undo(replacement.id).setStatuses(date, {
+                          p: status,
+                        }, ref.read(clockProvider)()),
+                      ),
+                    );
+                  }
+                  return;
+                }
+
                 if (status == PrayerStatus.missed &&
                     !await confirm(
                       'Mark ${p.label} as missed?',
@@ -817,6 +870,31 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
+        qadaSummary(j),
+        if (j.starting.values.any((n) => n > 0) ||
+            j.replacements.any((e) => e.missedDate == null))
+          GlassCard(
+            child: ExpansionTile(
+              title: Text(tr(context, 'Earlier records')),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    tr(
+                      context,
+                      'Existing balances and undated replacements are preserved. They do not identify which dates were settled. Use an existing replacement from a missed prayer to link it without reducing the balance again. Older starting balances are read-only until reconciled.',
+                    ),
+                  ),
+                ),
+                for (final p in Prayer.values)
+                  if ((j.starting[p] ?? 0) > 0)
+                    ListTile(
+                      title: Text(p.label),
+                      trailing: Text('${j.starting[p]}'),
+                    ),
+              ],
+            ),
+          ),
         heading(
           'Your prayer journal',
           'Tracking since ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(j.startDate)}',
@@ -839,6 +917,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               onTap: review,
             ),
           ),
+        missedPrayerList(j),
         if (firstDay)
           GlassCard(
             key: const ValueKey('history-first-day'),
@@ -918,6 +997,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             label: Text(tr(context, 'Review unrecorded days')),
           ),
         ],
+        replacementHistory(j),
       ],
     );
   }
@@ -1013,222 +1093,201 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     ),
   );
 
-  Widget qadaPage(Journal j) => ListView(
-    padding: const EdgeInsets.all(20),
-    children: [
-      heading(
-        'Make room for progress',
-        'Your confirmed replacements, one at a time.',
-      ),
-      metric(
-        'Outstanding qada',
-        '${j.outstanding}',
-        labelAction: Tooltip(
-          key: qadaFormulaTooltip,
-          message: tr(
-            context,
-            'Starting balances + confirmed misses − replacements. '
-            'Unrecorded prayers are excluded.',
-          ),
-          triggerMode: TooltipTriggerMode.manual,
-          constraints: BoxConstraints(
-            maxWidth: (MediaQuery.sizeOf(context).width - 48).clamp(0.0, 320.0),
-          ),
-          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.inverseSurface,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontSize: 14,
-            height: 1.4,
-            color: Theme.of(context).colorScheme.onInverseSurface,
-          ),
-          child: Semantics(
-            label: 'How outstanding qada is calculated',
-            button: true,
-            child: IconButton(
-              key: const ValueKey('qada-formula-info'),
-              style: const ButtonStyle(
-                minimumSize: WidgetStatePropertyAll(Size(48, 48)),
-                maximumSize: WidgetStatePropertyAll(Size(48, 48)),
-                padding: WidgetStatePropertyAll(EdgeInsets.all(14)),
-                side: WidgetStatePropertyAll(BorderSide.none),
-                backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-                shape: WidgetStatePropertyAll(RoundedRectangleBorder()),
-              ),
-              onPressed: () =>
-                  qadaFormulaTooltip.currentState?.ensureTooltipVisible(),
-              icon: const Icon(Icons.info_outline_rounded, size: 20),
+  Future<void> undoLinkedReplacement(QadaEntry entry) async {
+    if (await confirm(
+      'Undo qada?',
+      'This will reopen the missed prayer and restore one outstanding qada.',
+      label: 'Undo',
+    )) {
+      await act(() => controller.change((j) => j.undo(entry.id)));
+    }
+  }
+
+  Future<void> completeDatedPrayer(DateTime day, Prayer prayer) async {
+    final j = ref.read(journalProvider).requireValue;
+    final previous = j.replacements
+        .where(
+          (e) =>
+              e.missedDate == null &&
+              e.prayer == prayer &&
+              !dayOnly(e.completedAt.toLocal()).isBefore(dayOnly(day)),
+        )
+        .toList();
+    final choice = previous.isEmpty && j.balance(prayer) > 0
+        ? 'new'
+        : await showDialog<String>(
+            context: context,
+            builder: (context) => SimpleDialog(
+              title: Text(tr(context, 'Complete qada')),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    tr(
+                      context,
+                      'Already recorded this replacement? Use an existing entry to avoid counting it twice.',
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    tr(
+                      context,
+                      '${prayer.label} · ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(day)}',
+                    ),
+                  ),
+                ),
+                if (j.balance(prayer) > 0)
+                  SimpleDialogOption(
+                    onPressed: () => Navigator.pop(context, 'new'),
+                    child: Text(tr(context, 'Record new completion')),
+                  ),
+                for (final entry in previous)
+                  SimpleDialogOption(
+                    onPressed: () => Navigator.pop(context, entry.id),
+                    child: Text(
+                      tr(
+                        context,
+                        'Use existing replacement: ${entry.quantity} × ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(entry.completedAt.toLocal())}',
+                      ),
+                    ),
+                  ),
+                if (j.balance(prayer) == 0 && previous.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      tr(
+                        context,
+                        'No balance is available for a new completion. Review earlier replacement entries first.',
+                      ),
+                    ),
+                  ),
+                SimpleDialogOption(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(tr(context, 'Cancel')),
+                ),
+              ],
+            ),
+          );
+    if (choice == null) return;
+    await act(() async {
+      if (choice == 'new') {
+        final id = await controller.completeMiss(day, prayer);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(tr(context, 'Qada completed')),
+            action: SnackBarAction(
+              label: tr(context, 'Undo'),
+              onPressed: () => act(() => controller.change((j) => j.undo(id))),
             ),
           ),
-        ),
-      ),
-      for (final p in Prayer.values) qadaPrayerCard(j, p),
-      const SizedBox(height: 12),
-      Text(
-        tr(context, 'Replacement history'),
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-      const SizedBox(height: 12),
-      if (j.replacements.isEmpty)
-        Text(
+        );
+      } else {
+        await controller.linkReplacement(day, prayer, choice);
+      }
+    });
+  }
+
+  Widget missedPrayerList(Journal j) {
+    final misses = [
+      for (final row in j.records.entries)
+        for (final p in Prayer.values)
+          if (row.value[p] == PrayerStatus.missed &&
+              j.replacementFor(parseDay(row.key), p) == null)
+            (day: parseDay(row.key), prayer: p),
+    ]..sort((a, b) => a.day.compareTo(b.day));
+    if (misses.isEmpty) return const SizedBox.shrink();
+    return GlassCard(
+      child: ExpansionTile(
+        key: const ValueKey('missed-prayer-list'),
+        title: Text(tr(context, 'Missed prayer records')),
+        subtitle: Text(
           tr(
             context,
-            'No replacements recorded yet. Completing qada keeps the original missed prayer in your journal.',
+            'Complete a specific prayer below. Earlier unlinked replacements may already cover some records.',
           ),
         ),
-      for (final e in j.replacements.reversed)
-        GlassCard(
-          child: ListTile(
-            leading: const Icon(Icons.check_circle_outline),
-            title: Text(tr(context, '${e.prayer.label} × ${e.quantity}')),
+        children: [
+          SizedBox(
+            height: (misses.length * 88.0).clamp(88.0, 320.0),
+            child: ListView.builder(
+              itemCount: misses.length,
+              itemBuilder: (context, index) {
+                final item = misses[index];
+                return ListTile(
+                  title: Text(
+                    '${item.prayer.label} · ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(item.day)}',
+                  ),
+                  trailing: TextButton(
+                    onPressed: () => completeDatedPrayer(item.day, item.prayer),
+                    child: Text(tr(context, 'Complete qada')),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget qadaSummary(Journal j) => GlassCard(
+    child: ExpansionTile(
+      title: Text(tr(context, 'Outstanding qada')),
+      subtitle: Text(
+        tr(
+          context,
+          'Preserved older balances + confirmed misses − completed replacements. Unrecorded prayers are excluded.',
+        ),
+      ),
+      trailing: Text(
+        '${j.outstanding}',
+        style: Theme.of(context).textTheme.headlineSmall,
+      ),
+      children: [
+        for (final p in Prayer.values)
+          ListTile(title: Text(p.label), trailing: Text('${j.balance(p)}')),
+      ],
+    ),
+  );
+
+  Widget replacementHistory(Journal j) => GlassCard(
+    child: ExpansionTile(
+      title: Text(tr(context, 'Replacement history')),
+      children: [
+        if (j.replacements.isEmpty)
+          ListTile(title: Text(tr(context, 'No replacements recorded yet.'))),
+        for (final entry in j.replacements.reversed)
+          ListTile(
+            title: Text('${entry.prayer.label} × ${entry.quantity}'),
             subtitle: Text(
               tr(
                 context,
-                DateFormat(
-                  'd MMM yyyy, h:mm a',
-                  Localizations.localeOf(context).languageCode,
-                ).format(e.completedAt.toLocal()),
+                entry.missedDate == null
+                    ? 'Earlier replacement · date not linked'
+                    : 'For ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(entry.missedDate!)}',
               ),
             ),
             trailing: TextButton(
               onPressed: () async {
-                if (await confirm(
+                if (entry.missedDate != null) {
+                  await undoLinkedReplacement(entry);
+                } else if (await confirm(
                   'Undo replacement?',
-                  'Return ${e.quantity} ${e.prayer.label} to your outstanding balance?',
+                  'This restores the recorded quantity to your outstanding balance.',
                   label: 'Undo',
                 )) {
-                  await act(() => controller.change((j) => j.undo(e.id)));
+                  await act(() => controller.change((j) => j.undo(entry.id)));
                 }
               },
               child: Text(tr(context, 'Undo')),
             ),
           ),
-        ),
-    ],
-  );
-
-  Widget qadaPrayerCard(Journal j, Prayer p) => GlassCard(
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final details = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                tr(context, p.label),
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 17,
-                ),
-              ),
-              Text(tr(context, '${j.balance(p)} outstanding')),
-            ],
-          );
-          final actions = Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              Semantics(
-                label: 'Record one ${p.label} qada completed',
-                child: OutlinedButton(
-                  key: ValueKey('qada-quick-${p.name}'),
-                  onPressed: j.balance(p) > 0 ? () => completeOne(p) : null,
-                  child: Text(tr(context, '+1')),
-                ),
-              ),
-              FilledButton.tonal(
-                onPressed: j.balance(p) > 0 ? () => recordReplacement(p) : null,
-                child: Text(tr(context, 'Record')),
-              ),
-            ],
-          );
-          if (constraints.maxWidth >= 300 &&
-              MediaQuery.textScalerOf(context).scale(14) <= 18) {
-            return Row(
-              children: [
-                Expanded(child: details),
-                const SizedBox(width: 8),
-                actions,
-              ],
-            );
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [details, const SizedBox(height: 10), actions],
-          );
-        },
-      ),
+      ],
     ),
   );
-
-  Future<void> completeOne(Prayer p) => act(() async {
-    final id = await controller.complete(p, 1);
-    if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.clearSnackBars();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(tr(context, '1 ${p.label} qada recorded.')),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () => act(() => controller.change((j) => j.undo(id))),
-        ),
-      ),
-    );
-  });
-
-  Future<void> recordReplacement(Prayer p) async {
-    final text = TextEditingController(text: '1');
-    final form = GlobalKey<FormState>();
-    final count = await showDialog<int>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(tr(context, 'Record ${p.label} qada')),
-        content: Form(
-          key: form,
-          child: TextFormField(
-            controller: text,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: tr(context, 'Replacements completed'),
-            ),
-            validator: (value) {
-              final count = int.tryParse(value ?? '');
-              final available = ref
-                  .read(journalProvider)
-                  .requireValue
-                  .balance(p);
-              return count == null || count < 1 || count > available
-                  ? tr(context, 'Enter a whole number from 1 to $available.')
-                  : null;
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(tr(context, 'Cancel')),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (form.currentState!.validate()) {
-                Navigator.pop(context, int.parse(text.text));
-              }
-            },
-            child: Text(tr(context, 'Record')),
-          ),
-        ],
-      ),
-    );
-    // Dialog route transitions may still reference its controller briefly.
-    Future<void>.delayed(const Duration(seconds: 1), text.dispose);
-    if (count != null) await act(() => controller.complete(p, count));
-  }
 
   Widget progressPage(Journal j) {
     final month = DateTime(today.year, today.month);
@@ -1418,18 +1477,6 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                     prayerTimeSettings();
                   },
                 ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(tr(context, 'Past qada starting balances')),
-                  subtitle: Text(
-                    tr(
-                      context,
-                      'Optional counts from before you began tracking.',
-                    ),
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: startingBalances,
-                ),
                 const SizedBox(height: 16),
                 if (homeWidget.supported) ...[
                   ListTile(
@@ -1503,100 +1550,6 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       },
     ),
   );
-
-  Future<void> startingBalances() async {
-    final current = ref.read(journalProvider).requireValue;
-    final fields = {
-      for (final p in Prayer.values)
-        p: TextEditingController(text: '${current.starting[p] ?? 0}'),
-    };
-    final form = GlobalKey<FormState>();
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(tr(context, 'Starting qada balances')),
-        content: SingleChildScrollView(
-          child: Form(
-            key: form,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  tr(
-                    context,
-                    'Only enter prayers owed before tracking began. Daily confirmed misses are added separately.',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                for (final p in Prayer.values)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: TextFormField(
-                      controller: fields[p],
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: tr(context, p.label),
-                      ),
-                      validator: (value) {
-                        final n = int.tryParse(value ?? '');
-                        return n == null || n < 0 || n > 1000000000
-                            ? tr(
-                                context,
-                                'Enter a whole number from 0 to 1 billion.',
-                              )
-                            : null;
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(tr(context, 'Cancel')),
-          ),
-          FilledButton(
-            onPressed: () async {
-              if (!form.currentState!.validate()) return;
-              try {
-                await controller.change(
-                  (j) => j.setStarting({
-                    for (final p in Prayer.values)
-                      p: int.parse(fields[p]!.text),
-                  }),
-                );
-                if (context.mounted) Navigator.pop(context);
-              } catch (error) {
-                if (context.mounted) {
-                  await showDialog<void>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text(tr(context, 'Balance conflict')),
-                      content: Text(tr(context, error.toString())),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text(tr(context, 'OK')),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              }
-            },
-            child: Text(tr(context, 'Save')),
-          ),
-        ],
-      ),
-    );
-    Future<void>.delayed(const Duration(seconds: 1), () {
-      for (final c in fields.values) {
-        c.dispose();
-      }
-    });
-  }
 
   Future<void> exportBackup() async {
     if (fileBusy) return;

@@ -38,7 +38,7 @@ void main() {
       expect(j.reminderMinutes, 1380);
       expect(j.prayerTimes.notificationMask, 31);
       expect(j.trackingPauses, isEmpty);
-      expect(j.toJson()['version'], 2);
+      expect(j.toJson()['version'], 3);
     },
   );
   test(
