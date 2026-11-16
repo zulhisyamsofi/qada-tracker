@@ -63,7 +63,7 @@ Future<void> tap(WidgetTester tester, Finder target) async {
 
 Future<void> management(WidgetTester tester) async {
   await tap(tester, find.byTooltip('Settings'));
-  await tap(tester, find.text('Exempt dates & tracking pause'));
+  await tap(tester, find.text('Menstrual period & tracking pause'));
   expect(find.byType(TrackingSettings), findsOneWidget);
 }
 
@@ -279,7 +279,7 @@ void main() {
         await tester.pumpAndSettle();
         await management(tester);
         Future<void> select() async {
-          await tap(tester, find.text('Add exempt dates'));
+          await tap(tester, find.text('Add period dates'));
           await tester.tap(find.text('13').hitTestable().first);
           await tester.pumpAndSettle();
           await tester.tap(find.text('14').hitTestable().first);

@@ -59,7 +59,7 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
       firstDate: earliestJournalDay,
       lastDate: DateTime(today.year + 5 > 2200 ? 2200 : today.year + 5, 12, 31),
       currentDate: today,
-      helpText: 'Choose exempt dates',
+      helpText: 'Choose menstrual period dates',
     );
     if (selected == null || !mounted) return;
     if (!await confirm(
@@ -194,12 +194,12 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
       padding: const EdgeInsets.all(20),
       children: [
         Text(
-          'Exempt dates & tracking pause',
+          'Menstrual period & tracking pause',
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 12),
         const Text(
-          'Only you decide which prayers are exempt. Exempt prayers are excluded from qada, review badges, and required-prayer totals. Use a prayer’s menu in Today or History for individual changes.',
+          'Set your menstrual period dates to exclude prayers from tracking and qada. Dates are confirmed by you; the app does not predict your cycle. Existing performed and missed records stay unchanged.',
         ),
         const SizedBox(height: 16),
         Wrap(
@@ -210,7 +210,7 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
               key: const ValueKey('add-exempt-dates'),
               onPressed: busy ? null : dates,
               icon: const Icon(Icons.date_range_outlined),
-              label: const Text('Add exempt dates'),
+              label: const Text('Add period dates'),
             ),
             FilledButton.icon(
               key: const ValueKey('tracking-pause-toggle'),

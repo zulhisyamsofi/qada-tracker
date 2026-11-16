@@ -1,3 +1,23 @@
+# Validation record — v1.29.0
+
+Clarifies that exempt-date settings cover manually confirmed menstrual-period dates and tracking pauses. Keeps confirmed performed/missed records. No cycle prediction or new health-data collection is introduced.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.29.0-arm64-v8a.apk` (21.6 MB).
+- **Universal fallback:** `qada-tracker-v1.29.0.apk` (61.0 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **125 Flutter tests**, **60 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified; no Android device is connected. No database schema, journal/backup version, qada calculation, permission, or API change is introduced. Existing journal/backup version 2 remains supported.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.29.0-arm64-v8a.apk` (21,550,762 bytes): `965c17ef32701f444e5e02704f3e77b78e44469577e5eb454dd1218477eed90f`.
+- `qada-tracker-v1.29.0-armeabi-v7a.apk` (19,177,246 bytes): `333928777ee25625b8838e070551488ba7844b7b8f3d92e8f2663eaa8e41d130`.
+- `qada-tracker-v1.29.0-x86_64.apk` (23,030,282 bytes): `e6f0d43d5d6d5995ca3d5910bc0e96fc9dabdfef06dd929aaddd46433601d8cf`.
+- `qada-tracker-v1.29.0.apk` (61,041,746 bytes): `b78664b20bbe16a90f29fa7f545a8cf84530337700801c5c2b9f856c3dbea45d`.
+
+---
+
 # Validation record — v1.28.0
 
 Removes the repeated Starts at subtitle while retaining one parenthesized prayer time and the start-time guard. Removes individual Mark exempt menu actions while preserving existing exemptions and date-range management.

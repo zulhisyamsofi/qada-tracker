@@ -1246,9 +1246,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.pause_circle_outline),
-                  title: const Text('Exempt dates & tracking pause'),
+                  title: const Text('Menstrual period & tracking pause'),
                   subtitle: const Text(
-                    'Manage exempt prayers and pause or resume tracking.',
+                    'Set your menstrual period dates so prayers are excluded from tracking and qada.',
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {

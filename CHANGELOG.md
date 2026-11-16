@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.29.0 — Menstrual period date settings
+
+Clarifies that exempt-date settings cover manually confirmed menstrual-period dates and tracking pauses. Keeps confirmed performed/missed records. No cycle prediction or new health-data collection is introduced.
+
 ## v1.28.0 — Simpler prayer cards
 
 Removes the repeated Starts at subtitle while retaining one parenthesized prayer time and the start-time guard. Removes individual Mark exempt menu actions while preserving existing exemptions and date-range management.
