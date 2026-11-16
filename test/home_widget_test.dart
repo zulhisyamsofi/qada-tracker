@@ -1,3 +1,4 @@
+import 'support/prayer_actions.dart';
 import 'support/prayer_times.dart';
 import 'dart:async';
 import 'package:drift/native.dart';
@@ -153,18 +154,9 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpAndSettle();
     expect(find.text('2 of 5 prayers recorded today'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.byWidgetPredicate(
-        (w) => w is Checkbox && w.semanticLabel == 'Asar performed',
-      ),
-      150,
-    );
+    await tester.scrollUntilVisible(doneButton(Prayer.asar), 150);
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.byWidgetPredicate(
-        (w) => w is Checkbox && w.semanticLabel == 'Asar performed',
-      ),
-    );
+    await tester.tap(doneButton(Prayer.asar));
     await tester.pumpAndSettle();
     expect(
       (await db.load(now)).status(now, Prayer.asar),
@@ -253,6 +245,11 @@ void main() {
       final before = (await db.load(now)).export();
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Home-screen widget'),
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.ensureVisible(find.text('Home-screen widget'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Home-screen widget'));
@@ -296,6 +293,11 @@ void main() {
     // Leave Riverpod unchanged to emulate a delayed native broadcast.
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Export backup'),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.ensureVisible(find.text('Export backup'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Export backup'));

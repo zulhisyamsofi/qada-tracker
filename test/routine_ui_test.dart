@@ -1,3 +1,4 @@
+import 'support/prayer_actions.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,6 +56,13 @@ void phone(WidgetTester tester, {bool narrow = false}) {
 }
 
 Future<void> tap(WidgetTester tester, Finder target) async {
+  if (target.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      target,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+  }
   await tester.ensureVisible(target);
   await tester.pumpAndSettle();
   await tester.tap(target);
@@ -161,13 +169,10 @@ void main() {
         await capture(tester, 'tracking-management-active');
         Navigator.of(tester.element(find.byType(TrackingSettings))).pop();
         await tester.pumpAndSettle();
+        await tap(tester, find.text('Today').last);
         expect(find.text('1/1'), findsOneWidget);
-        final zohor = find.byWidgetPredicate(
-          (w) =>
-              w is Checkbox &&
-              w.semanticLabel == 'Zohor exempt; no prayer to record',
-        );
-        expect(tester.widget<Checkbox>(zohor).onChanged, isNull);
+        final zohor = doneButton(Prayer.zohor);
+        expect(actionSelected(tester, zohor), isFalse);
         await capture(tester, 'today-partially-exempt');
         now = DateTime(2026, 11, 16, 18);
         tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
@@ -193,7 +198,7 @@ void main() {
         expect(j.outstanding, 0);
         Navigator.of(tester.element(find.byType(TrackingSettings))).pop();
         await tester.pumpAndSettle();
-        await tap(tester, find.text('Records').last);
+        await tap(tester, find.text('History').last);
         expect(
           tester
               .widget<Badge>(find.byKey(const ValueKey('history-review-badge')))
@@ -258,7 +263,7 @@ void main() {
       }
     },
   );
-  testWidgets('individual exemption is absent from prayer menus', (
+  testWidgets('prayer cards expose Done and Missed without an exemption menu', (
     tester,
   ) async {
     phone(tester);
@@ -267,9 +272,10 @@ void main() {
     try {
       await tester.pumpWidget(app(db, RoutineReminders(), () => today));
       await tester.pumpAndSettle();
-      await tap(tester, find.byTooltip('Update Subuh'));
+      expect(find.byType(PopupMenuButton<PrayerStatus>), findsNothing);
+      expect(doneButton(Prayer.subuh), findsOneWidget);
+      expect(missedButton(Prayer.subuh), findsOneWidget);
       expect(find.text('Mark exempt'), findsNothing);
-      expect(find.text('Mark missed'), findsOneWidget);
       expect((await db.load(today)).records, isEmpty);
     } finally {
       await tester.pumpWidget(const SizedBox());

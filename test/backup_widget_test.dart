@@ -76,6 +76,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Export backup'),
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.ensureVisible(find.text('Export backup'));
       await tester.tap(find.text('Export backup'));
       await tester.pumpAndSettle();

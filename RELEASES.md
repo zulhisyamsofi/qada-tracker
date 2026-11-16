@@ -39,6 +39,7 @@ Each feature edition is represented by a separate commit and annotated tag. The 
 | v1.30.0 | English and Malay language selection | 128 / 62 | [v1.30.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.30.0) |
 | v1.31.0 | Unified Records and dated qada | 128 / 63 | [v1.31.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.31.0) |
 | v1.32.0 | Records and Today refinements | 134 / 63 | [v1.32.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.32.0) |
+| v1.33.0 | History, Qada, and prayer actions | 144 / 63 | [v1.33.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.33.0) |
 
 Every version passed formatting, static analysis, its Flutter tests, and an Android debug APK build. Versions with native test suites also passed those checks. Native widget tests use Robolectric. Actual launcher placement, GPS, notification delivery, reboot/Doze behavior, and OEM battery restrictions remain unverified on a physical phone.
 

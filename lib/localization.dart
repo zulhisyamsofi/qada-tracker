@@ -44,6 +44,59 @@ final _patterns = malay.entries
     .toList();
 
 const malay = <String, String>{
+  "Preferences": "Pilihan",
+  "Prayer & tracking": "Solat & rekod",
+  "Backups": "Sandaran",
+  "Tools & help": "Alat & bantuan",
+  "Personal edition": "Edisi peribadi",
+  "Prayer times from WaktuSolat / JAKIM. Cloud sync is not enabled.":
+      "Waktu solat daripada WaktuSolat / JAKIM. Penyegerakan awan tidak diaktifkan.",
+  "Save a copy of your journal and settings.":
+      "Simpan salinan jurnal dan tetapan anda.",
+  "Replace this journal with a saved backup.":
+      "Gantikan jurnal ini dengan sandaran yang disimpan.",
+  "Notification status": "Status pemberitahuan",
+  "History, {value} prayers need attention":
+      "Sejarah, {value} solat memerlukan perhatian",
+  "{value} prayers need attention": "{value} solat memerlukan perhatian",
+  "Missed or unrecorded prayers on past dates":
+      "Solat tertinggal atau belum direkod pada tarikh terdahulu",
+  "{value}: Done": "{value}: Selesai",
+  "{value}: Missed": "{value}: Tertinggal",
+  "{value} · outstanding qada": "{value} · baki qada",
+  "No dated missed prayers for this prayer.":
+      "Tiada rekod solat tertinggal bertarikh untuk solat ini.",
+  "Earlier unlinked replacements may already cover some dates. Link an existing replacement when recording Done.":
+      "Qada terdahulu yang belum dipautkan mungkin meliputi sesetengah tarikh. Pautkan qada sedia ada apabila memilih Selesai.",
+  "Open date": "Buka tarikh",
+  "Close": "Tutup",
+  "Qada & Progress": "Qada & Kemajuan",
+  "Review your History": "Semak Sejarah anda",
+  "Record your daily prayers, revisit earlier dates in History, and track replacements and progress in Qada.":
+      "Rekod solat harian, semak tarikh terdahulu dalam Sejarah, serta jejaki qada dan kemajuan dalam Qada.",
+  "Use Today, Qada, History, and Settings at the bottom. The tour never changes your prayer records.":
+      "Gunakan Hari Ini, Qada, Sejarah dan Tetapan di bawah. Panduan ini tidak mengubah rekod solat anda.",
+  "Choose Done after praying, or Missed if you missed a prayer. Tap the selected button again to leave it Unrecorded. Done on a missed prayer records its qada completion.":
+      "Pilih Selesai selepas bersolat, atau Tertinggal jika terlepas solat. Tekan butang yang dipilih sekali lagi untuk kembali ke Belum direkod. Selesai pada solat tertinggal merekod qada yang ditunaikan.",
+  "Missed saves immediately. Today’s Done action is available after the prayer time starts. Exempt dates and tracking pauses are managed in Settings.":
+      "Tertinggal disimpan serta-merta. Selesai untuk hari ini tersedia selepas masuk waktu solat. Tarikh dikecualikan dan jeda rekod diurus dalam Tetapan.",
+  "Open Settings → Prayer times & location to choose a Malaysian place or use your device location. Prayer times appear on Today.":
+      "Buka Tetapan → Waktu solat & lokasi untuk memilih tempat di Malaysia atau lokasi peranti. Waktu solat dipaparkan pada Hari Ini.",
+  "Language, dark mode, prayer tracking, reminders, backups, and help are grouped in Settings.":
+      "Bahasa, mod gelap, rekod solat, peringatan, sandaran dan bantuan dikelompokkan dalam Tetapan.",
+  "Past dates show a red badge counting missed or unrecorded prayers. The History badge adds these prayer counts together. A checkmark means all five prayers are performed or qada completed.":
+      "Tarikh terdahulu memaparkan lencana merah yang mengira solat tertinggal atau belum direkod. Lencana Sejarah menjumlahkan semua solat ini. Tanda semak bermakna kelima-lima solat telah ditunaikan atau qada selesai.",
+  "Select a date to edit its prayers using Done and Missed. Completed qada is excluded from pending counts. Tap today’s calendar date to return to Today.":
+      "Pilih tarikh untuk mengemas kini solat menggunakan Selesai dan Tertinggal. Qada selesai tidak termasuk dalam kiraan tertunggak. Tekan tarikh hari ini untuk kembali ke Hari Ini.",
+  "Tap a prayer’s outstanding balance to see its missed dates, newest first. Open a date in History and choose Done after completing its qada.":
+      "Tekan baki qada solat untuk melihat tarikh tertinggal, yang terbaharu dahulu. Buka tarikh dalam Sejarah dan pilih Selesai selepas menunaikan qada.",
+  "Qada also contains replacement history and weekly and monthly progress. Unrecorded prayers need attention but never add qada debt.":
+      "Qada juga mengandungi sejarah qada dan kemajuan mingguan serta bulanan. Solat belum direkod memerlukan perhatian tetapi tidak menambah hutang qada.",
+  "Settings contains language, dark mode, location, menstrual-period dates, reminder controls, manual backups, and the app walkthrough.":
+      "Tetapan mengandungi bahasa, mod gelap, lokasi, tarikh haid, kawalan peringatan, sandaran manual dan panduan aplikasi.",
+  "Backups include your records and settings. Restore asks before replacing the current journal. You can replay this tour from Settings.":
+      "Sandaran merangkumi rekod dan tetapan anda. Pemulihan meminta pengesahan sebelum menggantikan jurnal semasa. Anda boleh mengulang panduan ini daripada Tetapan.",
+
   'Today': 'Hari Ini',
   'History': 'Sejarah',
   'Qada': 'Qada',

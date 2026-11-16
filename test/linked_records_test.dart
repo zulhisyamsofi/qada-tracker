@@ -1,3 +1,4 @@
+import 'support/prayer_actions.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:drift/native.dart';
@@ -157,7 +158,7 @@ void main() {
   );
   for (final theme in [AppTheme.light, AppTheme.dark]) {
     testWidgets(
-      'Records completes the selected miss and corrects it without a negative balance ${theme.name}',
+      'History completes the selected miss and corrects it without a negative balance ${theme.name}',
       (t) async {
         t.view.physicalSize = const Size(390, 844);
         t.view.devicePixelRatio = 1;
@@ -166,6 +167,13 @@ void main() {
         final db = JournalDatabase(NativeDatabase.memory());
         await db.save(missed().copy(theme: theme));
         Future<void> tap(Finder f) async {
+          if (f.evaluate().isEmpty) {
+            await t.scrollUntilVisible(
+              f,
+              180,
+              scrollable: find.byType(Scrollable).first,
+            );
+          }
           await t.ensureVisible(f);
           await t.pumpAndSettle();
           await t.tap(f);
@@ -175,12 +183,9 @@ void main() {
         try {
           await t.pumpWidget(app(db));
           await t.pumpAndSettle();
-          await tap(find.text('Records').last);
-          expect(find.text('Qada'), findsNothing);
-          expect(find.text('History'), findsNothing);
-          final action = find.byKey(
-            const ValueKey('complete-qada-2026-11-15-subuh'),
-          );
+          await tap(find.text('History').last);
+          expect(find.text('Missed prayer records'), findsNothing);
+          final action = doneButton(Prayer.subuh, day);
           await t.scrollUntilVisible(
             action,
             180,
@@ -190,9 +195,12 @@ void main() {
           expect((await db.load(now)).outstanding, 0);
           expect(find.text('Qada completed'), findsWidgets);
           await capture(t, 'records-completed-${theme.name}');
-          await tap(find.byTooltip('Update Subuh'));
-          await tap(find.text('Mark performed'));
-          await tap(find.widgetWithText(FilledButton, 'Confirm'));
+          await tap(
+            action,
+          ); // Selected Done clears the mark and its dated replacement atomically.
+          await tap(
+            action,
+          ); // A fresh Done records an ordinary performed prayer.
           final j = await db.load(now);
           expect(j.outstanding, 0);
           expect(j.status(day, Prayer.subuh), PrayerStatus.performed);
@@ -217,11 +225,9 @@ void main() {
       try {
         await t.pumpWidget(app(db));
         await t.pumpAndSettle();
-        await t.tap(find.text('Records').last);
+        await t.tap(find.text('History').last);
         await t.pumpAndSettle();
-        final action = find.byKey(
-          const ValueKey('complete-qada-2026-11-15-subuh'),
-        );
+        final action = doneButton(Prayer.subuh, day);
         await t.scrollUntilVisible(
           action,
           180,

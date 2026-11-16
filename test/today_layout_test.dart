@@ -1,3 +1,4 @@
+import 'support/prayer_actions.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,9 +41,7 @@ void viewport(WidgetTester tester, Size size) {
   addTearDown(tester.view.resetDevicePixelRatio);
 }
 
-Finder prayerCheckbox(Prayer p) => find.byWidgetPredicate(
-  (w) => w is Checkbox && w.semanticLabel == '${p.label} performed',
-);
+Finder prayerCheckbox(Prayer p) => doneButton(p);
 void visibleCheckboxes(WidgetTester tester) {
   final bounds = tester.getRect(find.byKey(const ValueKey('today-prayers')));
   for (final p in Prayer.values) {
@@ -130,22 +129,18 @@ void main() {
             expect(find.text('5/5'), findsOneWidget);
             if (size.width == 390) visibleCheckboxes(tester);
             expect((await db.load(now)).outstanding, 0);
-            await tester.tap(find.text('Records').last);
+            await tester.tap(find.text('History').last);
             await tester.pumpAndSettle();
             await tester.scrollUntilVisible(
               find.byType(HistoryCalendar),
               180,
               scrollable: find.byType(Scrollable).first,
             );
-            expect(find.text('3 days need review'), findsOneWidget);
-            expect(
-              tester
-                  .getRect(find.byKey(const ValueKey('history-review-prompt')))
-                  .bottom,
-              lessThanOrEqualTo(
-                tester.getRect(find.byType(HistoryCalendar)).top,
-              ),
+            expect(find.text('3 days need review'), findsNothing);
+            final badge = tester.widget<Badge>(
+              find.byKey(const ValueKey('history-review-badge')),
             );
+            expect((badge.label! as Text).data, '15');
             expect(tester.takeException(), isNull);
           } finally {
             await tester.pumpWidget(const SizedBox());
@@ -182,21 +177,23 @@ void main() {
         visibleCheckboxes(tester);
         await tester.tap(find.byTooltip('Settings'));
         await tester.pumpAndSettle();
-        expect(find.text('Saved device location'), findsOneWidget);
+        expect(find.text('Saved device location'), findsWidgets);
         await capture(tester, 'settings-saved-prayer-location');
         await tester.ensureVisible(find.text('Prayer times & location'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Prayer times & location'));
         await tester.pumpAndSettle();
-        expect(find.text('Saved device location'), findsOneWidget);
+        expect(find.text('Saved device location'), findsWidgets);
         expect(
           find.text('Zone WLY01 · Times shown in Asia/Kuala_Lumpur'),
           findsOneWidget,
         );
         expect(location.requests, 0);
         Navigator.of(
-          tester.element(find.text('Prayer times & location')),
+          tester.element(find.text('Prayer times & location').last),
         ).pop();
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Today').last);
         await tester.pumpAndSettle();
         visibleCheckboxes(tester);
         await tester.pumpWidget(const SizedBox());

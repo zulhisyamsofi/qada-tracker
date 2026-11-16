@@ -21,6 +21,7 @@ import 'home_widget.dart';
 import 'prayer_recording_policy.dart';
 import 'walkthrough.dart';
 import 'ui/history_calendar.dart';
+import 'ui/settings_group.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,15 +79,18 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   Timer? midnight;
   Timer? prayerClock;
   bool fileBusy = false;
+  final updatingPrayers = <String>{};
+  final historyScroll = ScrollController();
+  final historyCalendarKey = GlobalKey();
   bool walkthroughChecked = false;
   bool walkthroughOpen = false;
   final walkthroughTargets = {
-    for (final key in ['prayer', 'settings']) key: GlobalKey(),
+    for (final key in ['prayer']) key: GlobalKey(),
   };
-  final navigationKeys = List.generate(3, (_) => GlobalKey());
+  final navigationKeys = List.generate(4, (_) => GlobalKey());
   late final ReminderService reminders;
   late final HomeWidgetService homeWidget;
-  final titles = const ['Today', 'Records', 'Progress'];
+  final titles = const ['Today', 'Qada', 'History', 'Settings'];
   @override
   void initState() {
     super.initState();
@@ -146,6 +150,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   void dispose() {
     midnight?.cancel();
     prayerClock?.cancel();
+    historyScroll.dispose();
     reminders.onOpenToday = null;
     reminders.onOpenPrayerTimes = null;
     homeWidget.onJournalChanged = null;
@@ -256,8 +261,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   @override
   Widget build(BuildContext context) {
     final data = ref.watch(journalProvider);
-    final unrecordedDays =
-        data.asData?.value.unresolvedDays(today).toSet() ?? <DateTime>{};
+    final pendingCounts =
+        data.asData?.value.pendingPrayerCounts(today) ?? <DateTime, int>{};
     if (data.hasValue && !walkthroughChecked) {
       walkthroughChecked = true;
       if (!data.requireValue.walkthroughSeen) {
@@ -314,13 +319,6 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   : Icons.dark_mode_outlined,
             ),
           ),
-          const SizedBox(width: 8),
-          IconButton(
-            key: walkthroughTargets['settings'],
-            tooltip: tr(context, 'Settings'),
-            onPressed: data.hasValue ? () => settings() : null,
-            icon: const Icon(Icons.settings_outlined),
-          ),
           const SizedBox(width: 14),
         ],
       ),
@@ -357,8 +355,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             constraints: const BoxConstraints(maxWidth: 680),
             child: switch (tab) {
               0 => todayPage(j),
-              1 => historyPage(j, unrecordedDays),
-              _ => progressPage(j),
+              1 => qadaPage(j),
+              2 => historyPage(j, pendingCounts),
+              _ => settingsPage(j),
             },
           ),
         ),
@@ -373,7 +372,10 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           child: GlassNavigationBar(
             selectedIndex: tab,
             destinationKeys: navigationKeys,
-            unrecordedDayCount: unrecordedDays.length,
+            pendingPrayerCount: pendingCounts.values.fold(
+              0,
+              (sum, count) => sum + count,
+            ),
             onDestinationSelected: (index) => setState(() => tab = index),
           ),
         ),
@@ -685,183 +687,169 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           ? (dark ? const Color(0xff3b3020) : const Color(0xfffff2dc))
           : null,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        child: Row(
-          children: [
-            Transform.scale(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final details = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tr(
+                    context,
+                    '${p.label}${isToday ? ' (${time?.time ?? '--:--'})' : ''}',
+                  ),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: performed ? FontWeight.w600 : FontWeight.w800,
+                    color: titleColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      needsReview ? Icons.pending_actions_rounded : icon,
+                      size: 14,
+                      color: statusColor,
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        tr(
+                          context,
+                          needsReview ? 'Unrecorded · needs review' : label,
+                        ),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: statusColor,
+                          fontWeight: missed || needsReview
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+            Widget button(bool done) {
+              final selected = done ? performed : missed;
+              final tint = done ? green : red;
+              return Semantics(
+                selected: selected,
+                label: tr(context, '${p.label}: ${done ? 'Done' : 'Missed'}'),
+                child: OutlinedButton(
+                  key: ValueKey(
+                    '${done ? 'done' : 'missed'}-${dateKey(date)}-${p.name}',
+                  ),
+                  onPressed:
+                      updatingPrayers.contains('${dateKey(date)}/${p.name}')
+                      ? null
+                      : () => choosePrayerAction(date, p, done),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: tint,
+                    backgroundColor: selected
+                        ? tint.withValues(alpha: dark ? .20 : .14)
+                        : tint.withValues(alpha: .04),
+                    side: BorderSide(
+                      color: tint.withValues(alpha: selected ? 1 : .65),
+                      width: selected ? 1.8 : 1,
+                    ),
+                    minimumSize: const Size(72, 48),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 10,
+                    ),
+                    textStyle: theme.textTheme.labelLarge?.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Text(tr(context, done ? 'Done' : 'Missed')),
+                ),
+              );
+            }
+
+            final stacked =
+                constraints.maxWidth < 300 ||
+                MediaQuery.textScalerOf(context).scale(14) > 18;
+            final buttons = Row(
+              mainAxisSize: stacked ? MainAxisSize.max : MainAxisSize.min,
+              children: [
+                if (stacked) Expanded(child: button(true)) else button(true),
+                const SizedBox(width: 8),
+                if (stacked) Expanded(child: button(false)) else button(false),
+              ],
+            );
+            return Column(
               key: isToday && p == Prayer.subuh
                   ? walkthroughTargets['prayer']
                   : null,
-              scale: 1.2,
-              child: Checkbox(
-                value: status == PrayerStatus.performed || replaced,
-                semanticLabel: tr(
-                  context,
-                  status == PrayerStatus.exempt
-                      ? '${p.label} exempt; no prayer to record'
-                      : '${p.label} performed',
-                ),
-                onChanged: replaced
-                    ? (_) => undoLinkedReplacement(replacement)
-                    : status == PrayerStatus.exempt
-                    ? null
-                    : (checked) =>
-                          isToday &&
-                              status == PrayerStatus.missed &&
-                              checked == true
-                          ? completeDatedPrayer(date, p)
-                          : act(
-                              () => controller.statuses(date, {
-                                p: checked!
-                                    ? PrayerStatus.performed
-                                    : PrayerStatus.unrecorded,
-                              }),
-                            ),
-              ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tr(
-                      context,
-                      '${p.label}${isToday ? ' (${time?.time ?? '--:--'})' : ''}',
-                    ),
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: performed ? FontWeight.w600 : FontWeight.w800,
-                      color: titleColor,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (stacked) ...[
+                  details,
+                  const SizedBox(height: 12),
+                  buttons,
+                ] else
                   Row(
                     children: [
-                      Icon(
-                        needsReview ? Icons.pending_actions_rounded : icon,
-                        size: 14,
-                        color: statusColor,
-                      ),
-                      const SizedBox(width: 5),
-                      Flexible(
-                        child: Text(
-                          tr(
-                            context,
-                            needsReview ? 'Unrecorded · needs review' : label,
-                          ),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: statusColor,
-                            fontWeight: missed || needsReview
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                          ),
-                        ),
-                      ),
+                      Expanded(child: details),
+                      const SizedBox(width: 10),
+                      buttons,
                     ],
                   ),
-                  if (!isToday && status == PrayerStatus.missed)
-                    TextButton.icon(
-                      key: ValueKey('complete-qada-${dateKey(date)}-${p.name}'),
-                      onPressed: replaced
-                          ? () => undoLinkedReplacement(replacement)
-                          : () => completeDatedPrayer(date, p),
-                      icon: Icon(replaced ? Icons.undo : Icons.task_alt),
-                      label: Text(
-                        tr(context, replaced ? 'Undo qada' : 'Complete qada'),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            PopupMenuButton<PrayerStatus>(
-              tooltip: tr(context, 'Update ${p.label}'),
-              icon: const Icon(Icons.more_horiz_rounded),
-              style: IconButton.styleFrom(
-                minimumSize: const Size(48, 48),
-                shape: const CircleBorder(),
-                side: BorderSide(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.outline.withValues(alpha: .75),
-                  width: 1.1,
-                ),
-              ),
-              onSelected: (status) async {
-                if (replaced && status != PrayerStatus.missed) {
-                  if (status == PrayerStatus.performed &&
-                      await confirm(
-                        'Correct the original record?',
-                        'Mark this prayer performed and remove its linked qada replacement? Your outstanding balance will stay unchanged.',
-                      )) {
-                    await act(
-                      () => controller.change(
-                        (j) => j.correctReplacedMiss(
-                          date,
-                          p,
-                          ref.read(clockProvider)(),
-                        ),
-                      ),
-                    );
-                  } else if (status != PrayerStatus.performed &&
-                      await confirm(
-                        'Undo qada and change this record?',
-                        'The linked replacement will be removed and this prayer will become unrecorded.',
-                      )) {
-                    await act(
-                      () => controller.change(
-                        (j) => j.undo(replacement.id).setStatuses(date, {
-                          p: status,
-                        }, ref.read(clockProvider)()),
-                      ),
-                    );
-                  }
-                  return;
-                }
-
-                if (status == PrayerStatus.missed &&
-                    !await confirm(
-                      'Mark ${p.label} as missed?',
-                      'This will count toward your outstanding ${p.label} qada.',
-                    )) {
-                  return;
-                }
-                if (status == PrayerStatus.exempt &&
-                    !await confirm(
-                      'Mark ${p.label} exempt?',
-                      'This prayer will be excluded from qada and review totals. Existing qada replacements must be corrected first if removing a confirmed miss would make the balance negative.',
-                    )) {
-                  return;
-                }
-                await act(() => controller.statuses(date, {p: status}));
-              },
-              itemBuilder: (_) => [
-                for (final s in PrayerStatus.values.where(
-                  (s) => s != PrayerStatus.exempt,
-                ))
-                  PopupMenuItem(
-                    value: s,
-                    child: Text(
-                      tr(context, switch (s) {
-                        PrayerStatus.unrecorded =>
-                          status == PrayerStatus.exempt
-                              ? 'Mark required (unrecorded)'
-                              : 'Leave unrecorded',
-                        PrayerStatus.performed => 'Mark performed',
-                        PrayerStatus.missed => 'Mark missed',
-                        PrayerStatus.exempt => 'Mark exempt',
-                      }),
-                    ),
-                  ),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget historyPage(Journal j, Set<DateTime> unrecordedDays) {
+  Future<void> choosePrayerAction(
+    DateTime day,
+    Prayer prayer,
+    bool done,
+  ) async {
+    final key = '${dateKey(day)}/${prayer.name}';
+    if (!updatingPrayers.add(key)) return;
+    setState(() {});
+    try {
+      final journal = ref.read(journalProvider).requireValue;
+      if (done &&
+          journal.status(day, prayer) == PrayerStatus.missed &&
+          journal.replacementFor(day, prayer) == null) {
+        await completeDatedPrayer(day, prayer);
+      } else {
+        await act(
+          () => controller.change((current) {
+            final linked = current.replacementFor(day, prayer);
+            final status = current.status(day, prayer);
+            final selected = done
+                ? status == PrayerStatus.performed || linked != null
+                : status == PrayerStatus.missed && linked == null;
+            final updated = linked == null ? current : current.undo(linked.id);
+            return updated.setStatuses(day, {
+              prayer: selected
+                  ? PrayerStatus.unrecorded
+                  : done
+                  ? PrayerStatus.performed
+                  : PrayerStatus.missed,
+            }, ref.read(clockProvider)());
+          }),
+        );
+      }
+    } finally {
+      updatingPrayers.remove(key);
+      if (mounted) setState(() {});
+    }
+  }
+
+  Widget historyPage(Journal j, Map<DateTime, int> pendingCounts) {
     final yesterday = DateTime(today.year, today.month, today.day - 1);
     final hasSelection =
         selectedDay != null &&
@@ -875,56 +863,14 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       selectedDay = null;
     });
     return ListView(
+      key: const ValueKey('history-page'),
+      controller: historyScroll,
       padding: const EdgeInsets.all(20),
       children: [
-        qadaSummary(j),
-        if (j.starting.values.any((n) => n > 0) ||
-            j.replacements.any((e) => e.missedDate == null))
-          GlassCard(
-            child: ExpansionTile(
-              title: Text(tr(context, 'Earlier records')),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    tr(
-                      context,
-                      'Existing balances and undated replacements are preserved. They do not identify which dates were settled. Use an existing replacement from a missed prayer to link it without reducing the balance again. Older starting balances are read-only until reconciled.',
-                    ),
-                  ),
-                ),
-                for (final p in Prayer.values)
-                  if ((j.starting[p] ?? 0) > 0)
-                    ListTile(
-                      title: Text(p.label),
-                      trailing: Text('${j.starting[p]}'),
-                    ),
-              ],
-            ),
-          ),
         heading(
           'Your prayer journal',
           'Tracking since ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(j.startDate)}',
         ),
-        if (unrecordedDays.isNotEmpty)
-          GlassCard(
-            key: const ValueKey('history-review-prompt'),
-            child: ListTile(
-              leading: const Icon(Icons.fact_check_outlined),
-              title: Text(
-                tr(
-                  context,
-                  '${unrecordedDays.length} ${unrecordedDays.length == 1 ? 'day needs' : 'days need'} review',
-                ),
-              ),
-              subtitle: Text(
-                tr(context, 'Unrecorded prayers are not qada debt.'),
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: review,
-            ),
-          ),
-        missedPrayerList(j),
         if (firstDay)
           GlassCard(
             key: const ValueKey('history-first-day'),
@@ -959,11 +905,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             ),
           ),
         GlassCard(
+          key: historyCalendarKey,
           child: HistoryCalendar(
             selectedDate: firstDay ? today : selected,
             showSelection: !firstDay,
             today: today,
-            unrecordedDays: unrecordedDays,
+            pendingPrayerCounts: pendingCounts,
             exemptDays: j.days(today).where(j.fullyExempt).toSet(),
             completedDays: j
                 .days(today)
@@ -1008,107 +955,45 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               ),
             ),
           for (final p in Prayer.values) prayerCard(j, selected, p),
-          OutlinedButton.icon(
-            onPressed: review,
-            icon: const Icon(Icons.fact_check_outlined),
-            label: Text(tr(context, 'Review unrecorded days')),
-          ),
         ],
-        const SizedBox(height: 20),
-        replacementHistory(j),
       ],
     );
   }
 
-  Future<void> review() => showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (sheetContext) => Consumer(
-      builder: (context, ref, _) {
-        final j = ref.watch(journalProvider).requireValue;
-        final days = j.unresolvedDays(today);
-        return SafeArea(
-          child: SizedBox(
-            height: MediaQuery.sizeOf(context).height * .82,
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                heading(
-                  'A moment to review',
-                  'Only confirmed misses add to your qada balance.',
+  Widget qadaPage(Journal j) => ListView(
+    key: const ValueKey('qada-page'),
+    padding: const EdgeInsets.all(20),
+    children: [
+      qadaSummary(j),
+      if (j.starting.values.any((n) => n > 0) ||
+          j.replacements.any((e) => e.missedDate == null))
+        GlassCard(
+          child: ExpansionTile(
+            title: Text(tr(context, 'Earlier records')),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  tr(
+                    context,
+                    'Existing balances and undated replacements are preserved. They do not identify which dates were settled. Use an existing replacement from a missed prayer to link it without reducing the balance again. Older starting balances are read-only until reconciled.',
+                  ),
                 ),
-                if (days.isEmpty)
-                  Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text(
-                      tr(
-                        context,
-                        'You’re all caught up. No previous days need review.',
-                      ),
-                    ),
+              ),
+              for (final p in Prayer.values)
+                if ((j.starting[p] ?? 0) > 0)
+                  ListTile(
+                    title: Text(p.label),
+                    trailing: Text('${j.starting[p]}'),
                   ),
-                for (final date in days) ...[
-                  Text(
-                    tr(
-                      context,
-                      DateFormat(
-                        'EEEE, d MMM yyyy',
-                        Localizations.localeOf(context).languageCode,
-                      ).format(date),
-                    ),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      for (final status in [
-                        PrayerStatus.performed,
-                        PrayerStatus.missed,
-                      ])
-                        ActionChip(
-                          label: Text(
-                            tr(
-                              context,
-                              status == PrayerStatus.performed
-                                  ? 'Remaining performed'
-                                  : 'Remaining missed',
-                            ),
-                          ),
-                          onPressed: () async {
-                            if (!await confirm(
-                              'Confirm remaining prayers?',
-                              'Mark every unrecorded prayer on ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(date)} as ${status.name}?',
-                            )) {
-                              return;
-                            }
-                            await act(
-                              () => controller.change(
-                                (current) => current.setStatuses(date, {
-                                  for (final p in Prayer.values)
-                                    if (current.status(date, p) ==
-                                        PrayerStatus.unrecorded)
-                                      p: status,
-                                }, ref.read(clockProvider)()),
-                              ),
-                            );
-                          },
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  for (final p in Prayer.values)
-                    if (j.status(date, p) == PrayerStatus.unrecorded)
-                      prayerCard(j, date, p),
-                  const Divider(height: 28),
-                ],
-              ],
-            ),
+            ],
           ),
-        );
-      },
-    ),
+        ),
+      const SizedBox(height: 12),
+      replacementHistory(j),
+      const SizedBox(height: 24),
+      progressContent(j),
+    ],
   );
 
   Future<void> undoLinkedReplacement(QadaEntry entry) async {
@@ -1213,47 +1098,129 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     });
   }
 
-  Widget missedPrayerList(Journal j) {
-    final misses = [
-      for (final row in j.records.entries)
-        for (final p in Prayer.values)
-          if (row.value[p] == PrayerStatus.missed &&
-              j.replacementFor(parseDay(row.key), p) == null)
-            (day: parseDay(row.key), prayer: p),
-    ]..sort((a, b) => a.day.compareTo(b.day));
-    if (misses.isEmpty) return const SizedBox.shrink();
-    return GlassCard(
-      child: ExpansionTile(
-        key: const ValueKey('missed-prayer-list'),
-        title: Text(tr(context, 'Missed prayer records')),
-        subtitle: Text(
-          tr(
-            context,
-            'Complete a specific prayer below. Earlier unlinked replacements may already cover some records.',
+  Future<void> showMissedPrayers(Prayer prayer) async {
+    final journal = ref.read(journalProvider).requireValue;
+    final dates =
+        journal.records.entries
+            .where(
+              (row) =>
+                  row.value[prayer] == PrayerStatus.missed &&
+                  journal.replacementFor(parseDay(row.key), prayer) == null,
+            )
+            .map((row) => parseDay(row.key))
+            .where((day) => !day.isAfter(today))
+            .toList()
+          ..sort((a, b) => b.compareTo(a));
+    final date = await showDialog<DateTime>(
+      context: context,
+      builder: (context) => AlertDialog(
+        scrollable: true,
+        title: Text(tr(context, '${prayer.label} · outstanding qada')),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (journal.replacements.any(
+                (e) => e.prayer == prayer && e.missedDate == null,
+              ))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    tr(
+                      context,
+                      'Earlier unlinked replacements may already cover some dates. Link an existing replacement when recording Done.',
+                    ),
+                  ),
+                ),
+              if (dates.isEmpty)
+                Text(tr(context, 'No dated missed prayers for this prayer.'))
+              else
+                SizedBox(
+                  height:
+                      (dates.length *
+                              72.0 *
+                              MediaQuery.textScalerOf(context).scale(16) /
+                              16)
+                          .clamp(64.0, MediaQuery.sizeOf(context).height * .45),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: dates.length,
+                    itemBuilder: (context, index) {
+                      final day = dates[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final label = Text(
+                              DateFormat.yMMMd(
+                                Localizations.localeOf(context).languageCode,
+                              ).format(day),
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            );
+                            final open = TextButton.icon(
+                              key: ValueKey(
+                                'open-miss-${dateKey(day)}-${prayer.name}',
+                              ),
+                              onPressed: () => Navigator.pop(context, day),
+                              icon: const Icon(
+                                Icons.calendar_month_outlined,
+                                size: 18,
+                              ),
+                              label: Text(tr(context, 'Open date')),
+                            );
+                            if (constraints.maxWidth < 260 ||
+                                MediaQuery.textScalerOf(context).scale(16) >
+                                    21) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  label,
+                                  const SizedBox(height: 8),
+                                  Align(
+                                    alignment: AlignmentDirectional.centerEnd,
+                                    child: open,
+                                  ),
+                                ],
+                              );
+                            }
+                            return Row(
+                              children: [
+                                Expanded(child: label),
+                                const SizedBox(width: 12),
+                                open,
+                              ],
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
           ),
         ),
-        children: [
-          SizedBox(
-            height: (misses.length * 88.0).clamp(88.0, 320.0),
-            child: ListView.builder(
-              itemCount: misses.length,
-              itemBuilder: (context, index) {
-                final item = misses[index];
-                return ListTile(
-                  title: Text(
-                    '${item.prayer.label} · ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(item.day)}',
-                  ),
-                  trailing: TextButton(
-                    onPressed: () => completeDatedPrayer(item.day, item.prayer),
-                    child: Text(tr(context, 'Complete qada')),
-                  ),
-                );
-              },
-            ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(tr(context, 'Close')),
           ),
         ],
       ),
     );
+    if (date == null || !mounted) return;
+    setState(() {
+      selectedDay = date == today ? null : date;
+      tab = date == today ? 0 : 2;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final calendar = historyCalendarKey.currentContext;
+      if (mounted && tab == 2 && calendar != null) {
+        Scrollable.ensureVisible(calendar, alignment: 0);
+      }
+    });
   }
 
   Widget qadaSummary(Journal j) => Column(
@@ -1277,22 +1244,21 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ),
-              Container(
+              OutlinedButton(
                 key: ValueKey('qada-balance-${p.name}'),
-                constraints: const BoxConstraints(minWidth: 56, minHeight: 44),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(
+                onPressed: () => showMissedPrayers(p),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(56, 48),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  backgroundColor: Theme.of(
                     context,
                   ).colorScheme.primaryContainer.withValues(alpha: .5),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outline,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Text(
                   '${j.balance(p)}',
@@ -1342,7 +1308,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     ),
   );
 
-  Widget progressPage(Journal j) {
+  Widget progressContent(Journal j) {
     final month = DateTime(today.year, today.month);
     final week = DateTime(
       today.year,
@@ -1398,11 +1364,11 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.all(20),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         heading(
-          'Every step counts',
+          'Progress',
           'Reflect on your records, without scores or penalties.',
         ),
         section('This week · Monday onwards', week),
@@ -1443,218 +1409,173 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     );
   }
 
-  Future<void> settings() => showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (context) => Consumer(
-      builder: (context, ref, _) {
-        final j = ref.watch(journalProvider).requireValue;
-        return SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                heading(
-                  'Your journal, your way',
-                  'Stored on this phone. No account or tracking.',
-                ),
-                DropdownButtonFormField<AppLanguage>(
-                  key: const ValueKey('app-language'),
-                  initialValue: j.language,
-                  decoration: InputDecoration(
-                    labelText: tr(context, 'Language / Bahasa'),
-                    prefixIcon: const Icon(Icons.language_rounded),
-                    filled: true,
-                    fillColor: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest
-                        .withValues(alpha: .45),
+  Widget settingsPage(Journal j) => ListView(
+    key: const ValueKey('settings-page'),
+    padding: const EdgeInsets.all(20),
+    children: [
+      SettingsGroup(
+        title: 'Preferences',
+        icon: Icons.tune_rounded,
+        children: [
+          SettingsItem(
+            key: ValueKey('language-setting-${j.language.name}'),
+            title: 'Language / Bahasa',
+            icon: Icons.language_rounded,
+            control: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: DropdownButtonFormField<AppLanguage>(
+                key: const ValueKey('app-language'),
+                initialValue: j.language,
+                decoration: const InputDecoration(
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
                   ),
-                  isExpanded: true,
-                  itemHeight: null,
-                  borderRadius: BorderRadius.circular(22),
-                  dropdownColor: Theme.of(
-                    context,
-                  ).colorScheme.surfaceContainerHigh,
-                  icon: const Icon(Icons.expand_more_rounded),
-                  selectedItemBuilder: (context) => [
-                    for (final language in AppLanguage.values)
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Text(
-                          language == AppLanguage.en
-                              ? 'English'
-                              : 'Bahasa Melayu',
-                        ),
+                ),
+                isExpanded: true,
+                itemHeight: null,
+                borderRadius: BorderRadius.circular(22),
+                dropdownColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHigh,
+                icon: const Icon(Icons.expand_more_rounded),
+                selectedItemBuilder: (context) => [
+                  for (final language in AppLanguage.values)
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        language == AppLanguage.en
+                            ? 'English'
+                            : 'Bahasa Melayu',
                       ),
-                  ],
-                  items: [
-                    for (final language in AppLanguage.values)
-                      DropdownMenuItem(
-                        value: language,
-                        child: Container(
-                          width: double.infinity,
-                          constraints: const BoxConstraints(minHeight: 58),
-                          margin: const EdgeInsets.symmetric(vertical: 3),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: language == j.language
-                                ? Theme.of(context).colorScheme.primaryContainer
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.outlineVariant,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  language == AppLanguage.en
-                                      ? 'English'
-                                      : 'Bahasa Melayu',
-                                ),
-                              ),
-                              if (language == j.language)
-                                const Icon(Icons.check_rounded, size: 20),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                  onChanged: (language) {
-                    if (language != null) {
-                      act(
-                        () => controller.change(
-                          (j) => j.copy(language: language),
-                        ),
-                      );
-                    }
-                  },
-                ),
-                const SizedBox(height: 20),
-                const ReminderSettings(),
-                const SizedBox(height: 20),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.pause_circle_outline),
-                  title: Text(tr(context, 'Menstrual period & tracking pause')),
-                  subtitle: Text(
-                    tr(
-                      context,
-                      'Set your menstrual period dates so prayers are excluded from tracking and qada.',
                     ),
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    trackingSettings();
-                  },
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.help_outline_rounded),
-                  title: Text(tr(context, 'App walkthrough')),
-                  subtitle: Text(
-                    tr(context, 'A guided tour of the screens and controls.'),
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    startWalkthrough();
-                  },
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(tr(context, 'Prayer times & location')),
-                  subtitle: Text(tr(context, j.prayerTimes.place.label)),
-                  leading: const Icon(Icons.schedule_rounded),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    prayerTimeSettings();
-                  },
-                ),
-                const SizedBox(height: 16),
-                if (homeWidget.supported) ...[
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.widgets_outlined),
-                    title: Text(tr(context, 'Home-screen widget')),
-                    subtitle: Text(
-                      tr(context, 'Five prayer buttons. Tap to mark done.'),
-                    ),
-                    trailing: const Icon(Icons.add_circle_outline),
-                    onTap: addHomeWidget,
-                  ),
-                  const SizedBox(height: 16),
                 ],
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(tr(context, 'Dark mode')),
-                  subtitle: Text(
-                    tr(context, 'Softer tones for your evening check-in.'),
-                  ),
-                  value: Theme.of(context).brightness == Brightness.dark,
-                  onChanged: (enabled) => act(
-                    () => controller.change(
-                      (j) => j.copy(
-                        theme: enabled ? AppTheme.dark : AppTheme.light,
+                items: [
+                  for (final language in AppLanguage.values)
+                    DropdownMenuItem(
+                      value: language,
+                      child: Container(
+                        width: double.infinity,
+                        constraints: const BoxConstraints(minHeight: 58),
+                        margin: const EdgeInsets.symmetric(vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: language == j.language
+                              ? Theme.of(context).colorScheme.primaryContainer
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                language == AppLanguage.en
+                                    ? 'English'
+                                    : 'Bahasa Melayu',
+                              ),
+                            ),
+                            if (language == j.language)
+                              const Icon(Icons.check_rounded, size: 20),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  tr(context, 'Manual backups'),
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  tr(
-                    context,
-                    'Export a backup regularly and keep it somewhere safe. Backups contain your personal prayer records in plain text. Restore replaces your current journal.',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: fileBusy ? null : exportBackup,
-                      icon: const Icon(Icons.file_upload_outlined),
-                      label: Text(tr(context, 'Export backup')),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: fileBusy ? null : importBackup,
-                      icon: const Icon(Icons.file_download_outlined),
-                      label: Text(tr(context, 'Restore backup')),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  tr(
-                    context,
-                    'Personal edition\nPrayer times from WaktuSolat / JAKIM. Cloud sync is not enabled.',
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
+                ],
+                onChanged: (language) {
+                  if (language != null) {
+                    act(
+                      () =>
+                          controller.change((j) => j.copy(language: language)),
+                    );
+                  }
+                },
+              ),
             ),
           ),
-        );
-      },
-    ),
+          SwitchListTile(
+            key: const ValueKey('dark-mode-setting'),
+            secondary: const SettingsIcon(Icons.dark_mode_outlined),
+            title: Text(tr(context, 'Dark mode')),
+            subtitle: Text(
+              tr(context, 'Softer tones for your evening check-in.'),
+            ),
+            value: Theme.of(context).brightness == Brightness.dark,
+            onChanged: (_) => toggleTheme(),
+          ),
+        ],
+      ),
+      SettingsGroup(
+        title: 'Prayer & tracking',
+        icon: Icons.mosque_outlined,
+        children: [
+          SettingsItem(
+            title: 'Prayer times & location',
+            icon: Icons.schedule_rounded,
+            description: j.prayerTimes.place.label,
+            onTap: prayerTimeSettings,
+          ),
+          SettingsItem(
+            title: 'Menstrual period & tracking pause',
+            icon: Icons.pause_circle_outline,
+            description:
+                'Set your menstrual period dates so prayers are excluded from tracking and qada.',
+            onTap: trackingSettings,
+          ),
+        ],
+      ),
+      const ReminderSettings(),
+      SettingsGroup(
+        title: 'Backups',
+        icon: Icons.backup_outlined,
+        children: [
+          SettingsItem(
+            title: 'Export backup',
+            icon: Icons.file_upload_outlined,
+            description: 'Save a copy of your journal and settings.',
+            enabled: !fileBusy,
+            onTap: exportBackup,
+          ),
+          SettingsItem(
+            title: 'Restore backup',
+            icon: Icons.file_download_outlined,
+            description: 'Replace this journal with a saved backup.',
+            enabled: !fileBusy,
+            onTap: importBackup,
+          ),
+        ],
+      ),
+      SettingsGroup(
+        title: 'Tools & help',
+        icon: Icons.help_outline_rounded,
+        children: [
+          if (homeWidget.supported)
+            SettingsItem(
+              title: 'Home-screen widget',
+              icon: Icons.widgets_outlined,
+              description: 'Five prayer buttons. Tap to mark done.',
+              onTap: addHomeWidget,
+            ),
+          SettingsItem(
+            title: 'App walkthrough',
+            icon: Icons.explore_outlined,
+            description: 'A guided tour of the screens and controls.',
+            onTap: startWalkthrough,
+          ),
+          const SettingsItem(
+            title: 'Personal edition',
+            icon: Icons.info_outline_rounded,
+            description:
+                'Prayer times from WaktuSolat / JAKIM. Cloud sync is not enabled.',
+          ),
+        ],
+      ),
+    ],
   );
 
   Future<void> exportBackup() async {

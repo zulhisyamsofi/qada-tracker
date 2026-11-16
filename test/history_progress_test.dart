@@ -1,3 +1,4 @@
+import 'support/prayer_actions.dart';
 import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -39,7 +40,7 @@ void main() {
     await db.save(Journal(startDate: dayOnly(now)));
     await tester.pumpWidget(journalApp(db));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Progress').last);
+    await tester.tap(find.text('Qada').last);
     await tester.pumpAndSettle();
     void fullWidthMetrics({required bool last}) {
       for (final label in [
@@ -78,7 +79,7 @@ void main() {
       try {
         await tester.pumpWidget(journalApp(db));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Records').last);
+        await tester.tap(find.text('History').last);
         await tester.pumpAndSettle();
         await tester.scrollUntilVisible(
           find.byKey(const ValueKey('history-date-2026-11-12')),
@@ -97,26 +98,22 @@ void main() {
               .selectedDate,
           old,
         );
-        final subuh = find.byWidgetPredicate(
-          (w) => w is Checkbox && w.semanticLabel == 'Subuh performed',
-        );
+        final subuh = doneButton(Prayer.subuh);
         final historyScroll = find.byType(Scrollable).first;
         await tester.scrollUntilVisible(subuh, 150, scrollable: historyScroll);
         await tester.pumpAndSettle();
         await tester.tap(subuh);
         await tester.pumpAndSettle();
         await tester.scrollUntilVisible(
-          find.byTooltip('Update Zohor'),
+          missedButton(Prayer.zohor),
           150,
           scrollable: historyScroll,
         );
+        await tester.ensureVisible(missedButton(Prayer.zohor));
         await tester.pumpAndSettle();
-        await tester.tap(find.byTooltip('Update Zohor'));
+        await tester.tap(missedButton(Prayer.zohor));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Mark missed'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.widgetWithText(FilledButton, 'Confirm'));
-        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsNothing);
         var j = await db.load(now);
         expect(j.startDate, dayOnly(now));
         expect(j.status(old, Prayer.subuh), PrayerStatus.performed);
@@ -134,9 +131,19 @@ void main() {
         expect(j.status(old, Prayer.subuh), PrayerStatus.performed);
         expect(j.status(old, Prayer.zohor), PrayerStatus.missed);
         expect(Journal.decode(j.export(), now).toJson(), j.toJson());
-        await tester.tap(find.text('Records').last);
+        await tester.tap(find.text('History').last);
         await tester.pumpAndSettle();
-        expect(find.text('1 day needs review'), findsOneWidget);
+        expect(find.text('1 day needs review'), findsNothing);
+        expect(
+          (tester
+                      .widget<Badge>(
+                        find.byKey(const ValueKey('history-review-badge')),
+                      )
+                      .label!
+                  as Text)
+              .data,
+          '4',
+        );
         await tester.scrollUntilVisible(
           find.byKey(const ValueKey('history-date-2026-11-12')),
           180,

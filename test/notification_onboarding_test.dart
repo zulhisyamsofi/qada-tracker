@@ -120,7 +120,7 @@ void main() {
         expect(service.requests, 0);
         await press(tester, 'Enable & continue');
         expect(service.requests, 1);
-        expect(find.text('Review your Records'), findsOneWidget);
+        expect(find.text('Review your History'), findsOneWidget);
         var journal = await db.load(now);
         expect(journal.prayerTimes.notifications, isTrue);
         expect(journal.prayerTimes.place.id, 'johor_bahru');
@@ -167,7 +167,7 @@ void main() {
         await tester.pumpAndSettle();
         await openConsent(tester);
         await press(tester, 'Enable & continue');
-        expect(find.text('Review your Records'), findsOneWidget);
+        expect(find.text('Review your History'), findsOneWidget);
         expect((await db.load(now)).prayerTimes.notifications, isTrue);
         expect((await db.load(now)).reminderEnabled, isFalse);
         await press(tester, 'Skip tour');
@@ -208,7 +208,7 @@ void main() {
             findsOneWidget,
           );
           await press(tester, 'Next');
-          expect(find.text('Review your Records'), findsOneWidget);
+          expect(find.text('Review your History'), findsOneWidget);
           expect(service.requests, 1);
           expect((await db.load(now)).prayerTimes.notifications, isFalse);
           await press(tester, 'Skip tour');
@@ -244,6 +244,11 @@ void main() {
         await press(tester, 'Skip tour');
         await tester.tap(find.byTooltip('Settings'));
         await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.text('App walkthrough'),
+          180,
+          scrollable: find.byType(Scrollable).first,
+        );
         await tester.tap(find.text('App walkthrough'));
         await tester.pumpAndSettle();
         await openConsent(tester);
@@ -324,7 +329,7 @@ void main() {
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
           await press(tester, 'Next');
-          expect(find.text('Review your Records'), findsOneWidget);
+          expect(find.text('Review your History'), findsOneWidget);
           await press(tester, 'Skip tour');
         } finally {
           await tester.pumpWidget(const SizedBox());

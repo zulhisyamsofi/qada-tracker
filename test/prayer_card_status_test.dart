@@ -1,3 +1,4 @@
+import 'support/prayer_actions.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -69,7 +70,7 @@ void main() {
           await capture(tester, 'prayer-status-today-${mode.name}');
           final checkbox = find.descendant(
             of: card(now, Prayer.subuh),
-            matching: find.byType(Checkbox),
+            matching: prayerActions(),
           );
           await tester.tap(checkbox);
           await tester.pumpAndSettle();
@@ -81,7 +82,7 @@ void main() {
           await tester.tap(checkbox);
           await tester.pumpAndSettle();
           expect(appearance(now, Prayer.subuh).borderColor, done.borderColor);
-          await tester.tap(find.text('Records').last);
+          await tester.tap(find.text('History').last);
           await tester.pumpAndSettle();
           final date = find.byKey(const ValueKey('history-date-2026-11-13'));
           await tester.scrollUntilVisible(
@@ -116,12 +117,9 @@ void main() {
           );
           expect((await db.load(now)).outstanding, 2);
           await capture(tester, 'prayer-status-history-${mode.name}');
-          await tester.ensureVisible(find.byTooltip('Update Asar'));
-          await tester.tap(find.byTooltip('Update Asar'));
+          await tester.ensureVisible(missedButton(Prayer.asar));
           await tester.pumpAndSettle();
-          await tester.tap(find.text('Mark missed'));
-          await tester.pumpAndSettle();
-          await tester.tap(find.widgetWithText(FilledButton, 'Confirm'));
+          await tester.tap(missedButton(Prayer.asar));
           await tester.pumpAndSettle();
           expect(appearance(yesterday, Prayer.asar).borderColor, red);
           final missed = find.descendant(
@@ -133,9 +131,7 @@ void main() {
             FontWeight.w700,
           );
           expect((await db.load(now)).outstanding, 3);
-          await tester.tap(find.byTooltip('Update Asar'));
-          await tester.pumpAndSettle();
-          await tester.tap(find.text('Leave unrecorded'));
+          await tester.tap(missedButton(Prayer.asar));
           await tester.pumpAndSettle();
           expect(appearance(yesterday, Prayer.asar).borderColor, amber);
           expect((await db.load(now)).outstanding, 2);

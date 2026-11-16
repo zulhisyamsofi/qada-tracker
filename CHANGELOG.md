@@ -2,6 +2,12 @@
 
 Each version tag identifies one feature edition.
 
+## v1.33.0 — History, Qada, and prayer actions
+
+Navigation is Today, Qada, History, Settings. Progress and replacement history live in Qada. History has per-date red counts of past unrecorded prayers and unreplaced misses; its navigation badge sums prayers instead of days. Completed qada and exemptions are excluded. Each qada balance opens a newest-first missed-date list linking to the exact History date. Removes History’s missed-prayer list and all review prompts/bulk-review buttons.
+
+Today and History replace checkboxes and menus with green Done and red Missed buttons. Missed saves without confirmation. Tapping a selected button clears to Unrecorded. Done on a missed prayer records dated qada; clearing completed qada removes its linked entry and mark atomically. Prayer-start checks and legacy replacement linking are preserved. Settings is organized into consistent icon rows and groups, with language, theme, location, tracking pauses, notifications, backups, and tools. Updates English/Malay labels and the seven-step walkthrough.
+
 ## v1.32.0 — Records and Today refinements
 
 Styles Language options with rounded borders and a selected checkmark in both themes. Records shows five always-visible prayer balances beneath a plain Outstanding qada heading, with only counts boxed and no combined total or expansion. Adds space before Replacement history and calendar checkmarks for dates whose five prayers are performed or have dated qada completions.

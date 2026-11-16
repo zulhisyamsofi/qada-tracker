@@ -137,15 +137,17 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await capture(tester, 'prayer-settings-${mode.name}');
-      Navigator.of(tester.element(find.text('Prayer times & location'))).pop();
+      Navigator.of(
+        tester.element(find.text('Prayer times & location').last),
+      ).pop();
       await tester.pumpAndSettle();
-      for (final tab in ['Records', 'Progress']) {
+      for (final tab in ['History', 'Qada']) {
         await tester.tap(find.text(tab).last);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.text('Qada Tracker'), findsNothing);
         await capture(tester, '${tab.toLowerCase()}-${mode.name}');
-        if (tab == 'Records') {
+        if (tab == 'History') {
           await tester.scrollUntilVisible(
             find.byKey(const ValueKey('history-date-2026-11-12')),
             180,
@@ -199,7 +201,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await capture(tester, 'accessibility-320');
-    for (final tab in ['Records', 'Progress']) {
+    for (final tab in ['History', 'Qada']) {
       await tester.tap(find.text(tab).last);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);

@@ -187,18 +187,19 @@ class GlassNavigationBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     this.destinationKeys,
-    this.unrecordedDayCount = 0,
+    this.pendingPrayerCount = 0,
     super.key,
   });
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final List<GlobalKey>? destinationKeys;
-  final int unrecordedDayCount;
-  static const labels = ['Today', 'Records', 'Progress'];
+  final int pendingPrayerCount;
+  static const labels = ['Today', 'Qada', 'History', 'Settings'];
   static const icons = [
     Icons.wb_sunny_outlined,
+    Icons.restart_alt_rounded,
     Icons.calendar_month_outlined,
-    Icons.bar_chart_rounded,
+    Icons.settings_outlined,
   ];
   @override
   Widget build(BuildContext context) {
@@ -213,16 +214,19 @@ class GlassNavigationBar extends StatelessWidget {
               key: destinationKeys?[index],
               button: true,
               selected: index == selectedIndex,
-              label: index == 1 && unrecordedDayCount > 0
-                  ? 'Records, $unrecordedDayCount past ${unrecordedDayCount == 1 ? 'day' : 'days'} with unrecorded prayers'
-                  : labels[index],
+              label: tr(
+                context,
+                index == 2 && pendingPrayerCount > 0
+                    ? 'History, $pendingPrayerCount prayers need attention'
+                    : labels[index],
+              ),
               onTap: () => onDestinationSelected(index),
               child: ExcludeSemantics(
                 child: Tooltip(
                   message: tr(
                     context,
-                    index == 1 && unrecordedDayCount > 0
-                        ? 'Records · $unrecordedDayCount ${unrecordedDayCount == 1 ? 'day needs' : 'days need'} review'
+                    index == 2 && pendingPrayerCount > 0
+                        ? 'History, $pendingPrayerCount prayers need attention'
                         : labels[index],
                   ),
                   child: Padding(
@@ -253,11 +257,11 @@ class GlassNavigationBar extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (index == 1)
+                            if (index == 2)
                               Badge(
                                 key: const ValueKey('history-review-badge'),
                                 label: Text(
-                                  tr(context, '$unrecordedDayCount'),
+                                  tr(context, '$pendingPrayerCount'),
                                   textScaler: MediaQuery.textScalerOf(
                                     context,
                                   ).clamp(maxScaleFactor: 1.3),
@@ -267,7 +271,7 @@ class GlassNavigationBar extends StatelessWidget {
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                 ),
-                                isLabelVisible: unrecordedDayCount > 0,
+                                isLabelVisible: pendingPrayerCount > 0,
                                 backgroundColor: reviewIndicatorColor(context),
                                 textColor: reviewIndicatorTextColor(context),
                                 child: Icon(

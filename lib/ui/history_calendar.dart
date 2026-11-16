@@ -5,12 +5,12 @@ import 'package:intl/intl.dart';
 import '../model.dart';
 import 'review_indicators.dart';
 
-/// Editable Gregorian calendar with review markers, independent of qada status.
+/// Editable Gregorian calendar with completed and pending prayer badges.
 class HistoryCalendar extends StatefulWidget {
   const HistoryCalendar({
     required this.selectedDate,
     required this.today,
-    required this.unrecordedDays,
+    required this.pendingPrayerCounts,
     required this.onDateChanged,
     this.exemptDays = const {},
     this.completedDays = const {},
@@ -19,7 +19,7 @@ class HistoryCalendar extends StatefulWidget {
     super.key,
   });
   final DateTime selectedDate, today;
-  final Set<DateTime> unrecordedDays;
+  final Map<DateTime, int> pendingPrayerCounts;
   final Set<DateTime> exemptDays;
   final Set<DateTime> completedDays;
   final ValueChanged<DateTime> onDateChanged;
@@ -81,8 +81,10 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
         !date.isBefore(earliestJournalDay) && !date.isAfter(widget.today);
     final selected = widget.showSelection && date == widget.selectedDate;
     final isToday = date == widget.today;
-    final pending =
-        date.isBefore(widget.today) && widget.unrecordedDays.contains(date);
+    final pendingCount = date.isBefore(widget.today)
+        ? widget.pendingPrayerCounts[date] ?? 0
+        : 0;
+    final pending = pendingCount > 0;
     final exempt = widget.exemptDays.contains(date);
     final completed = widget.completedDays.contains(date);
     final red = reviewIndicatorColor(context);
@@ -99,7 +101,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
     return Semantics(
       label:
           '${DateFormat.yMMMMEEEEd(Localizations.localeOf(context).languageCode).format(date)}${isToday ? ', today' : ''}${isToday && widget.onTodaySelected != null ? ', opens Today' : ''}'
-          '${completed ? tr(context, ', all five prayers completed') : ''}${pending ? ', has unrecorded prayers, needs review' : ''}${exempt ? ', exempt, no prayers required' : ''}',
+          '${completed ? tr(context, ', all five prayers completed') : ''}${pending ? ', ${tr(context, '$pendingCount prayers need attention')}' : ''}${exempt ? ', exempt, no prayers required' : ''}',
       button: true,
       enabled: enabled,
       selected: selected,
@@ -151,26 +153,45 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
                             ),
                           ),
                         ),
-                        if (completed)
+                        if (completed || pending)
                           Positioned(
                             right: 0,
                             bottom: 0,
-                            child: DecoratedBox(
+                            child: Container(
                               key: ValueKey(
-                                'history-completed-${dateKey(date)}',
+                                '${completed ? 'history-completed' : 'history-pending'}-${dateKey(date)}',
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 3,
+                                vertical: 1,
                               ),
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.primary,
-                                shape: BoxShape.circle,
+                                color: completed
+                                    ? theme.colorScheme.primary
+                                    : red,
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(1),
-                                child: Icon(
-                                  Icons.check_rounded,
-                                  size: 12,
-                                  color: theme.colorScheme.onPrimary,
-                                ),
-                              ),
+                              child: completed
+                                  ? Icon(
+                                      Icons.check_rounded,
+                                      size: 12,
+                                      color: theme.colorScheme.onPrimary,
+                                    )
+                                  : Text(
+                                      '$pendingCount',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: reviewIndicatorTextColor(
+                                          context,
+                                        ),
+                                      ),
+                                    ),
                             ),
                           ),
                       ],
@@ -333,7 +354,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    tr(context, 'Past days with unrecorded prayers'),
+                    tr(context, 'Missed or unrecorded prayers on past dates'),
                     style: theme.textTheme.bodySmall,
                   ),
                 ),

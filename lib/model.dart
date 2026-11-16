@@ -469,6 +469,25 @@ class Journal {
       .reversed
       .toList();
 
+  /// Past prayers still requiring a record or a dated replacement.
+  Map<DateTime, int> pendingPrayerCounts(DateTime now) {
+    final settled = {
+      for (final entry in replacements)
+        if (entry.missedDate != null)
+          '${dateKey(entry.missedDate!)}/${entry.prayer.name}',
+    };
+    return {
+      for (final day in days(now))
+        if (day.isBefore(dayOnly(now)))
+          day: Prayer.values.where((p) {
+            final value = status(day, p);
+            return value == PrayerStatus.unrecorded ||
+                value == PrayerStatus.missed &&
+                    !settled.contains('${dateKey(day)}/${p.name}');
+          }).length,
+    }..removeWhere((day, count) => count == 0);
+  }
+
   Map<String, dynamic> toJson() => {
     'version': 3,
     'startDate': dateKey(startDate),

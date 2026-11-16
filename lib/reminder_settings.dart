@@ -5,6 +5,7 @@ import 'controller.dart';
 import 'model.dart';
 import 'prayer_times_controller.dart';
 import 'reminders.dart';
+import 'ui/settings_group.dart';
 
 /// Both reminder preferences and their shared Android access controls.
 class ReminderSettings extends ConsumerStatefulWidget {
@@ -107,24 +108,32 @@ class _ReminderSettingsState extends ConsumerState<ReminderSettings> {
             (j.prayerTimes.notifications &&
                 access.prayerTimesNotifications == false) ||
             (j.reminderEnabled && !access.notifications));
-    return Column(
+    final statusMessages = <String>[
+      if (j.prayerTimes.notifications && j.prayerTimes.notificationMask == 0)
+        'No prayer alerts selected.',
+      if (!service.supported) 'Reminders are available on Android.',
+      if (!enabled) 'Both reminders are off.',
+      if (access?.error != null) access!.error!,
+      if (enabled &&
+          access != null &&
+          !(access.appNotifications ?? access.notifications))
+        'Android notification permission is blocked.',
+      if (j.prayerTimes.notifications &&
+          access?.prayerTimesNotifications == false)
+        'The Prayer times notification channel is blocked.',
+      if (j.reminderEnabled && access != null && !access.notifications)
+        'Daily check-in notifications are blocked in Android settings.',
+      if (enabled && access != null && !access.exactAlarms)
+        'Allow alarms & reminders for on-time delivery. Android may delay or skip inexact alerts.',
+    ];
+    return SettingsGroup(
       key: const ValueKey('notification-settings-group'),
-      crossAxisAlignment: CrossAxisAlignment.start,
+      title: 'Notifications',
+      icon: Icons.notifications_outlined,
       children: [
-        Text(
-          tr(context, 'Notifications'),
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 6),
-        Text(
-          tr(
-            context,
-            'Choose prayer-time alerts, a daily check-in, or both. Android permission alone does not turn these reminders on.',
-          ),
-        ),
         SwitchListTile(
           key: const ValueKey('prayer-notifications-toggle'),
-          contentPadding: EdgeInsets.zero,
+          secondary: const SettingsIcon(Icons.notifications_active_outlined),
           title: Text(tr(context, 'Prayer-time notifications')),
           subtitle: Text(tr(context, 'Alerts for your selected prayers.')),
           value: j.prayerTimes.notifications,
@@ -136,7 +145,7 @@ class _ReminderSettingsState extends ConsumerState<ReminderSettings> {
         ),
         SwitchListTile(
           key: const ValueKey('daily-check-in-toggle'),
-          contentPadding: EdgeInsets.zero,
+          secondary: const SettingsIcon(Icons.notification_important_outlined),
           title: Text(tr(context, 'Daily check-in reminder')),
           subtitle: Text(
             tr(
@@ -149,74 +158,61 @@ class _ReminderSettingsState extends ConsumerState<ReminderSettings> {
         ),
         ListTile(
           key: const ValueKey('daily-reminder-time'),
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.schedule_outlined),
+          leading: const SettingsIcon(Icons.schedule_outlined),
           title: Text(tr(context, 'Daily check-in time')),
           subtitle: Text(tr(context, '$dailyTime · phone local time')),
           trailing: const Icon(Icons.chevron_right),
           onTap: busy || !service.supported ? null : chooseDailyTime,
         ),
         if (j.prayerTimes.notifications) ...[
-          Text(tr(context, 'Notify me for')),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final p in Prayer.values)
-                FilterChip(
-                  key: ValueKey('prayer-alert-${p.name}'),
-                  label: Text(tr(context, p.label)),
-                  selected:
-                      (j.prayerTimes.notificationMask & (1 << p.index)) != 0,
-                  onSelected: busy || !service.supported
-                      ? null
-                      : (enabled) => prayer(p, enabled),
-                ),
-            ],
-          ),
-          if (j.prayerTimes.notificationMask == 0)
-            Text(tr(context, 'No prayer alerts selected.')),
-          const SizedBox(height: 12),
-        ],
-        if (!service.supported)
-          Text(tr(context, 'Reminders are available on Android.')),
-        if (!enabled) Text(tr(context, 'Both reminders are off.')),
-        if (access?.error != null) Text(tr(context, access!.error!)),
-        if (enabled &&
-            access != null &&
-            !(access.appNotifications ?? access.notifications))
-          Text(tr(context, 'Android notification permission is blocked.')),
-        if (j.prayerTimes.notifications &&
-            access?.prayerTimesNotifications == false)
-          Text(
-            tr(context, 'The Prayer times notification channel is blocked.'),
-          ),
-        if (j.reminderEnabled && access != null && !access.notifications)
-          Text(
-            tr(
-              context,
-              'Daily check-in notifications are blocked in Android settings.',
+          SettingsItem(
+            title: 'Notify me for',
+            icon: Icons.checklist_rounded,
+            control: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final p in Prayer.values)
+                    FilterChip(
+                      key: ValueKey('prayer-alert-${p.name}'),
+                      label: Text(tr(context, p.label)),
+                      selected:
+                          (j.prayerTimes.notificationMask & (1 << p.index)) !=
+                          0,
+                      onSelected: busy || !service.supported
+                          ? null
+                          : (enabled) => prayer(p, enabled),
+                    ),
+                ],
+              ),
             ),
           ),
-        if (enabled && access != null && !access.exactAlarms)
-          Text(
-            tr(
-              context,
-              'Allow alarms & reminders for on-time delivery. Android may delay or skip inexact alerts.',
+        ],
+        if (statusMessages.isNotEmpty)
+          SettingsItem(
+            title: 'Notification status',
+            icon: Icons.info_outline_rounded,
+            control: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final message in statusMessages)
+                  Text(tr(context, message)),
+              ],
             ),
           ),
         if (notificationBlocked)
-          TextButton(
-            onPressed: busy
-                ? null
-                : () => action(service.openNotificationSettings),
-            child: Text(tr(context, 'Android notification settings')),
+          SettingsItem(
+            title: 'Android notification settings',
+            icon: Icons.settings_outlined,
+            onTap: busy ? null : () => action(service.openNotificationSettings),
           ),
         if (service.supported && enabled && access?.exactAlarms == false)
-          TextButton(
-            onPressed: busy ? null : () => action(service.openAlarmSettings),
-            child: Text(tr(context, 'Allow alarms & reminders')),
+          SettingsItem(
+            title: 'Allow alarms & reminders',
+            icon: Icons.alarm_rounded,
+            onTap: busy ? null : () => action(service.openAlarmSettings),
           ),
       ],
     );

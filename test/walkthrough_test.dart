@@ -1,3 +1,4 @@
+import 'support/prayer_actions.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:drift/native.dart';
@@ -84,9 +85,7 @@ void main() {
         expect(find.text(walkthroughSteps[1].title), findsOneWidget);
         await capture(tester, 'walkthrough-checkbox');
         // A tap at the real, spotlighted checkbox is absorbed by the tour.
-        final checkbox = find.byWidgetPredicate(
-          (w) => w is Checkbox && w.semanticLabel == 'Subuh performed',
-        );
+        final checkbox = doneButton(Prayer.subuh);
         await tester.tapAt(tester.getCenter(checkbox));
         await tester.pumpAndSettle();
         expect((await db.load(now)).records, isEmpty);
@@ -101,7 +100,12 @@ void main() {
             find.descendant(
               of: find.byWidget(bar),
               matching: find.text(
-                ['Today', 'Records', 'Progress'][walkthroughSteps[i].tab],
+                [
+                  'Today',
+                  'Qada',
+                  'History',
+                  'Settings',
+                ][walkthroughSteps[i].tab],
               ),
             ),
             findsOneWidget,
@@ -150,6 +154,11 @@ void main() {
       expect(find.byType(AppWalkthrough), findsNothing);
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('App walkthrough'),
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.text('App walkthrough'));
       await tester.pumpAndSettle();
       expect(find.text(walkthroughSteps.first.title), findsOneWidget);

@@ -21,6 +21,13 @@ Widget app(JournalDatabase db) => ProviderScope(
   child: RepaintBoundary(key: captureKey, child: const QadaApp()),
 );
 Future<void> tap(WidgetTester t, Finder f) async {
+  if (f.evaluate().isEmpty) {
+    await t.scrollUntilVisible(
+      f,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+  }
   await t.ensureVisible(f);
   await t.pumpAndSettle();
   await t.tap(f);
@@ -105,9 +112,11 @@ void main() {
             labels
                 .evaluate()
                 .map((e) => (e.widget as Text).data)
-                .where((s) => ['Today', 'Records', 'Progress'].contains(s))
+                .where(
+                  (s) => ['Today', 'Qada', 'History', 'Settings'].contains(s),
+                )
                 .toList(),
-            ['Today', 'Records', 'Progress'],
+            ['Today', 'Qada', 'History', 'Settings'],
           );
           expect(find.textContaining('Starts at'), findsNothing);
           await tap(t, find.byTooltip('Settings'));
@@ -131,11 +140,11 @@ void main() {
             await Future<void>.delayed(const Duration(milliseconds: 100));
           });
           await t.pumpAndSettle();
-          expect(find.text('Jurnal mengikut cara anda'), findsOneWidget);
+          expect(find.text('Pilihan'), findsOneWidget);
           await capture(t, 'language-settings-${mode.name}');
-          Navigator.of(t.element(find.text('Jurnal mengikut cara anda'))).pop();
+          await t.tap(find.text('Hari Ini').last);
           await t.pumpAndSettle();
-          for (final tab in ['Rekod', 'Kemajuan', 'Hari Ini']) {
+          for (final tab in ['Sejarah', 'Qada', 'Hari Ini']) {
             await tap(t, find.text(tab).last);
             expect(t.takeException(), isNull);
             await capture(

@@ -1,3 +1,4 @@
+import 'support/prayer_actions.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,225 +35,185 @@ BoxDecoration day(WidgetTester tester, String key) =>
             .decoration
         as BoxDecoration;
 Finder date(String key) => find.byKey(ValueKey('history-date-$key'));
-Future<void> checkbox(WidgetTester tester, Prayer prayer) async {
-  final target = find.byWidgetPredicate(
-    (w) => w is Checkbox && w.semanticLabel == '${prayer.label} performed',
-  );
-  await tester.scrollUntilVisible(
-    target,
-    140,
+Future<void> tapMark(WidgetTester t, Prayer p, {bool done = true}) async {
+  final f = done ? doneButton(p) : missedButton(p);
+  await t.scrollUntilVisible(f, 160, scrollable: find.byType(Scrollable).first);
+  await t.ensureVisible(f);
+  await t.pumpAndSettle();
+  await t.tap(f);
+  await t.pumpAndSettle();
+}
+
+Future<void> openDate(WidgetTester t, DateTime d) async {
+  final f = date(dateKey(d));
+  await t.scrollUntilVisible(
+    f,
+    -160,
     scrollable: find.byType(Scrollable).first,
   );
-  await tester.ensureVisible(target);
-  await tester.pumpAndSettle();
-  await tester.tap(target);
-  await tester.pumpAndSettle();
+  await t.ensureVisible(f);
+  await t.pumpAndSettle();
+  await t.tap(f);
+  await t.pumpAndSettle();
 }
 
 void main() {
   setUpAll(fonts);
   testWidgets(
-    'badge counts days rather than prayers; red markers and count follow partial and complete corrections',
-    (tester) async {
-      phone(tester);
+    'calendar counts two misses and one unrecorded; navigation sums prayers and settles qada',
+    (t) async {
+      phone(t);
       final db = JournalDatabase(NativeDatabase.memory());
-      final yesterday = DateTime(2026, 11, 13);
-      final previous = DateTime(2026, 11, 12);
-      final oneDay = Journal(startDate: yesterday).setStatuses(yesterday, {
-        for (final p in Prayer.values)
-          p: [Prayer.subuh, Prayer.zohor].contains(p)
-              ? PrayerStatus.unrecorded
-              : PrayerStatus.performed,
-      }, now);
-      await db.save(oneDay);
+      final yesterday = DateTime(2026, 11, 13),
+          previous = DateTime(2026, 11, 12);
+      var j = Journal(startDate: previous);
+      for (final d in [yesterday, previous]) {
+        j = j.setStatuses(d, {
+          for (final p in Prayer.values) p: PrayerStatus.performed,
+        }, now);
+      }
+      j = j
+          .setStatuses(yesterday, {
+            Prayer.subuh: PrayerStatus.missed,
+            Prayer.zohor: PrayerStatus.missed,
+            Prayer.asar: PrayerStatus.unrecorded,
+          }, now)
+          .setStatuses(previous, {Prayer.isyak: PrayerStatus.unrecorded}, now);
+      await db.save(j);
       try {
-        await tester.pumpWidget(app(db));
-        await tester.pumpAndSettle();
-        expectCount(tester, 1); // Two unrecorded prayers, one past day.
-        final twoDays = Journal(startDate: previous, records: oneDay.records)
-            .setStatuses(previous, {
-              for (final p in Prayer.values)
-                p: p == Prayer.asar
-                    ? PrayerStatus.unrecorded
-                    : PrayerStatus.performed,
-            }, now);
-        final container = ProviderScope.containerOf(
-          tester.element(find.byType(QadaApp)),
+        await t.pumpWidget(app(db));
+        await t.pumpAndSettle();
+        expectCount(t, 4);
+        await t.tap(find.text('History').last);
+        await t.pumpAndSettle();
+        final pending = find.byKey(
+          const ValueKey('history-pending-2026-11-13'),
         );
-        await container.read(journalProvider.notifier).restore(twoDays);
-        await tester.pumpAndSettle();
-        expectCount(tester, 2);
-        await tester.tap(find.text('Records').last);
-        await tester.pumpAndSettle();
-        await capture(tester, 'history-calendar-standard');
-        final red = badge(tester).backgroundColor;
-        expect(day(tester, '2026-11-13').border!.top.color, red);
-        expect(day(tester, '2026-11-12').border!.top.color, red);
         expect(
-          day(tester, '2026-11-14').border!.top.color,
-          isNot(red),
-        ); // Today opens the checklist; no review ring.
+          find.descendant(of: pending, matching: find.text('3')),
+          findsOneWidget,
+        );
         expect(
-          day(tester, '2026-11-10').border,
-          isNull,
-        ); // Untouched pre-start date.
-        expect(tester.widget<InkWell>(date('2026-11-15')).onTap, isNull);
-        await tester.scrollUntilVisible(
-          date('2026-11-13'),
-          180,
-          scrollable: find.byType(Scrollable).first,
+          day(t, '2026-11-13').border!.top.color,
+          badge(t).backgroundColor,
         );
-        await tester.ensureVisible(date('2026-11-13'));
-        await tester.pumpAndSettle();
-        await tester.tap(date('2026-11-13'));
-        await tester.pumpAndSettle();
+        expect(find.text('Missed prayer records'), findsNothing);
+        expect(find.text('Review unrecorded days'), findsNothing);
+        await capture(t, 'history-pending-prayer-counts');
+        await tapMark(t, Prayer.asar);
+        expectCount(t, 3);
+        await tapMark(t, Prayer.subuh);
+        expectCount(t, 2);
+        await tapMark(t, Prayer.zohor);
+        expectCount(t, 1);
+        expect((await db.load(now)).outstanding, 0);
+        await openDate(t, yesterday);
         expect(
-          day(tester, '2026-11-13').border!.top.color,
-          red,
-        ); // Selection retains red ring.
-        await capture(tester, 'history-calendar-selected-review');
-        await checkbox(tester, Prayer.subuh);
-        expectCount(tester, 2); // One unresolved prayer remains on yesterday.
-        await tester.ensureVisible(find.byTooltip('Update Zohor'));
-        await tester.tap(find.byTooltip('Update Zohor'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Mark missed'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.widgetWithText(FilledButton, 'Confirm'));
-        await tester.pumpAndSettle();
-        expectCount(tester, 1);
-        await tester.scrollUntilVisible(
-          date('2026-11-13'),
-          -180,
-          scrollable: find.byType(Scrollable).first,
+          find.byKey(const ValueKey('history-completed-2026-11-13')),
+          findsOneWidget,
         );
-        expect(day(tester, '2026-11-13').border, isNull);
-        expect(day(tester, '2026-11-12').border!.top.color, red);
-        expect((await db.load(now)).outstanding, 1);
-        await checkbox(
-          tester,
-          Prayer.subuh,
-        ); // Clearing a completed prayer reopens the day.
-        expectCount(tester, 2);
-        await tester.scrollUntilVisible(
-          date('2026-11-13'),
-          -180,
-          scrollable: find.byType(Scrollable).first,
+        expect(pending, findsNothing);
+        await capture(t, 'history-prayer-counts');
+        await tapMark(
+          t,
+          Prayer.zohor,
+        ); // Selected Done clears both the miss and replacement.
+        expectCount(t, 2);
+        expect(
+          (await db.load(now)).status(yesterday, Prayer.zohor),
+          PrayerStatus.unrecorded,
         );
-        expect(day(tester, '2026-11-13').border!.top.color, red);
-        expect((await db.load(now)).outstanding, 1);
+        expect((await db.load(now)).balance(Prayer.zohor), 0);
+        await openDate(t, previous);
+        await tapMark(t, Prayer.isyak);
+        expectCount(t, 1);
+        await openDate(t, yesterday);
+        await tapMark(t, Prayer.zohor);
+        expectCount(t, 0);
+        expect(t.takeException(), isNull);
       } finally {
-        await tester.pumpWidget(const SizedBox());
+        await t.pumpWidget(const SizedBox());
         await db.close();
       }
     },
   );
-
   testWidgets(
-    'explicit historical backfill joins the badge; bulk review removes resolved markers and zero hides the badge',
-    (tester) async {
-      phone(tester);
+    'optional historical backfill counts unresolved prayers without creating intervening dates',
+    (t) async {
+      phone(t);
       final db = JournalDatabase(NativeDatabase.memory());
-      final old = DateTime(2026, 11, 5);
-      final j = Journal(startDate: DateTime(2026, 11, 12))
-          .setStatuses(old, {Prayer.subuh: PrayerStatus.performed}, now)
-          .setStatuses(DateTime(2026, 11, 12), {
-            for (final p in Prayer.values) p: PrayerStatus.performed,
-          }, now);
+      await db.save(Journal(startDate: dayOnly(now)));
+      final earlier = DateTime(2026, 11, 10);
+      try {
+        await t.pumpWidget(app(db));
+        await t.pumpAndSettle();
+        expectCount(t, 0);
+        await t.tap(find.text('History').last);
+        await t.pumpAndSettle();
+        await openDate(t, earlier);
+        await tapMark(t, Prayer.subuh);
+        expectCount(t, 4);
+        for (final p in Prayer.values.skip(1)) {
+          await tapMark(t, p);
+        }
+        expectCount(t, 0);
+        final saved = await db.load(now);
+        expect(saved.startDate, dayOnly(now));
+        expect(saved.records.keys, [dateKey(earlier)]);
+        expect(saved.outstanding, 0);
+        expect(find.text('Review unrecorded days'), findsNothing);
+      } finally {
+        await t.pumpWidget(const SizedBox());
+        await db.close();
+      }
+    },
+  );
+  testWidgets(
+    'midnight, resume gaps and restart derive prayer counts across months without creating misses',
+    (t) async {
+      phone(t);
+      var clock = DateTime(2026, 11, 30, 23, 59, 59);
+      final db = JournalDatabase(NativeDatabase.memory());
       await db.save(
-        j,
-      ); // Nov 5 and Nov 13 are unresolved; the pre-start gap is untouched.
+        Journal(
+          startDate: dayOnly(clock),
+        ).setStatuses(clock, {Prayer.subuh: PrayerStatus.performed}, clock),
+      );
       try {
-        await tester.pumpWidget(app(db));
-        await tester.pumpAndSettle();
-        expectCount(tester, 2);
-        await tester.tap(find.text('Records').last);
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('2 days need review'));
-        await tester.pumpAndSettle();
-        final bulk = find.text('Remaining missed').last;
-        await tester.scrollUntilVisible(
-          bulk,
-          200,
-          scrollable: find.byType(Scrollable).last,
-        );
-        await tester.tap(bulk);
-        await tester.pumpAndSettle();
-        await tester.tap(find.widgetWithText(FilledButton, 'Confirm'));
-        await tester.pumpAndSettle();
-        expectCount(tester, 1);
-        expect((await db.load(now)).outstanding, 4);
-        Navigator.of(tester.element(find.text('A moment to review'))).pop();
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Records').last);
-        await tester.pumpAndSettle();
-        expect(day(tester, '2026-11-05').border, isNull);
-        expect(day(tester, '2026-11-10').border, isNull);
-        expect(day(tester, '2026-11-13').border, isNotNull);
-        final container = ProviderScope.containerOf(
-          tester.element(find.byType(QadaApp)),
-        );
-        await container.read(journalProvider.notifier).statuses(
-          DateTime(2026, 11, 13),
-          {for (final p in Prayer.values) p: PrayerStatus.performed},
-        );
-        await tester.pumpAndSettle();
-        expectCount(tester, 0);
-        expect(day(tester, '2026-11-13').border, isNull);
+        await t.pumpWidget(app(db, clock: () => clock));
+        await t.pumpAndSettle();
+        expectCount(t, 0);
+        clock = DateTime(2026, 12, 1);
+        await t.pump(const Duration(seconds: 2));
+        await t.pumpAndSettle();
+        expectCount(t, 4);
+        clock = DateTime(2026, 12, 4);
+        t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+        await t.pumpAndSettle();
+        expectCount(t, 19);
+        await t.pumpWidget(const SizedBox());
+        await t.pumpWidget(app(db, clock: () => clock));
+        await t.pumpAndSettle();
+        expectCount(t, 19);
+        expect((await db.load(clock)).outstanding, 0);
+        await t.tap(find.text('History').last);
+        await t.pumpAndSettle();
         expect(
-          (await db.load(now)).outstanding,
-          4,
-        ); // Confirmed misses remain, but have no unrecorded marker.
+          t.widget<HistoryCalendar>(find.byType(HistoryCalendar)).selectedDate,
+          DateTime(2026, 12, 3),
+        );
+        expect(
+          find.byKey(const ValueKey('history-pending-2026-12-03')),
+          findsOneWidget,
+        );
+        expect(t.takeException(), isNull);
       } finally {
-        await tester.pumpWidget(const SizedBox());
+        await t.pumpWidget(const SizedBox());
         await db.close();
       }
     },
   );
-
-  testWidgets(
-    'open midnight, resume gaps, and reopening derive the badge across month boundaries without creating misses',
-    (tester) async {
-      phone(tester);
-      var time = DateTime(2026, 1, 31, 23, 59, 59);
-      final db = JournalDatabase(NativeDatabase.memory());
-      await db.save(Journal(startDate: dayOnly(time)));
-      try {
-        await tester.pumpWidget(app(db, clock: () => time));
-        await tester.pumpAndSettle();
-        expectCount(tester, 0);
-        time = DateTime(2026, 2, 1);
-        await tester.pump(const Duration(seconds: 2));
-        await tester.pumpAndSettle();
-        expectCount(tester, 1);
-        await tester.tap(find.text('Records').last);
-        await tester.pumpAndSettle();
-        expect(find.text('January 2026'), findsOneWidget);
-        expect(
-          day(tester, '2026-01-31').border!.top.color,
-          badge(tester).backgroundColor,
-        );
-        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-        time = DateTime(2026, 2, 3);
-        tester.binding.handleAppLifecycleStateChanged(
-          AppLifecycleState.resumed,
-        );
-        await tester.pumpAndSettle();
-        expectCount(tester, 3);
-        await tester.pumpWidget(const SizedBox());
-        time = DateTime(2026, 2, 5);
-        await tester.pumpWidget(app(db, clock: () => time));
-        await tester.pumpAndSettle();
-        expectCount(tester, 5);
-        expect((await db.load(time)).outstanding, 0);
-        expect((await db.load(time)).records, isEmpty);
-      } finally {
-        await tester.pumpWidget(const SizedBox());
-        await db.close();
-      }
-    },
-  );
-
   testWidgets(
     'calendar retains leap years, year boundaries, date jumping and supported bounds',
     (tester) async {
@@ -267,7 +228,7 @@ void main() {
               builder: (context, setState) => HistoryCalendar(
                 selectedDate: selected,
                 today: today,
-                unrecordedDays: {DateTime(2024, 2, 28)},
+                pendingPrayerCounts: {DateTime(2024, 2, 28): 5},
                 onDateChanged: (value) => setState(() => selected = value),
               ),
             ),
@@ -353,17 +314,17 @@ void main() {
         try {
           await tester.pumpWidget(app(db));
           await tester.pumpAndSettle();
-          final expected = (await db.load(now)).unresolvedDays(now).length;
+          final expected = (await db.load(
+            now,
+          )).pendingPrayerCounts(now).values.fold<int>(0, (sum, n) => sum + n);
           expectCount(tester, expected);
           expect(expected, greaterThan(999));
           expect(
-            find.bySemanticsLabel(
-              'Records, $expected past days with unrecorded prayers',
-            ),
+            find.bySemanticsLabel('History, $expected prayers need attention'),
             findsOneWidget,
           );
           await capture(tester, 'history-badge-narrow-${mode.name}');
-          await tester.tap(find.text('Records').last);
+          await tester.tap(find.text('History').last);
           await tester.pumpAndSettle();
           await tester.scrollUntilVisible(
             date('2026-11-13'),
@@ -376,7 +337,7 @@ void main() {
           );
           expect(
             find.bySemanticsLabel(
-              RegExp('November 13, 2026.*has unrecorded prayers'),
+              RegExp('November 13, 2026.*5 prayers need attention'),
             ),
             findsOneWidget,
           );

@@ -1,3 +1,4 @@
+import 'support/prayer_actions.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,10 +61,22 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Prayer times & location'));
       await tester.pumpAndSettle();
-      expect(find.text('Prayer times & location'), findsOneWidget);
+      expect(find.text('Prayer times & location'), findsWidgets);
       expect(find.byType(PrayerTimesSettings), findsOneWidget);
-      expect(find.text('Prayer-time notifications'), findsNothing);
-      expect(find.text('Daily check-in reminder'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(PrayerTimesSettings),
+          matching: find.text('Prayer-time notifications'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(PrayerTimesSettings),
+          matching: find.text('Daily check-in reminder'),
+        ),
+        findsNothing,
+      );
       expect(
         find.text('Zone WLY01 · Times shown in Asia/Kuala_Lumpur'),
         findsOneWidget,
@@ -154,74 +167,70 @@ void main() {
     });
   }
 
-  testWidgets(
-    'early checkbox and menu actions explain the restriction and unlock at start',
-    (tester) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      var now = DateTime.utc(2026, 11, 13, 2);
-      final db = JournalDatabase(NativeDatabase.memory());
-      await db.save(Journal(startDate: dayOnly(now)));
-      final api = FakeTimesApi();
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            databaseProvider.overrideWith((ref) async => db),
-            clockProvider.overrideWithValue(() => now),
-            prayerTimesApiProvider.overrideWithValue(api),
-          ],
-          child: const QadaApp(),
-        ),
-      );
-      await tester.pumpAndSettle();
-      final zohor = find.byWidgetPredicate(
-        (w) => w is Checkbox && w.semanticLabel == 'Zohor performed',
-      );
-      await tester.scrollUntilVisible(zohor, 150);
-      await tester.pumpAndSettle();
-      await tester.tap(zohor);
-      await tester.pumpAndSettle();
-      expect(
-        find.text(
-          'Zohor starts at 13:00 (Asia/Kuala_Lumpur). You can mark it performed then.',
-        ),
-        findsOneWidget,
-      );
-      expect(
-        (await db.load(now)).status(now, Prayer.zohor),
-        PrayerStatus.unrecorded,
-      );
-      await tester.pump(const Duration(seconds: 5));
-      await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(find.byTooltip('Update Isyak'), 150);
-      await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Update Isyak'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Mark performed'));
-      await tester.pumpAndSettle();
-      expect(
-        (await db.load(now)).status(now, Prayer.isyak),
-        PrayerStatus.unrecorded,
-      );
-      // No reopen is necessary; the write rechecks the real clock at the boundary.
-      now = DateTime.utc(2026, 11, 13, 5);
-      await tester.drag(find.byType(ListView), const Offset(0, 1000));
-      await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(zohor, 150);
-      await tester.pumpAndSettle();
-      await tester.tap(zohor);
-      await tester.pumpAndSettle();
-      expect(
-        (await db.load(now)).status(now, Prayer.zohor),
-        PrayerStatus.performed,
-      );
-      await tester.pumpWidget(const SizedBox());
-      api.client.close();
-      await db.close();
-    },
-  );
+  testWidgets('early Done actions explain the restriction and unlock at start', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    var now = DateTime.utc(2026, 11, 13, 2);
+    final db = JournalDatabase(NativeDatabase.memory());
+    await db.save(Journal(startDate: dayOnly(now)));
+    final api = FakeTimesApi();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWith((ref) async => db),
+          clockProvider.overrideWithValue(() => now),
+          prayerTimesApiProvider.overrideWithValue(api),
+        ],
+        child: const QadaApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final zohor = doneButton(Prayer.zohor);
+    await tester.scrollUntilVisible(zohor, 150);
+    await tester.pumpAndSettle();
+    await tester.tap(zohor);
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Zohor starts at 13:00 (Asia/Kuala_Lumpur). You can mark it performed then.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      (await db.load(now)).status(now, Prayer.zohor),
+      PrayerStatus.unrecorded,
+    );
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(doneButton(Prayer.isyak), 150);
+    await tester.ensureVisible(doneButton(Prayer.isyak));
+    await tester.pumpAndSettle();
+    await tester.tap(doneButton(Prayer.isyak));
+    await tester.pumpAndSettle();
+    expect(
+      (await db.load(now)).status(now, Prayer.isyak),
+      PrayerStatus.unrecorded,
+    );
+    // No reopen is necessary; the write rechecks the real clock at the boundary.
+    now = DateTime.utc(2026, 11, 13, 5);
+    await tester.drag(find.byType(ListView), const Offset(0, 1000));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(zohor, 150);
+    await tester.pumpAndSettle();
+    await tester.tap(zohor);
+    await tester.pumpAndSettle();
+    expect(
+      (await db.load(now)).status(now, Prayer.zohor),
+      PrayerStatus.performed,
+    );
+    await tester.pumpWidget(const SizedBox());
+    api.client.close();
+    await db.close();
+  });
 
   testWidgets(
     'prayer notification taps open Today after leaving the first tab',
@@ -243,9 +252,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Progress').last);
+      await tester.tap(find.text('Qada').last);
       await tester.pumpAndSettle();
-      expect(find.text('Every step counts'), findsOneWidget);
+      expect(find.byKey(const ValueKey('qada-page')), findsOneWidget);
       service.onOpenPrayerTimes!();
       await tester.pumpAndSettle();
       expect(find.text('0 of 5 prayers recorded today'), findsOneWidget);

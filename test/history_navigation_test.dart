@@ -1,3 +1,4 @@
+import 'support/prayer_actions.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,7 +58,7 @@ void main() {
         try {
           await tester.pumpWidget(app(db, () => now));
           await tester.pumpAndSettle();
-          await tap(tester, find.text('Records').last);
+          await tap(tester, find.text('History').last);
           expect(calendar(tester).selectedDate, yesterday);
           expect(card(dayOnly(now), Prayer.subuh), findsNothing);
           await tester.scrollUntilVisible(
@@ -70,7 +71,7 @@ void main() {
           await capture(tester, 'history-yesterday-${mode.name}');
           final checkbox = find.descendant(
             of: card(yesterday, Prayer.subuh),
-            matching: find.byType(Checkbox),
+            matching: prayerActions(),
           );
           await tap(tester, checkbox);
           var saved = await db.load(now);
@@ -87,7 +88,7 @@ void main() {
           expect(card(dayOnly(now), Prayer.subuh), findsOneWidget);
           saved = await db.load(now);
           expect(saved.records.length, 2);
-          await tap(tester, find.text('Records').last);
+          await tap(tester, find.text('History').last);
           expect(calendar(tester).selectedDate, yesterday);
           expect(card(dayOnly(now), Prayer.subuh), findsNothing);
           expect(tester.takeException(), isNull);
@@ -110,7 +111,7 @@ void main() {
       try {
         await tester.pumpWidget(app(db, () => now));
         await tester.pumpAndSettle();
-        await tap(tester, find.text('Records').last);
+        await tap(tester, find.text('History').last);
         await tester.scrollUntilVisible(
           find.text('Your prayer history will appear here tomorrow.'),
           180,
@@ -120,7 +121,7 @@ void main() {
           find.text('Your prayer history will appear here tomorrow.'),
           findsOneWidget,
         );
-        expect(find.byType(Checkbox), findsNothing);
+        expect(prayerActions(), findsNothing);
         expect((await db.load(now)).toJson(), original.toJson());
         await tester.scrollUntilVisible(
           find.text('Go to Today'),
@@ -130,7 +131,7 @@ void main() {
         await capture(tester, 'history-first-day-dark-large-text');
         await tap(tester, find.text('Go to Today'));
         expect(card(dayOnly(now), Prayer.subuh), findsOneWidget);
-        await tap(tester, find.text('Records').last);
+        await tap(tester, find.text('History').last);
         await tester.scrollUntilVisible(
           cell(yesterday),
           180,
@@ -141,7 +142,7 @@ void main() {
         expect(find.byKey(const ValueKey('history-first-day')), findsNothing);
         final checkbox = find.descendant(
           of: card(yesterday, Prayer.subuh),
-          matching: find.byType(Checkbox),
+          matching: prayerActions(),
         );
         await tap(tester, checkbox);
         expect(
@@ -170,7 +171,7 @@ void main() {
       try {
         await tester.pumpWidget(app(db, () => now));
         await tester.pumpAndSettle();
-        await tap(tester, find.text('Records').last);
+        await tap(tester, find.text('History').last);
         await tap(tester, find.byKey(const ValueKey('history-choose-date')));
         await tester.tap(find.text('Cancel'));
         await tester.pumpAndSettle();
@@ -201,7 +202,7 @@ void main() {
       try {
         await tester.pumpWidget(app(db, () => clock));
         await tester.pumpAndSettle();
-        await tap(tester, find.text('Records').last);
+        await tap(tester, find.text('History').last);
         expect(find.byKey(const ValueKey('history-first-day')), findsOneWidget);
         clock = DateTime(2026, 2, 1);
         await tester.pump(const Duration(seconds: 2));
@@ -239,7 +240,7 @@ void main() {
         clock = DateTime(2026, 11, 17, 12);
         await tester.pumpWidget(app(db, () => clock));
         await tester.pumpAndSettle();
-        await tap(tester, find.text('Records').last);
+        await tap(tester, find.text('History').last);
         expect(calendar(tester).selectedDate, DateTime(2026, 11, 16));
         tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
         clock = DateTime(2026, 11, 18, 12);

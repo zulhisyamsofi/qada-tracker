@@ -1,3 +1,24 @@
+# Validation record — v1.33.0
+
+Navigation is Today, Qada, History, Settings. Qada contains outstanding balances, replacement history, and Progress. History contains the calendar and editable date records, with no missed-prayer list or review/bulk-review prompts. Past-date badges count unrecorded prayers plus misses without a linked qada completion; the navigation badge sums these prayers. Today, performed prayers, exemptions, and linked qada completions are excluded from pending counts. Derived counts require no database or backup migration.
+
+Done/Missed buttons replace checkboxes and three-dot menus in Today and History. Missed saves immediately. Done on an unrecorded prayer records Performed; Done on a missed prayer records dated qada. Repeating the selected action clears to Unrecorded. Clearing completed qada removes its exact linked entry and mark in one validated SQLite update; choosing Missed reopens the obligation. Prayer-start checks, nonnegative balances, and explicit linking of eligible legacy replacements are retained. Qada’s per-prayer numbers open newest-first dated misses; Open date selects the corresponding History month/date, or Today for a current-day miss.
+
+Settings uses shared icon rows, typography, indentation, and grouped cards for Preferences, Prayer & tracking, Notifications, Backups, and Tools & help. English/Malay copy and the seven-step walkthrough follow the four destinations. Dialogs stack dates and actions on narrow/enlarged-text layouts. Screenshots were inspected for both themes, pending calendar badges, prayer actions, Settings, and enlarged Malay dialog text.
+
+Validation: formatting and static analysis passed; **144 Flutter tests**, **63 Android JVM tests**, and Android debug APK compilation passed. Optimized universal/per-architecture release builds also passed; all four APKs have verified versions, architectures, signatures, and SHA-256 checksums, with no debug flag or Dart debug kernel. Flutter regressions cover pending counts (including the two misses plus one unrecorded example), exact-date qada navigation and ordering, Done/Missed toggles and atomic qada clearing, date rollover/resume/restart, optional backfill, exemptions, legacy links, reminder permissions, backup cancellation/restore, language persistence, both themes, and narrow/enlarged-text layouts. No Android device is attached, so physical-device runtime checks remain unavailable. Release packaging uses version 1.33.0 (build 34). The app ID, signing certificate, SQLite schema 2, and journal/backup format 3 are unchanged. The release records below describe their own older artifacts.
+
+Downloads: **22.2 MB ARM64** for the Realme GT Master and most current Android phones; **63.1 MB universal** fallback. Choose one APK and keep the same processor variant for updates. Install over the current app to preserve records.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name.
+
+- `qada-tracker-v1.33.0-arm64-v8a.apk` (22,207,158 bytes): `581b525817d2d125ca85b29216cb7e303713c831327f84aeae0281237fda015e`.
+- `qada-tracker-v1.33.0-armeabi-v7a.apk` (19,981,102 bytes): `a83fad0596f7aff3ab7f3c05c9bd6b980f6501705fca6fff48bcc88a70fed6a6`.
+- `qada-tracker-v1.33.0-x86_64.apk` (23,621,150 bytes): `0d0760a391c89f39540240e43c6b574e101af83c639bf2617443b50861e56b8d`.
+- `qada-tracker-v1.33.0.apk` (63,090,786 bytes): `1d5a3414cd8fca2b1f9e5f86bc1b5e036f1282d24b7e17eddab1a58c6e5b845d`.
+
+---
+
 # Validation record — v1.32.0
 
 Language options have rounded borders, theme-aware surfaces, and a selected checkmark; option heights accommodate enlarged text. Records displays five non-collapsible prayer balances with boxed counts, spaces the review button from replacement history, and marks calendar dates only when all five prayers are performed or have dated qada completions. Today checks a confirmed miss into a dated qada completion, preserving its original miss and balance accounting, without inline Complete/Undo qada buttons. English/Malay walkthrough copy explains this flow.

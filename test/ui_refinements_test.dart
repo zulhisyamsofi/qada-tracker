@@ -1,3 +1,4 @@
+import 'support/prayer_actions.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,7 +44,7 @@ void phone(WidgetTester t) {
 void main() {
   setUpAll(fonts);
   testWidgets(
-    'Today missed checkbox respects prayer start and dismisses its error',
+    'Today missed Done button respects prayer start and dismisses its error',
     (t) async {
       phone(t);
       final db = JournalDatabase(NativeDatabase.memory());
@@ -53,17 +54,14 @@ void main() {
         ).setStatuses(now, {Prayer.isyak: PrayerStatus.missed}, now),
       );
       final card = find.byKey(const ValueKey('prayer-card-2026-11-16-isyak'));
-      final checkbox = find.descendant(
-        of: card,
-        matching: find.byType(Checkbox),
-      );
+      final checkbox = find.descendant(of: card, matching: prayerActions());
       try {
         await t.pumpWidget(app(db));
         await t.pumpAndSettle();
         await tap(t, checkbox);
         expect((await db.load(now)).replacements, isEmpty);
         expect((await db.load(now)).balance(Prayer.isyak), 1);
-        expect(t.widget<Checkbox>(checkbox).value, isFalse);
+        expect(actionSelected(t, checkbox), isFalse);
         expect(find.textContaining('Isyak starts at'), findsOneWidget);
         await t.pump(const Duration(seconds: 5));
         await t.pumpAndSettle();
@@ -77,7 +75,7 @@ void main() {
   );
   for (final theme in [AppTheme.light, AppTheme.dark]) {
     testWidgets(
-      'Today missed checkbox completes dated qada and message expires ${theme.name}',
+      'Today missed Done button completes dated qada and message expires ${theme.name}',
       (t) async {
         phone(t);
         final db = JournalDatabase(NativeDatabase.memory());
@@ -89,7 +87,7 @@ void main() {
         );
         final card = find.byKey(const ValueKey('prayer-card-2026-11-16-subuh'));
         Finder checkbox() =>
-            find.descendant(of: card, matching: find.byType(Checkbox));
+            find.descendant(of: card, matching: prayerActions());
         try {
           await t.pumpWidget(app(db));
           await t.pumpAndSettle();
@@ -107,7 +105,7 @@ void main() {
                 .join(' / '),
           );
           expect(saved.replacements.single.missedDate, dayOnly(now));
-          expect(t.widget<Checkbox>(checkbox()).value, isTrue);
+          expect(actionSelected(t, checkbox()), isTrue);
           expect(
             find.descendant(of: card, matching: find.text('Qada completed')),
             findsOneWidget,
@@ -123,7 +121,7 @@ void main() {
           await t.pumpWidget(const SizedBox());
           await t.pumpWidget(app(db));
           await t.pumpAndSettle();
-          expect(t.widget<Checkbox>(checkbox()).value, isTrue);
+          expect(actionSelected(t, checkbox()), isTrue);
           expect((await db.load(now)).replacements.length, 1);
           expect(find.text('Complete qada'), findsNothing);
           expect(find.text('Undo qada'), findsNothing);
@@ -135,7 +133,7 @@ void main() {
       },
     );
     testWidgets(
-      'Records has plain balances, review spacing and exact five-prayer checkmarks ${theme.name}',
+      'Qada has plain balances and History has exact five-prayer checkmarks ${theme.name}',
       (t) async {
         phone(t);
         final db = JournalDatabase(NativeDatabase.memory());
@@ -157,7 +155,7 @@ void main() {
         try {
           await t.pumpWidget(app(db));
           await t.pumpAndSettle();
-          await tap(t, find.text('Records').last);
+          await tap(t, find.text('Qada').last);
           final title = find.text('Outstanding qada');
           expect(title, findsOneWidget);
           expect(
@@ -185,6 +183,7 @@ void main() {
             );
           }
           await capture(t, 'records-balances-${theme.name}');
+          await tap(t, find.text('History').last);
           final calendar = find.byType(HistoryCalendar);
           await scrollTo(t, calendar);
           expect(
@@ -215,21 +214,9 @@ void main() {
             find.byKey(const ValueKey('history-completed-2026-11-15')),
             findsNothing,
           );
-          final review = find.widgetWithText(
-            OutlinedButton,
-            'Review unrecorded days',
-          );
-          await scrollTo(t, review);
-          final history = find
-              .ancestor(
-                of: find.text('Replacement history'),
-                matching: find.byType(GlassCard),
-              )
-              .first;
-          expect(
-            t.getRect(history).top - t.getRect(review).bottom,
-            greaterThanOrEqualTo(20),
-          );
+          expect(find.text('Review unrecorded days'), findsNothing);
+          expect(find.text('Replacement history'), findsNothing);
+          expect(find.text('Missed prayer records'), findsNothing);
           expect(t.takeException(), isNull);
         } finally {
           await t.pumpWidget(const SizedBox());
