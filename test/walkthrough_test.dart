@@ -103,8 +103,8 @@ void main() {
               matching: find.text(
                 [
                   'Today',
-                  'History',
                   'Qada',
+                  'History',
                   'Progress',
                 ][walkthroughSteps[i].tab],
               ),

@@ -193,11 +193,11 @@ class GlassNavigationBar extends StatelessWidget {
   final ValueChanged<int> onDestinationSelected;
   final List<GlobalKey>? destinationKeys;
   final int unrecordedDayCount;
-  static const labels = ['Today', 'History', 'Qada', 'Progress'];
+  static const labels = ['Today', 'Qada', 'History', 'Progress'];
   static const icons = [
     Icons.wb_sunny_outlined,
-    Icons.calendar_month_outlined,
     Icons.restart_alt_rounded,
+    Icons.calendar_month_outlined,
     Icons.bar_chart_rounded,
   ];
   @override
@@ -213,13 +213,13 @@ class GlassNavigationBar extends StatelessWidget {
               key: destinationKeys?[index],
               button: true,
               selected: index == selectedIndex,
-              label: index == 1 && unrecordedDayCount > 0
+              label: index == 2 && unrecordedDayCount > 0
                   ? 'History, $unrecordedDayCount past ${unrecordedDayCount == 1 ? 'day' : 'days'} with unrecorded prayers'
                   : labels[index],
               onTap: () => onDestinationSelected(index),
               child: ExcludeSemantics(
                 child: Tooltip(
-                  message: index == 1 && unrecordedDayCount > 0
+                  message: index == 2 && unrecordedDayCount > 0
                       ? 'History · $unrecordedDayCount ${unrecordedDayCount == 1 ? 'day needs' : 'days need'} review'
                       : labels[index],
                   child: Padding(
@@ -250,7 +250,7 @@ class GlassNavigationBar extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (index == 1)
+                            if (index == 2)
                               Badge(
                                 key: const ValueKey('history-review-badge'),
                                 label: Text(

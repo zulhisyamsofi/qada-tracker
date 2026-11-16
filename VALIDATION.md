@@ -1,3 +1,23 @@
+# Validation record — v1.27.0
+
+Orders tabs Today, Qada, History, Progress and updates the History badge and walkthrough targets to match.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.27.0-arm64-v8a.apk` (21.6 MB).
+- **Universal fallback:** `qada-tracker-v1.27.0.apk` (61.0 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **125 Flutter tests**, **60 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified; no Android device is connected. No database schema, journal/backup version, qada calculation, permission, or API change is introduced. Existing journal/backup version 2 remains supported.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.27.0-arm64-v8a.apk` (21,550,762 bytes): `7c1f198ed0f1191b1cd289f4290238f8d2627c0a9f08f278fe003fccf93cf62c`.
+- `qada-tracker-v1.27.0-armeabi-v7a.apk` (19,177,242 bytes): `be6e26d08ad97b8b21987f85ba4f5c7e3356204c3b3a5885b23353016c36f412`.
+- `qada-tracker-v1.27.0-x86_64.apk` (23,030,286 bytes): `efb8e193c7b2579ce0e94a82a66aff6d099fcb1a16f70300d1842b7fcad56b0f`.
+- `qada-tracker-v1.27.0.apk` (61,041,746 bytes): `eabf9e812757dc8139c05242917fb8b46792ec67908e30f80f2470d42be7d704`.
+
+---
+
 # Validation record — v1.26.0
 
 Aligns navigation destination corners with the surrounding rounded bar and its inset. Keeps all existing navigation and prayer behavior.

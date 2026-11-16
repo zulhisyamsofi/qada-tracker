@@ -82,7 +82,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   final qadaFormulaTooltip = GlobalKey<TooltipState>();
   late final ReminderService reminders;
   late final HomeWidgetService homeWidget;
-  final titles = const ['Today', 'History', 'Qada', 'Progress'];
+  final titles = const ['Today', 'Qada', 'History', 'Progress'];
   @override
   void initState() {
     super.initState();
@@ -337,8 +337,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             constraints: const BoxConstraints(maxWidth: 680),
             child: switch (tab) {
               0 => todayPage(j),
-              1 => historyPage(j, unrecordedDays),
-              2 => qadaPage(j),
+              1 => qadaPage(j),
+              2 => historyPage(j, unrecordedDays),
               _ => progressPage(j),
             },
           ),

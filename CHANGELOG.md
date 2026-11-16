@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.27.0 — Qada before History
+
+Orders tabs Today, Qada, History, Progress and updates the History badge and walkthrough targets to match.
+
 ## v1.26.0 — Consistent navigation rounding
 
 Aligns navigation destination corners with the surrounding rounded bar and its inset. Keeps all existing navigation and prayer behavior.
