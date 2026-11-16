@@ -1,3 +1,4 @@
+import 'localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'controller.dart';
@@ -169,15 +170,20 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
           key: const ValueKey('walkthrough-place'),
           initialValue: notificationPlace.id,
           isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Prayer-time place'),
+          decoration: InputDecoration(
+            labelText: tr(context, 'Prayer-time place'),
+          ),
           items: [
             if (!malaysiaPlaces.any((p) => p.id == notificationPlace.id))
               DropdownMenuItem(
                 value: notificationPlace.id,
-                child: Text(notificationPlace.label),
+                child: Text(tr(context, notificationPlace.label)),
               ),
             for (final place in malaysiaPlaces)
-              DropdownMenuItem(value: place.id, child: Text(place.label)),
+              DropdownMenuItem(
+                value: place.id,
+                child: Text(tr(context, place.label)),
+              ),
           ],
           onChanged: saving
               ? null
@@ -194,11 +200,14 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
         SwitchListTile(
           key: const ValueKey('walkthrough-prayer-alerts'),
           contentPadding: EdgeInsets.zero,
-          title: const Text('Prayer-time notifications'),
+          title: Text(tr(context, 'Prayer-time notifications')),
           subtitle: Text(
-            service.supported
-                ? 'Five daily alerts. Turn off anytime in Settings.'
-                : 'Available on Android.',
+            tr(
+              context,
+              service.supported
+                  ? 'Five daily alerts. Turn off anytime in Settings.'
+                  : 'Available on Android.',
+            ),
           ),
           value: wantNotifications,
           onChanged: saving || !service.supported
@@ -209,8 +218,11 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                 }),
         ),
         if (service.supported && access?.exactAlarms == false) ...[
-          const Text(
-            'For precise timing, also allow alarms & reminders. Android may delay alerts without this access.',
+          Text(
+            tr(
+              context,
+              'For precise timing, also allow alarms & reminders. Android may delay alerts without this access.',
+            ),
           ),
           TextButton(
             onPressed: saving
@@ -228,7 +240,7 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                     }
                     if (mounted) ref.invalidate(reminderAccessProvider);
                   },
-            child: const Text('Allow alarms & reminders'),
+            child: Text(tr(context, 'Allow alarms & reminders')),
           ),
         ],
         if (error != null && service.supported)
@@ -248,7 +260,7 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                     }
                     if (mounted) ref.invalidate(reminderAccessProvider);
                   },
-            child: const Text('Android notification settings'),
+            child: Text(tr(context, 'Android notification settings')),
           ),
       ],
     );
@@ -325,18 +337,21 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
           ? finish
           : next,
       child: Text(
-        saving
-            ? 'Saving…'
-            : index == walkthroughSteps.length - 1
-            ? 'Get started'
-            : step.notificationSetup && wantNotifications
-            ? 'Enable & continue'
-            : 'Next',
+        tr(
+          context,
+          saving
+              ? 'Saving…'
+              : index == walkthroughSteps.length - 1
+              ? 'Get started'
+              : step.notificationSetup && wantNotifications
+              ? 'Enable & continue'
+              : 'Next',
+        ),
       ),
     );
     final back = OutlinedButton(
       onPressed: saving || preparing ? null : () => loadStep(index - 1),
-      child: const Text('Back'),
+      child: Text(tr(context, 'Back')),
     );
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -432,7 +447,10 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    'Step ${index + 1} of ${walkthroughSteps.length}',
+                                    tr(
+                                      context,
+                                      'Step ${index + 1} of ${walkthroughSteps.length}',
+                                    ),
                                     style: theme.textTheme.labelLarge,
                                   ),
                                 ),
@@ -440,7 +458,7 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                                   onPressed: saving || preparing
                                       ? null
                                       : finish,
-                                  child: const Text('Skip tour'),
+                                  child: Text(tr(context, 'Skip tour')),
                                 ),
                               ],
                             ),
@@ -477,7 +495,7 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                                         liveRegion: true,
                                         header: true,
                                         child: Text(
-                                          step.title,
+                                          tr(context, step.title),
                                           style: theme.textTheme.titleLarge
                                               ?.copyWith(
                                                 fontWeight: FontWeight.w800,
@@ -485,7 +503,7 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                                         ),
                                       ),
                                       const SizedBox(height: 10),
-                                      Text(step.body),
+                                      Text(tr(context, step.body)),
                                       if (step.notificationSetup)
                                         notificationControls(),
                                       const SizedBox(height: 12),
@@ -501,7 +519,7 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                                         child: Padding(
                                           padding: const EdgeInsets.all(12),
                                           child: Text(
-                                            step.hint,
+                                            tr(context, step.hint),
                                             style: TextStyle(
                                               color: theme
                                                   .colorScheme
@@ -521,7 +539,7 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                                   child: Padding(
                                     padding: const EdgeInsets.only(top: 12),
                                     child: Text(
-                                      error!,
+                                      tr(context, error!),
                                       style: TextStyle(
                                         color: theme.colorScheme.error,
                                       ),

@@ -1,6 +1,6 @@
 # Qada Tracker
 
-A personal Android prayer journal built with Flutter, Riverpod, and SQLite through Drift. English interface; Malay prayer names. Prayer records stay on the phone unless you export them. Today loads JAKIM prayer times from the free WaktuSolat API using the saved place coordinates (Kuala Lumpur by default).
+A personal Android prayer journal built with Flutter, Riverpod, and SQLite through Drift. English/Malay interface; Malay prayer names. Prayer records stay on the phone unless you export them. Today loads JAKIM prayer times from the free WaktuSolat API using the saved place coordinates (Kuala Lumpur by default).
 
 ## Downloads and versions
 
@@ -18,9 +18,13 @@ New installations open an eight-step guided tour that highlights real controls a
 
 Existing journals are not interrupted after updating. Use **Settings → App walkthrough** to replay the guide at any time. The guide follows light/dark appearance and reduced motion, and its instructions scroll when large text or a small screen needs more space. Scrollable text and setup controls reserve a separate gutter beside the scrollbar. It introduces no new permissions or network services.
 
+## Language
+
+Choose **Settings → Language / Bahasa → English / Bahasa Melayu**. The interface, walkthrough, date/time pickers, dates, new prayer/check-in notification text, and widget feedback follow the saved language. The preference is included in backups and defaults to English for older journals. Android permission and document-picker screens follow the phone’s system language. Menstrual dates are entered and confirmed manually; there is no cycle prediction.
+
 ## Daily use
 
-- **Today:** performed cards have green borders and softer text; confirmed misses use bold red styling. Past unrecorded cards use amber borders and an explicit needs-review label, excluding them from qada until confirmed. Each prayer shows its time, e.g. `Subuh (05:48)`. Tick it once its time has started; early taps explain when you can record it. Untick to leave it unrecorded, or use the menu to confirm a miss. Today uses generously padded prayer cards and a rounded progress panel with a circular completion count. The date remains in the app bar; short screens and large text can scroll. Pull down to refresh times.
+- **Today:** performed cards have green borders and softer text; confirmed misses use bold red styling. Past unrecorded cards use amber borders and an explicit needs-review label, excluding them from qada until confirmed. Each prayer shows its time, e.g. `Subuh (05:48)`. Tick it once its time has started; early taps explain when you can record it. Untick to leave it unrecorded, or use the menu to confirm a miss. The label retains its prayer time; the repeated start-time subtitle is removed. Today uses generously padded prayer cards and a rounded progress panel with a circular completion count. The date remains in the app bar; short screens and large text can scroll. Pull down to refresh times.
 - **Review:** use the prompt above History’s calendar to open previous unrecorded days; mark prayers individually or confirm all remaining prayers for a day.
 - **History:** opens on yesterday for reviewing and correcting earlier dates. Selecting today in the calendar or date picker opens **Today**, keeping current-day recording in one place. On the first tracking day, a helper explains that history appears tomorrow; earlier dates remain available for optional backfill. The red navigation badge counts past days with at least one unrecorded prayer, excluding today. Matching red calendar rings identify those days, and both update as records are corrected; the badge hides at zero. Select any past date (from 1900) and maintain its records. Days before first launch are optional: recording a prayer includes only that day, leaving untouched gaps outside review and totals. Earlier records remain saved when Today rolls over at local midnight or the app resumes.
 - **Qada:** tap the info icon beside Outstanding qada for the balance formula. Enter optional old balances in Settings, tap **+1** beside a prayer for an immediate replacement, or use **Record** for a quantity. The quick action offers Undo for that exact entry and is disabled at zero outstanding. Replacements never tick today's obligatory prayers.
@@ -31,9 +35,9 @@ Existing journals are not interrupted after updating. Use **Settings → App wal
 
 ## Exempt prayers and tracking pauses
 
-Use a prayer’s menu in Today or History to **Mark exempt**, with confirmation. Exempt cards show a pause icon and “Exempt · no qada”; their checkbox is disabled. Use **Mark required (unrecorded)** to correct an exemption, or explicitly confirm performed/missed instead. Changing a confirmed miss to exempt still respects the nonnegative qada-balance rule.
+Individual **Mark exempt** actions are removed from prayer menus. Manage menstrual period dates and pauses in Settings. Existing individual exemptions are preserved; their menu still permits explicitly marking them required (unrecorded), performed, or missed. Corrections continue to respect the nonnegative qada-balance rule.
 
-In **Settings → Exempt dates & tracking pause**, select a date range and confirm it, or pause from a selected prayer today until you resume. Range/pause changes affect unrecorded prayers only: existing performed and missed confirmations are preserved. Future dates are represented by the interval, without creating daily records. Resume requires selecting the first required prayer today, or Tomorrow, so earlier prayers remain exempt. Removing a period asks for confirmation and can bring its unresolved prayers back into review; individually confirmed records remain saved.
+In **Settings → Menstrual period & tracking pause**, select a date range and confirm it, or pause from a selected prayer today until you resume. Range/pause changes affect unrecorded prayers only: existing performed and missed confirmations are preserved. Future dates are represented by the interval, without creating daily records. Resume requires selecting the first required prayer today, or Tomorrow, so earlier prayers remain exempt. Removing a period asks for confirmation and can bring its unresolved prayers back into review; individually confirmed records remain saved.
 
 Exempt prayers do not inflate the History badge, unrecorded counts, or required-prayer totals. Fully exempt dates have neutral calendar shading. **Silence prayer alerts for exempt prayers** defaults on, so an ongoing pause silences prayer-time alerts; daily check-ins always ignore exempt prayers and stay silent when no required prayers need recording. Existing reminder preferences are retained for resume. No reason, health information, or automatic exemption inference is collected.
 
@@ -47,7 +51,7 @@ Reminders are off until enabled. Without alarm access, Android's inexact fallbac
 
 ## Prayer times on Today (v1.5)
 
-The first tab integrates the five daily records and their times; navigation now contains Today, History, Qada, and Progress. It uses the free [WaktuSolat API](https://api.waktusolat.app) without an API key. Coordinates resolve to a Malaysian prayer zone, then previous/current/next months are downloaded from its JAKIM timetable. The selected place, resolved zone, and `Asia/Kuala_Lumpur` timetable timezone are visible in **Settings → Prayer times & location**. Today retains the five parenthesized prayer times. All 150 sample times for WLY01 in November 2026 matched the official e-Solat sample; zone lookup should still be checked near boundaries.
+The first tab integrates the five daily records and their times; navigation now contains Today, Qada, History, and Progress. It uses the free [WaktuSolat API](https://api.waktusolat.app) without an API key. Coordinates resolve to a Malaysian prayer zone, then previous/current/next months are downloaded from its JAKIM timetable. The selected place, resolved zone, and `Asia/Kuala_Lumpur` timetable timezone are visible in **Settings → Prayer times & location**. Today retains the five parenthesized prayer times. All 150 sample times for WLY01 in November 2026 matched the official e-Solat sample; zone lookup should still be checked near boundaries.
 
 Open **Settings → Prayer times & location**. Select a place from the Malaysia dropdown or tap **Use device location**. Location is requested only on that action, at medium accuracy, rounded to three decimals. No background GPS or location history is collected. The saved point is reused for refreshes; tap the button again after travelling. Coordinates are sent to WaktuSolat and included in the plaintext journal backup along with the selected place and notification preference.
 
@@ -117,7 +121,7 @@ Verified in the cloud instance:
 
 - Pinned Flutter/Dart and JDK setup, with checksum verification and TLS trust intact.
 - Frozen dependency resolution with `pubspec.lock`, and repeatable `scripts/setup.sh` execution.
-- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **125 passing Flutter tests and 60 passing Android tests**, and a successful Android debug APK build.
+- `scripts/validate.sh`: formatting checks, static analysis with **no issues**, **128 passing Flutter tests and 62 passing Android tests**, and a successful Android debug APK build.
 
 Prayer-time validation tests cover before/exactly-at/after start, checkboxes and menus, source/date mismatches, absent or malformed caches, atomic bulk changes, concurrent calendar refresh, notification routing, and historical/restore behavior.
 

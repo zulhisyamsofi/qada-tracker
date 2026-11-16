@@ -1,3 +1,4 @@
+import '../localization.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -57,7 +58,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
       firstDate: earliestJournalDay,
       lastDate: widget.today,
       currentDate: widget.today,
-      helpText: 'Choose a date',
+      helpText: tr(context, 'Choose a date'),
     );
     if (!mounted || picked == null) return;
     setState(() => month = monthOf(picked));
@@ -94,7 +95,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
     final onTap = enabled ? () => selectDate(date) : null;
     return Semantics(
       label:
-          '${DateFormat.yMMMMEEEEd().format(date)}${isToday ? ', today' : ''}${isToday && widget.onTodaySelected != null ? ', opens Today' : ''}'
+          '${DateFormat.yMMMMEEEEd(Localizations.localeOf(context).languageCode).format(date)}${isToday ? ', today' : ''}${isToday && widget.onTodaySelected != null ? ', opens Today' : ''}'
           '${pending ? ', has unrecorded prayers, needs review' : ''}${exempt ? ', exempt, no prayers required' : ''}',
       button: true,
       enabled: enabled,
@@ -134,7 +135,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
                     ),
                     child: Center(
                       child: Text(
-                        '${date.day}',
+                        tr(context, '${date.day}'),
                         style: TextStyle(
                           fontSize: 14,
                           color: text,
@@ -175,7 +176,12 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
                   onPressed: chooseDate,
                   style: TextButton.styleFrom(padding: const EdgeInsets.all(8)),
                   child: Text(
-                    DateFormat.yMMMM().format(month),
+                    tr(
+                      context,
+                      DateFormat.yMMMM(
+                        Localizations.localeOf(context).languageCode,
+                      ).format(month),
+                    ),
                     textAlign: TextAlign.start,
                     style: const TextStyle(
                       fontSize: 16,
@@ -186,7 +192,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
               ),
               const SizedBox(width: 4),
               IconButton(
-                tooltip: localizations.previousMonthTooltip,
+                tooltip: tr(context, localizations.previousMonthTooltip),
                 onPressed: month.isAfter(monthOf(earliestJournalDay))
                     ? () => setState(
                         () => month = DateTime(month.year, month.month - 1),
@@ -196,7 +202,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
               ),
               const SizedBox(width: 4),
               IconButton(
-                tooltip: localizations.nextMonthTooltip,
+                tooltip: tr(context, localizations.nextMonthTooltip),
                 onPressed: month.isBefore(monthOf(widget.today))
                     ? () => setState(
                         () => month = DateTime(month.year, month.month + 1),
@@ -220,9 +226,12 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
                             height: 32,
                             child: Center(
                               child: Text(
-                                localizations.narrowWeekdays[(col +
-                                        localizations.firstDayOfWeekIndex) %
-                                    7],
+                                tr(
+                                  context,
+                                  localizations.narrowWeekdays[(col +
+                                          localizations.firstDayOfWeekIndex) %
+                                      7],
+                                ),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: theme.colorScheme.onSurfaceVariant,
@@ -261,7 +270,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Text(
-                'Tap today’s date to open Today.',
+                tr(context, 'Tap today’s date to open Today.'),
                 style: theme.textTheme.bodySmall,
               ),
             ),
@@ -274,7 +283,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Shaded dates are exempt',
+                      tr(context, 'Shaded dates are exempt'),
                       style: theme.textTheme.bodySmall,
                     ),
                   ),
@@ -294,7 +303,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Past days with unrecorded prayers',
+                    tr(context, 'Past days with unrecorded prayers'),
                     style: theme.textTheme.bodySmall,
                   ),
                 ),

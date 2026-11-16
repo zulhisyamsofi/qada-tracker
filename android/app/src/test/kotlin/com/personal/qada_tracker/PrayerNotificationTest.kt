@@ -261,4 +261,15 @@ class PrayerNotificationTest {
         assertTrue(manager.activeNotifications.any { it.id == 2300 })
     }
 
+    @Test fun malayPreferenceTranslatesPrayerAndDailyNotificationText() {
+        save(journal().put("language", "ms"))
+        PrayerTimeAlarms.configure(context, true, time)
+        PrayerTimeAlarms.deliver(context, prayerIntent("zohor"), at(14, 13))
+        val manager = context.getSystemService(NotificationManager::class.java)
+        assertEquals("Waktu Zohor", manager.activeNotifications.first { it.id == 10002 }.notification.extras.getString(Notification.EXTRA_TITLE))
+        val clock = Calendar.getInstance().apply { timeInMillis = at(14, 23) }
+        PrayerReminders.sync(context, true, clock)
+        PrayerReminders.deliver(context, "2026-11-14", clock)
+        assertEquals("Masa untuk jurnal solat anda", manager.activeNotifications.first { it.id == 2300 }.notification.extras.getString(Notification.EXTRA_TITLE))
+    }
 }

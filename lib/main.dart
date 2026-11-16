@@ -1,3 +1,5 @@
+import 'localization.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart'
     show LicenseRegistry, LicenseEntryWithLineBreaks;
@@ -38,6 +40,9 @@ class QadaApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'Qada Tracker',
+      locale: Locale(journal?.language.name ?? 'en'),
+      supportedLocales: const [Locale('en'), Locale('ms')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       debugShowCheckedModeBanner: false,
       theme: QadaTheme.build(Brightness.light),
       darkTheme: QadaTheme.build(Brightness.dark),
@@ -160,7 +165,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         messenger.clearSnackBars();
         messenger.showSnackBar(
           SnackBar(
-            content: Text(error.toString().replaceFirst('Bad state: ', '')),
+            content: Text(
+              tr(context, error.toString().replaceFirst('Bad state: ', '')),
+            ),
           ),
         );
       }
@@ -229,16 +236,16 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(title),
-          content: Text(message),
+          title: Text(tr(context, title)),
+          content: Text(tr(context, message)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(tr(context, 'Cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: Text(label),
+              child: Text(tr(context, label)),
             ),
           ],
         ),
@@ -266,7 +273,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              titles[tab],
+              tr(context, titles[tab]),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -277,7 +284,13 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             ),
             if (tab == 0)
               Text(
-                DateFormat('EEE, d MMM yyyy').format(today),
+                tr(
+                  context,
+                  DateFormat(
+                    'EEE, d MMM yyyy',
+                    Localizations.localeOf(context).languageCode,
+                  ).format(today),
+                ),
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -287,9 +300,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         ),
         actions: [
           IconButton(
-            tooltip: Theme.of(context).brightness == Brightness.dark
-                ? 'Switch to light mode'
-                : 'Switch to dark mode',
+            tooltip: tr(
+              context,
+              Theme.of(context).brightness == Brightness.dark
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode',
+            ),
             onPressed: data.hasValue ? toggleTheme : null,
             icon: Icon(
               Theme.of(context).brightness == Brightness.dark
@@ -300,7 +316,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           const SizedBox(width: 8),
           IconButton(
             key: walkthroughTargets['settings'],
-            tooltip: 'Settings',
+            tooltip: tr(context, 'Settings'),
             onPressed: data.hasValue ? () => settings() : null,
             icon: const Icon(Icons.settings_outlined),
           ),
@@ -315,17 +331,20 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Unable to open your journal. Your stored data has not been reset.',
+                Text(
+                  tr(
+                    context,
+                    'Unable to open your journal. Your stored data has not been reset.',
+                  ),
                 ),
                 const SizedBox(height: 16),
-                Text('$error'),
+                Text(tr(context, '$error')),
                 TextButton(
                   onPressed: () {
                     ref.invalidate(databaseProvider);
                     ref.invalidate(journalProvider);
                   },
-                  child: const Text('Retry'),
+                  child: Text(tr(context, 'Retry')),
                 ),
               ],
             ),
@@ -368,13 +387,16 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          title,
+          tr(context, title),
           style: Theme.of(
             context,
           ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 6),
-        Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+        Text(
+          tr(context, subtitle),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
       ],
     ),
   );
@@ -392,24 +414,24 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (labelAction == null)
-              Text(label)
+              Text(tr(context, label))
             else
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Flexible(child: Text(label)),
+                  Flexible(child: Text(tr(context, label))),
                   const SizedBox(width: 4),
                   labelAction,
                 ],
               ),
             const SizedBox(height: 6),
             Text(
-              value,
+              tr(context, value),
               style: Theme.of(
                 context,
               ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
-            if (detail != null) Text(detail),
+            if (detail != null) Text(tr(context, detail)),
           ],
         ),
       ),
@@ -451,9 +473,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          required == 0
-                              ? 'No prayers to record today'
-                              : '$count of $required prayers recorded today',
+                          tr(
+                            context,
+                            required == 0
+                                ? 'No prayers to record today'
+                                : '$count of $required prayers recorded today',
+                          ),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -462,9 +487,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          required == 0
-                              ? 'Today is exempt. Your previous records are preserved.'
-                              : 'A small moment to reflect and keep track.',
+                          tr(
+                            context,
+                            required == 0
+                                ? 'Today is exempt. Your previous records are preserved.'
+                                : 'A small moment to reflect and keep track.',
+                          ),
                           style: Theme.of(
                             context,
                           ).textTheme.bodyMedium?.copyWith(fontSize: 13),
@@ -487,13 +515,21 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                             backgroundColor: Theme.of(
                               context,
                             ).colorScheme.primary.withValues(alpha: .14),
-                            semanticsLabel: 'Daily prayer progress',
-                            semanticsValue:
-                                '$count of $required required prayers performed',
+                            semanticsLabel: tr(
+                              context,
+                              'Daily prayer progress',
+                            ),
+                            semanticsValue: tr(
+                              context,
+                              '$count of $required required prayers performed',
+                            ),
                           ),
                         ),
                         Text(
-                          required == 0 ? 'Exempt' : '$count/$required',
+                          tr(
+                            context,
+                            required == 0 ? 'Exempt' : '$count/$required',
+                          ),
                           style: TextStyle(
                             fontSize: required == 0 ? 14 : 22,
                             fontWeight: FontWeight.w800,
@@ -514,11 +550,14 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 spacing: 8,
                 children: [
                   Text(
-                    '$exempt ${exempt == 1 ? 'prayer' : 'prayers'} exempt today',
+                    tr(
+                      context,
+                      '$exempt ${exempt == 1 ? 'prayer' : 'prayers'} exempt today',
+                    ),
                   ),
                   TextButton(
                     onPressed: trackingSettings,
-                    child: const Text('Manage exemptions'),
+                    child: Text(tr(context, 'Manage exemptions')),
                   ),
                 ],
               ),
@@ -527,9 +566,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Text(
-                data.isLoading
-                    ? 'Loading prayer times…'
-                    : 'Times unavailable · pull down to retry',
+                tr(
+                  context,
+                  data.isLoading
+                      ? 'Loading prayer times…'
+                      : 'Times unavailable · pull down to retry',
+                ),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -642,9 +684,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               scale: 1.2,
               child: Checkbox(
                 value: status == PrayerStatus.performed,
-                semanticLabel: status == PrayerStatus.exempt
-                    ? '${p.label} exempt; no prayer to record'
-                    : '${p.label} performed',
+                semanticLabel: tr(
+                  context,
+                  status == PrayerStatus.exempt
+                      ? '${p.label} exempt; no prayer to record'
+                      : '${p.label} performed',
+                ),
                 onChanged: status == PrayerStatus.exempt
                     ? null
                     : (checked) => act(
@@ -661,7 +706,10 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${p.label}${isToday ? ' (${time?.time ?? '--:--'})' : ''}',
+                    tr(
+                      context,
+                      '${p.label}${isToday ? ' (${time?.time ?? '--:--'})' : ''}',
+                    ),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: performed ? FontWeight.w600 : FontWeight.w800,
@@ -679,7 +727,10 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                       const SizedBox(width: 5),
                       Flexible(
                         child: Text(
-                          needsReview ? 'Unrecorded · needs review' : label,
+                          tr(
+                            context,
+                            needsReview ? 'Unrecorded · needs review' : label,
+                          ),
                           style: TextStyle(
                             fontSize: 12,
                             color: statusColor,
@@ -695,7 +746,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               ),
             ),
             PopupMenuButton<PrayerStatus>(
-              tooltip: 'Update ${p.label}',
+              tooltip: tr(context, 'Update ${p.label}'),
               icon: const Icon(Icons.more_horiz_rounded),
               style: IconButton.styleFrom(
                 minimumSize: const Size(48, 48),
@@ -730,15 +781,17 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ))
                   PopupMenuItem(
                     value: s,
-                    child: Text(switch (s) {
-                      PrayerStatus.unrecorded =>
-                        status == PrayerStatus.exempt
-                            ? 'Mark required (unrecorded)'
-                            : 'Leave unrecorded',
-                      PrayerStatus.performed => 'Mark performed',
-                      PrayerStatus.missed => 'Mark missed',
-                      PrayerStatus.exempt => 'Mark exempt',
-                    }),
+                    child: Text(
+                      tr(context, switch (s) {
+                        PrayerStatus.unrecorded =>
+                          status == PrayerStatus.exempt
+                              ? 'Mark required (unrecorded)'
+                              : 'Leave unrecorded',
+                        PrayerStatus.performed => 'Mark performed',
+                        PrayerStatus.missed => 'Mark missed',
+                        PrayerStatus.exempt => 'Mark exempt',
+                      }),
+                    ),
                   ),
               ],
             ),
@@ -766,7 +819,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       children: [
         heading(
           'Your prayer journal',
-          'Tracking since ${DateFormat.yMMMd().format(j.startDate)}',
+          'Tracking since ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(j.startDate)}',
         ),
         if (unrecordedDays.isNotEmpty)
           GlassCard(
@@ -774,9 +827,14 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             child: ListTile(
               leading: const Icon(Icons.fact_check_outlined),
               title: Text(
-                '${unrecordedDays.length} ${unrecordedDays.length == 1 ? 'day needs' : 'days need'} review',
+                tr(
+                  context,
+                  '${unrecordedDays.length} ${unrecordedDays.length == 1 ? 'day needs' : 'days need'} review',
+                ),
               ),
-              subtitle: const Text('Unrecorded prayers are not qada debt.'),
+              subtitle: Text(
+                tr(context, 'Unrecorded prayers are not qada debt.'),
+              ),
               trailing: const Icon(Icons.chevron_right),
               onTap: review,
             ),
@@ -792,17 +850,23 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   const Icon(Icons.history_rounded),
                   const SizedBox(height: 12),
                   Text(
-                    'Your prayer history will appear here tomorrow.',
+                    tr(
+                      context,
+                      'Your prayer history will appear here tomorrow.',
+                    ),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Record today’s prayers on Today. You can select an earlier date to add older records.',
+                  Text(
+                    tr(
+                      context,
+                      'Record today’s prayers on Today. You can select an earlier date to add older records.',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton(
                     onPressed: openToday,
-                    child: const Text('Go to Today'),
+                    child: Text(tr(context, 'Go to Today')),
                   ),
                 ],
               ),
@@ -825,16 +889,25 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
-              DateFormat('EEEE, d MMMM').format(selected),
+              tr(
+                context,
+                DateFormat(
+                  'EEEE, d MMMM',
+                  Localizations.localeOf(context).languageCode,
+                ).format(selected),
+              ),
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
           if (selected.isBefore(j.startDate))
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(bottom: 12),
               child: Text(
-                'Optional history before tracking began. Saving a prayer adds '
-                'this day only; other earlier dates stay outside your totals.',
+                tr(
+                  context,
+                  'Optional history before tracking began. Saving a prayer adds '
+                  'this day only; other earlier dates stay outside your totals.',
+                ),
                 style: TextStyle(fontSize: 12),
               ),
             ),
@@ -842,7 +915,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           OutlinedButton.icon(
             onPressed: review,
             icon: const Icon(Icons.fact_check_outlined),
-            label: const Text('Review unrecorded days'),
+            label: Text(tr(context, 'Review unrecorded days')),
           ),
         ],
       ],
@@ -868,15 +941,24 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   'Only confirmed misses add to your qada balance.',
                 ),
                 if (days.isEmpty)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.all(24),
                     child: Text(
-                      'You’re all caught up. No previous days need review.',
+                      tr(
+                        context,
+                        'You’re all caught up. No previous days need review.',
+                      ),
                     ),
                   ),
                 for (final date in days) ...[
                   Text(
-                    DateFormat('EEEE, d MMM yyyy').format(date),
+                    tr(
+                      context,
+                      DateFormat(
+                        'EEEE, d MMM yyyy',
+                        Localizations.localeOf(context).languageCode,
+                      ).format(date),
+                    ),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -889,14 +971,17 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                       ])
                         ActionChip(
                           label: Text(
-                            status == PrayerStatus.performed
-                                ? 'Remaining performed'
-                                : 'Remaining missed',
+                            tr(
+                              context,
+                              status == PrayerStatus.performed
+                                  ? 'Remaining performed'
+                                  : 'Remaining missed',
+                            ),
                           ),
                           onPressed: () async {
                             if (!await confirm(
                               'Confirm remaining prayers?',
-                              'Mark every unrecorded prayer on ${DateFormat.yMMMd().format(date)} as ${status.name}?',
+                              'Mark every unrecorded prayer on ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(date)} as ${status.name}?',
                             )) {
                               return;
                             }
@@ -940,9 +1025,11 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         '${j.outstanding}',
         labelAction: Tooltip(
           key: qadaFormulaTooltip,
-          message:
-              'Starting balances + confirmed misses − replacements. '
-              'Unrecorded prayers are excluded.',
+          message: tr(
+            context,
+            'Starting balances + confirmed misses − replacements. '
+            'Unrecorded prayers are excluded.',
+          ),
           triggerMode: TooltipTriggerMode.manual,
           constraints: BoxConstraints(
             maxWidth: (MediaQuery.sizeOf(context).width - 48).clamp(0.0, 320.0),
@@ -981,21 +1068,30 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       for (final p in Prayer.values) qadaPrayerCard(j, p),
       const SizedBox(height: 12),
       Text(
-        'Replacement history',
+        tr(context, 'Replacement history'),
         style: Theme.of(context).textTheme.titleLarge,
       ),
       const SizedBox(height: 12),
       if (j.replacements.isEmpty)
-        const Text(
-          'No replacements recorded yet. Completing qada keeps the original missed prayer in your journal.',
+        Text(
+          tr(
+            context,
+            'No replacements recorded yet. Completing qada keeps the original missed prayer in your journal.',
+          ),
         ),
       for (final e in j.replacements.reversed)
         GlassCard(
           child: ListTile(
             leading: const Icon(Icons.check_circle_outline),
-            title: Text('${e.prayer.label} × ${e.quantity}'),
+            title: Text(tr(context, '${e.prayer.label} × ${e.quantity}')),
             subtitle: Text(
-              DateFormat('d MMM yyyy, h:mm a').format(e.completedAt.toLocal()),
+              tr(
+                context,
+                DateFormat(
+                  'd MMM yyyy, h:mm a',
+                  Localizations.localeOf(context).languageCode,
+                ).format(e.completedAt.toLocal()),
+              ),
             ),
             trailing: TextButton(
               onPressed: () async {
@@ -1007,7 +1103,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   await act(() => controller.change((j) => j.undo(e.id)));
                 }
               },
-              child: const Text('Undo'),
+              child: Text(tr(context, 'Undo')),
             ),
           ),
         ),
@@ -1023,13 +1119,13 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                p.label,
+                tr(context, p.label),
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 17,
                 ),
               ),
-              Text('${j.balance(p)} outstanding'),
+              Text(tr(context, '${j.balance(p)} outstanding')),
             ],
           );
           final actions = Wrap(
@@ -1041,12 +1137,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 child: OutlinedButton(
                   key: ValueKey('qada-quick-${p.name}'),
                   onPressed: j.balance(p) > 0 ? () => completeOne(p) : null,
-                  child: const Text('+1'),
+                  child: Text(tr(context, '+1')),
                 ),
               ),
               FilledButton.tonal(
                 onPressed: j.balance(p) > 0 ? () => recordReplacement(p) : null,
-                child: const Text('Record'),
+                child: Text(tr(context, 'Record')),
               ),
             ],
           );
@@ -1076,7 +1172,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
-        content: Text('1 ${p.label} qada recorded.'),
+        content: Text(tr(context, '1 ${p.label} qada recorded.')),
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () => act(() => controller.change((j) => j.undo(id))),
@@ -1091,15 +1187,15 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     final count = await showDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Record ${p.label} qada'),
+        title: Text(tr(context, 'Record ${p.label} qada')),
         content: Form(
           key: form,
           child: TextFormField(
             controller: text,
             autofocus: true,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Replacements completed',
+            decoration: InputDecoration(
+              labelText: tr(context, 'Replacements completed'),
             ),
             validator: (value) {
               final count = int.tryParse(value ?? '');
@@ -1108,7 +1204,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   .requireValue
                   .balance(p);
               return count == null || count < 1 || count > available
-                  ? 'Enter a whole number from 1 to $available.'
+                  ? tr(context, 'Enter a whole number from 1 to $available.')
                   : null;
             },
           ),
@@ -1116,7 +1212,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(tr(context, 'Cancel')),
           ),
           FilledButton(
             onPressed: () {
@@ -1124,7 +1220,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 Navigator.pop(context, int.parse(text.text));
               }
             },
-            child: const Text('Record'),
+            child: Text(tr(context, 'Record')),
           ),
         ],
       ),
@@ -1170,7 +1266,10 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            tr(context, title),
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 12),
           metric(
             'Prayers performed',
@@ -1196,7 +1295,13 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         ),
         section('This week · Monday onwards', week),
         const SizedBox(height: 16),
-        section(DateFormat('MMMM yyyy').format(today), month),
+        section(
+          DateFormat(
+            'MMMM yyyy',
+            Localizations.localeOf(context).languageCode,
+          ).format(today),
+          month,
+        ),
       ],
     );
   }
@@ -1206,17 +1311,20 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add your prayer widget'),
-        content: const Text(
-          'Touch and hold an empty space on your home screen, choose Widgets, '
-          'then find Qada Tracker. Drag the five-prayer widget onto your home '
-          'screen. Tap a prayer to toggle between performed and unrecorded '
-          'for today. Tap the background to open the app.',
+        title: Text(tr(context, 'Add your prayer widget')),
+        content: Text(
+          tr(
+            context,
+            'Touch and hold an empty space on your home screen, choose Widgets, '
+            'then find Qada Tracker. Drag the five-prayer widget onto your home '
+            'screen. Tap a prayer to toggle between performed and unrecorded '
+            'for today. Tap the background to open the app.',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Done'),
+            child: Text(tr(context, 'Done')),
           ),
         ],
       ),
@@ -1241,14 +1349,44 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   'Your journal, your way',
                   'Stored on this phone. No account or tracking.',
                 ),
+                DropdownButtonFormField<AppLanguage>(
+                  key: const ValueKey('app-language'),
+                  initialValue: j.language,
+                  decoration: InputDecoration(
+                    labelText: tr(context, 'Language / Bahasa'),
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: AppLanguage.en,
+                      child: Text(tr(context, 'English')),
+                    ),
+                    DropdownMenuItem(
+                      value: AppLanguage.ms,
+                      child: Text(tr(context, 'Bahasa Melayu')),
+                    ),
+                  ],
+                  onChanged: (language) {
+                    if (language != null) {
+                      act(
+                        () => controller.change(
+                          (j) => j.copy(language: language),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                const SizedBox(height: 20),
                 const ReminderSettings(),
                 const SizedBox(height: 20),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.pause_circle_outline),
-                  title: const Text('Menstrual period & tracking pause'),
-                  subtitle: const Text(
-                    'Set your menstrual period dates so prayers are excluded from tracking and qada.',
+                  title: Text(tr(context, 'Menstrual period & tracking pause')),
+                  subtitle: Text(
+                    tr(
+                      context,
+                      'Set your menstrual period dates so prayers are excluded from tracking and qada.',
+                    ),
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
@@ -1259,9 +1397,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.help_outline_rounded),
-                  title: const Text('App walkthrough'),
-                  subtitle: const Text(
-                    'A guided tour of the screens and controls.',
+                  title: Text(tr(context, 'App walkthrough')),
+                  subtitle: Text(
+                    tr(context, 'A guided tour of the screens and controls.'),
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
@@ -1271,8 +1409,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Prayer times & location'),
-                  subtitle: Text(j.prayerTimes.place.label),
+                  title: Text(tr(context, 'Prayer times & location')),
+                  subtitle: Text(tr(context, j.prayerTimes.place.label)),
                   leading: const Icon(Icons.schedule_rounded),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
@@ -1282,9 +1420,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Past qada starting balances'),
-                  subtitle: const Text(
-                    'Optional counts from before you began tracking.',
+                  title: Text(tr(context, 'Past qada starting balances')),
+                  subtitle: Text(
+                    tr(
+                      context,
+                      'Optional counts from before you began tracking.',
+                    ),
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: startingBalances,
@@ -1294,9 +1435,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.widgets_outlined),
-                    title: const Text('Home-screen widget'),
-                    subtitle: const Text(
-                      'Five prayer buttons. Tap to mark done.',
+                    title: Text(tr(context, 'Home-screen widget')),
+                    subtitle: Text(
+                      tr(context, 'Five prayer buttons. Tap to mark done.'),
                     ),
                     trailing: const Icon(Icons.add_circle_outline),
                     onTap: addHomeWidget,
@@ -1305,9 +1446,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 ],
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Dark mode'),
-                  subtitle: const Text(
-                    'Softer tones for your evening check-in.',
+                  title: Text(tr(context, 'Dark mode')),
+                  subtitle: Text(
+                    tr(context, 'Softer tones for your evening check-in.'),
                   ),
                   value: Theme.of(context).brightness == Brightness.dark,
                   onChanged: (enabled) => act(
@@ -1319,13 +1460,16 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Manual backups',
+                Text(
+                  tr(context, 'Manual backups'),
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Export a backup regularly and keep it somewhere safe. Backups contain your personal prayer records in plain text. Restore replaces your current journal.',
+                Text(
+                  tr(
+                    context,
+                    'Export a backup regularly and keep it somewhere safe. Backups contain your personal prayer records in plain text. Restore replaces your current journal.',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -1335,18 +1479,21 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                     OutlinedButton.icon(
                       onPressed: fileBusy ? null : exportBackup,
                       icon: const Icon(Icons.file_upload_outlined),
-                      label: const Text('Export backup'),
+                      label: Text(tr(context, 'Export backup')),
                     ),
                     OutlinedButton.icon(
                       onPressed: fileBusy ? null : importBackup,
                       icon: const Icon(Icons.file_download_outlined),
-                      label: const Text('Restore backup'),
+                      label: Text(tr(context, 'Restore backup')),
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'Personal edition\nPrayer times from WaktuSolat / JAKIM. Cloud sync is not enabled.',
+                Text(
+                  tr(
+                    context,
+                    'Personal edition\nPrayer times from WaktuSolat / JAKIM. Cloud sync is not enabled.',
+                  ),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -1367,15 +1514,18 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Starting qada balances'),
+        title: Text(tr(context, 'Starting qada balances')),
         content: SingleChildScrollView(
           child: Form(
             key: form,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Only enter prayers owed before tracking began. Daily confirmed misses are added separately.',
+                Text(
+                  tr(
+                    context,
+                    'Only enter prayers owed before tracking began. Daily confirmed misses are added separately.',
+                  ),
                 ),
                 const SizedBox(height: 16),
                 for (final p in Prayer.values)
@@ -1384,11 +1534,16 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                     child: TextFormField(
                       controller: fields[p],
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(labelText: p.label),
+                      decoration: InputDecoration(
+                        labelText: tr(context, p.label),
+                      ),
                       validator: (value) {
                         final n = int.tryParse(value ?? '');
                         return n == null || n < 0 || n > 1000000000
-                            ? 'Enter a whole number from 0 to 1 billion.'
+                            ? tr(
+                                context,
+                                'Enter a whole number from 0 to 1 billion.',
+                              )
                             : null;
                       },
                     ),
@@ -1400,7 +1555,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(tr(context, 'Cancel')),
           ),
           FilledButton(
             onPressed: () async {
@@ -1418,12 +1573,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   await showDialog<void>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Balance conflict'),
-                      content: Text(error.toString()),
+                      title: Text(tr(context, 'Balance conflict')),
+                      content: Text(tr(context, error.toString())),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text('OK'),
+                          child: Text(tr(context, 'OK')),
                         ),
                       ],
                     ),
@@ -1431,7 +1586,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 }
               }
             },
-            child: const Text('Save'),
+            child: Text(tr(context, 'Save')),
           ),
         ],
       ),
@@ -1458,8 +1613,10 @@ class _JournalHomeState extends ConsumerState<JournalHome>
           );
       if (saved && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Backup exported. Keep it somewhere safe.'),
+          SnackBar(
+            content: Text(
+              tr(context, 'Backup exported. Keep it somewhere safe.'),
+            ),
           ),
         );
       }
@@ -1485,9 +1642,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       await controller.restore(validated);
       if (mounted) {
         setState(() => selectedDay = null);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Backup restored.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(tr(context, 'Backup restored.'))),
+        );
       }
     });
     if (mounted) setState(() => fileBusy = false);

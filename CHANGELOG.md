@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.30.0 — English and Malay language selection
+
+Adds Settings → Language / Bahasa with persistent English/Bahasa Melayu selection, localized interface, dates, pickers, new prayer/check-in alerts and widget feedback. Choices survive restart and backup. Includes the prior UI editions; retained master opt-ins and prayer records are unchanged.
+
 ## v1.29.0 — Menstrual period date settings
 
 Clarifies that exempt-date settings cover manually confirmed menstrual-period dates and tracking pauses. Keeps confirmed performed/missed records. No cycle prediction or new health-data collection is introduced.

@@ -49,7 +49,17 @@ class PrayerHomeWidget : AppWidgetProvider() {
                             } catch (error: Exception) { Log.w("PrayerWidget", "Could not refresh check-in reminder", error) }
                         }
                         val label = PrayerWidgetPolicy.labels[PrayerWidgetPolicy.prayers.indexOf(prayer)]
-                        val message = when (result) {
+                        val malay = try { PrayerWidgetStore.read(context)?.optString("language") == "ms" } catch (_: Exception) { false }
+                        val message = if (malay) when (result) {
+                            WidgetWriteResult.SAVED -> "$label direkod untuk hari ini"
+                            WidgetWriteResult.CLEARED -> "$label dikembalikan ke belum direkod"
+                            WidgetWriteResult.STALE_DAY -> "Hari baharu. Tekan sekali lagi untuk merekod solat hari ini."
+                            WidgetWriteResult.BALANCE_CONFLICT -> "Batalkan penggantian qada yang berkenaan dalam aplikasi dahulu."
+                            WidgetWriteResult.UNAVAILABLE -> "Tidak dapat disimpan. Buka Qada Tracker dan cuba lagi."
+                            WidgetWriteResult.NOT_STARTED -> "Waktu $label belum bermula. Semak waktunya di Hari Ini."
+                            WidgetWriteResult.EXEMPT -> "$label dikecualikan. Buka aplikasi untuk mengubahnya."
+                            WidgetWriteResult.TIMES_UNAVAILABLE -> "Muat semula waktu solat hari ini dalam aplikasi dahulu."
+                        } else when (result) {
                             WidgetWriteResult.SAVED -> "$label recorded for today"
                             WidgetWriteResult.CLEARED -> "$label returned to unrecorded"
                             WidgetWriteResult.STALE_DAY -> "New day. Tap again to record today's prayer."

@@ -1,3 +1,23 @@
+# Validation record — v1.30.0
+
+Adds Settings → Language / Bahasa with persistent English/Bahasa Melayu selection, localized interface, dates, pickers, new prayer/check-in alerts and widget feedback. Choices survive restart and backup. Includes the prior UI editions; retained master opt-ins and prayer records are unchanged.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.30.0-arm64-v8a.apk` (22.2 MB).
+- **Universal fallback:** `qada-tracker-v1.30.0.apk` (63.2 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **128 Flutter tests**, **62 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified; no Android device is connected. No database schema, journal/backup version, qada calculation, permission, or API change is introduced. Existing journal/backup version 2 remains supported.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.30.0-arm64-v8a.apk` (22,206,122 bytes): `e6920e2fe777cadcd90df777d7e6c46b210a1b440ed91f851226f73031a5f2e9`.
+- `qada-tracker-v1.30.0-armeabi-v7a.apk` (19,980,062 bytes): `57b135c65f3fedb1921f4798b23621bdb4a292915826d9a8762ae38aa4bb6f15`.
+- `qada-tracker-v1.30.0-x86_64.apk` (23,685,646 bytes): `cfa52c54a3bd414c8baa9393e21f6eb382042625acc518a96d4df1eb4cfda252`.
+- `qada-tracker-v1.30.0.apk` (63,155,282 bytes): `3f366ce43fad2de4a6ac0a942a7542aaa5e95420772ce95228fec1880f58297b`.
+
+---
+
 # Validation record — v1.29.0
 
 Clarifies that exempt-date settings cover manually confirmed menstrual-period dates and tracking pauses. Keeps confirmed performed/missed records. No cycle prediction or new health-data collection is introduced.

@@ -140,8 +140,8 @@ internal object PrayerReminders {
             @Suppress("DEPRECATION")
             val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(context, CHANNEL) else Notification.Builder(context)
             builder.setSmallIcon(R.drawable.notification_icon)
-                .setContentTitle("A moment for your prayer journal")
-                .setContentText("You still have unrecorded prayers today. Check in before midnight.")
+                .setContentTitle(if (journal?.optString("language") == "ms") "Masa untuk jurnal solat anda" else "A moment for your prayer journal")
+                .setContentText(if (journal?.optString("language") == "ms") "Masih ada solat belum direkod hari ini. Rekod sebelum tengah malam." else "You still have unrecorded prayers today. Check in before midnight.")
                 .setContentIntent(open).setAutoCancel(true)
             if (Build.VERSION.SDK_INT >= 26) {
                 val midnight = (now.clone() as Calendar).apply {

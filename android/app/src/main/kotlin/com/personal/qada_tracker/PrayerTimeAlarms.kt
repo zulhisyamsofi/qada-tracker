@@ -126,7 +126,7 @@ internal object PrayerTimeAlarms {
         }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         @Suppress("DEPRECATION")
         val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(context, CHANNEL) else Notification.Builder(context)
-        builder.setSmallIcon(R.drawable.notification_icon).setContentTitle("Time for ${PrayerTimePolicy.labels[index]}")
+        builder.setSmallIcon(R.drawable.notification_icon).setContentTitle(if (config.journal?.optString("language") == "ms") "Waktu ${PrayerTimePolicy.labels[index]}" else "Time for ${PrayerTimePolicy.labels[index]}")
             .setContentText("${config.label} · ${slot.time} (${calendar!!.timezone})")
             .setContentIntent(open).setAutoCancel(true).setWhen(at)
         if (Build.VERSION.SDK_INT >= 26) builder.setTimeoutAfter(30 * 60 * 1000L)

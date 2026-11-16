@@ -1,3 +1,4 @@
+import '../localization.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'review_indicators.dart';
@@ -219,9 +220,12 @@ class GlassNavigationBar extends StatelessWidget {
               onTap: () => onDestinationSelected(index),
               child: ExcludeSemantics(
                 child: Tooltip(
-                  message: index == 2 && unrecordedDayCount > 0
-                      ? 'History · $unrecordedDayCount ${unrecordedDayCount == 1 ? 'day needs' : 'days need'} review'
-                      : labels[index],
+                  message: tr(
+                    context,
+                    index == 2 && unrecordedDayCount > 0
+                        ? 'History · $unrecordedDayCount ${unrecordedDayCount == 1 ? 'day needs' : 'days need'} review'
+                        : labels[index],
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(5),
                     child: InkWell(
@@ -254,7 +258,7 @@ class GlassNavigationBar extends StatelessWidget {
                               Badge(
                                 key: const ValueKey('history-review-badge'),
                                 label: Text(
-                                  '$unrecordedDayCount',
+                                  tr(context, '$unrecordedDayCount'),
                                   textScaler: MediaQuery.textScalerOf(
                                     context,
                                   ).clamp(maxScaleFactor: 1.3),
@@ -291,7 +295,7 @@ class GlassNavigationBar extends StatelessWidget {
                             FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                labels[index],
+                                tr(context, labels[index]),
                                 maxLines: 1,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(

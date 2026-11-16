@@ -1,3 +1,4 @@
+import 'localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'controller.dart';
@@ -23,9 +24,12 @@ class _PrayerTimesSettingsState extends ConsumerState<PrayerTimesSettings> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              error is FormatException
-                  ? error.message
-                  : 'Could not complete this action. Choose a place or try again.',
+              tr(
+                context,
+                error is FormatException
+                    ? error.message
+                    : 'Could not complete this action. Choose a place or try again.',
+              ),
             ),
           ),
         );
@@ -54,27 +58,33 @@ class _PrayerTimesSettingsState extends ConsumerState<PrayerTimesSettings> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Prayer times & location',
+            tr(context, 'Prayer times & location'),
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Times appear beside each prayer on Today. Choose a Malaysian place or use your current location.',
+          Text(
+            tr(
+              context,
+              'Times appear beside each prayer on Today. Choose a Malaysian place or use your current location.',
+            ),
           ),
           const SizedBox(height: 20),
           DropdownButtonFormField<String>(
             key: ValueKey(settings.place.key),
             initialValue: settings.place.id,
             isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Place'),
+            decoration: InputDecoration(labelText: tr(context, 'Place')),
             items: [
               if (!malaysiaPlaces.any((p) => p.id == settings.place.id))
                 DropdownMenuItem(
                   value: settings.place.id,
-                  child: Text(settings.place.label),
+                  child: Text(tr(context, settings.place.label)),
                 ),
               for (final place in malaysiaPlaces)
-                DropdownMenuItem(value: place.id, child: Text(place.label)),
+                DropdownMenuItem(
+                  value: place.id,
+                  child: Text(tr(context, place.label)),
+                ),
             ],
             onChanged: busy
                 ? null
@@ -99,39 +109,51 @@ class _PrayerTimesSettingsState extends ConsumerState<PrayerTimesSettings> {
                     if (mounted) await choose(place);
                   }),
             icon: const Icon(Icons.my_location),
-            label: const Text('Use device location'),
+            label: Text(tr(context, 'Use device location')),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Location is requested only when you tap this button. The selected coordinates are sent to WaktuSolat to find the Malaysian prayer zone.',
+          Text(
+            tr(
+              context,
+              'Location is requested only when you tap this button. The selected coordinates are sent to WaktuSolat to find the Malaysian prayer zone.',
+            ),
             style: TextStyle(fontSize: 12),
           ),
           const SizedBox(height: 16),
           if (busy || loading) const LinearProgressIndicator(),
           if (matching) ...[
             Text(
-              'Zone ${calendar!.zone} · Times shown in ${calendar.timezone}',
+              tr(
+                context,
+                'Zone ${calendar!.zone} · Times shown in ${calendar.timezone}',
+              ),
             ),
             if (data.asData?.value.warning != null)
-              Text(data.asData!.value.warning!),
+              Text(tr(context, data.asData!.value.warning!)),
             const SizedBox(height: 8),
             Text(
-              'Downloaded through ${calendar.entries.last.date}.',
+              tr(context, 'Downloaded through ${calendar.entries.last.date}.'),
               style: const TextStyle(fontSize: 12),
             ),
           ] else if (!loading)
-            const Text(
-              'Unable to load prayer times. Check your connection or choose another place.',
+            Text(
+              tr(
+                context,
+                'Unable to load prayer times. Check your connection or choose another place.',
+              ),
             ),
           TextButton.icon(
             onPressed: loading
                 ? null
                 : () => ref.read(prayerTimesProvider.notifier).refresh(),
             icon: const Icon(Icons.refresh),
-            label: const Text('Refresh times'),
+            label: Text(tr(context, 'Refresh times')),
           ),
-          const Text(
-            'Source: WaktuSolat API · JAKIM zone timetable. Check the selected zone against your local mosque or e-Solat, especially near zone boundaries.',
+          Text(
+            tr(
+              context,
+              'Source: WaktuSolat API · JAKIM zone timetable. Check the selected zone against your local mosque or e-Solat, especially near zone boundaries.',
+            ),
             style: TextStyle(fontSize: 12),
           ),
         ],

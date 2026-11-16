@@ -1,3 +1,4 @@
+import 'localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -24,7 +25,9 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(error.toString().replaceFirst('Bad state: ', '')),
+            content: Text(
+              tr(context, error.toString().replaceFirst('Bad state: ', '')),
+            ),
           ),
         );
       }
@@ -37,16 +40,16 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
       await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(title),
-          content: Text(text),
+          title: Text(tr(context, title)),
+          content: Text(tr(context, text)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(tr(context, 'Cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Confirm'),
+              child: Text(tr(context, 'Confirm')),
             ),
           ],
         ),
@@ -59,12 +62,12 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
       firstDate: earliestJournalDay,
       lastDate: DateTime(today.year + 5 > 2200 ? 2200 : today.year + 5, 12, 31),
       currentDate: today,
-      helpText: 'Choose menstrual period dates',
+      helpText: tr(context, 'Choose menstrual period dates'),
     );
     if (selected == null || !mounted) return;
     if (!await confirm(
       'Confirm exempt dates?',
-      '${DateFormat.yMMMd().format(selected.start)} – ${DateFormat.yMMMd().format(selected.end)}\n\nUnrecorded prayers on these dates will be exempt. Existing performed and missed records will stay unchanged. Exempt prayers do not add qada or require review.',
+      '${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(selected.start)} – ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(selected.end)}\n\nUnrecorded prayers on these dates will be exempt. Existing performed and missed records will stay unchanged. Exempt prayers do not add qada or require review.',
     )) {
       return;
     }
@@ -82,23 +85,29 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, set) => AlertDialog(
-          title: const Text('Pause tracking from today'),
+          title: Text(tr(context, 'Pause tracking from today')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Choose the first exempt prayer today. Earlier prayers and existing performed/missed records stay unchanged. The pause continues until you resume.',
+                Text(
+                  tr(
+                    context,
+                    'Choose the first exempt prayer today. Earlier prayers and existing performed/missed records stay unchanged. The pause continues until you resume.',
+                  ),
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<int>(
                   initialValue: first,
-                  decoration: const InputDecoration(
-                    labelText: 'First exempt prayer',
+                  decoration: InputDecoration(
+                    labelText: tr(context, 'First exempt prayer'),
                   ),
                   items: [
                     for (final p in Prayer.values)
-                      DropdownMenuItem(value: p.index, child: Text(p.label)),
+                      DropdownMenuItem(
+                        value: p.index,
+                        child: Text(tr(context, p.label)),
+                      ),
                   ],
                   onChanged: (v) => set(() => first = v!),
                 ),
@@ -108,11 +117,11 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(tr(context, 'Cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, first),
-              child: const Text('Confirm pause'),
+              child: Text(tr(context, 'Confirm pause')),
             ),
           ],
         ),
@@ -133,24 +142,33 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, set) => AlertDialog(
-          title: const Text('Resume tracking'),
+          title: Text(tr(context, 'Resume tracking')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Choose the first prayer to track today. Earlier prayers remain exempt. Existing confirmations stay unchanged.',
+                Text(
+                  tr(
+                    context,
+                    'Choose the first prayer to track today. Earlier prayers remain exempt. Existing confirmations stay unchanged.',
+                  ),
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<int>(
                   initialValue: first,
-                  decoration: const InputDecoration(
-                    labelText: 'First prayer to track',
+                  decoration: InputDecoration(
+                    labelText: tr(context, 'First prayer to track'),
                   ),
                   items: [
                     for (final p in Prayer.values)
-                      DropdownMenuItem(value: p.index, child: Text(p.label)),
-                    const DropdownMenuItem(value: 5, child: Text('Tomorrow')),
+                      DropdownMenuItem(
+                        value: p.index,
+                        child: Text(tr(context, p.label)),
+                      ),
+                    DropdownMenuItem(
+                      value: 5,
+                      child: Text(tr(context, 'Tomorrow')),
+                    ),
                   ],
                   onChanged: (v) => set(() => first = v),
                 ),
@@ -160,13 +178,13 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(tr(context, 'Cancel')),
             ),
             FilledButton(
               onPressed: first == null
                   ? null
                   : () => Navigator.pop(context, first),
-              child: const Text('Resume'),
+              child: Text(tr(context, 'Resume')),
             ),
           ],
         ),
@@ -180,8 +198,11 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
 
   String label(TrackingPause p) {
     final start =
-        '${DateFormat.yMMMd().format(p.from)} · from ${Prayer.values[p.fromPrayer].label}';
-    return '$start\n${p.through == null ? 'Ongoing until you resume' : '${DateFormat.yMMMd().format(p.through!)} · through ${Prayer.values[p.throughPrayer].label}'}';
+        '${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(p.from)} · from ${Prayer.values[p.fromPrayer].label}';
+    final end = p.through == null
+        ? 'Ongoing until you resume'
+        : '${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(p.through!)} · through ${Prayer.values[p.throughPrayer].label}';
+    return '${tr(context, start)}\n${tr(context, end)}';
   }
 
   @override
@@ -194,12 +215,15 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
       padding: const EdgeInsets.all(20),
       children: [
         Text(
-          'Menstrual period & tracking pause',
+          tr(context, 'Menstrual period & tracking pause'),
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 12),
-        const Text(
-          'Set your menstrual period dates to exclude prayers from tracking and qada. Dates are confirmed by you; the app does not predict your cycle. Existing performed and missed records stay unchanged.',
+        Text(
+          tr(
+            context,
+            'Set your menstrual period dates to exclude prayers from tracking and qada. Dates are confirmed by you; the app does not predict your cycle. Existing performed and missed records stay unchanged.',
+          ),
         ),
         const SizedBox(height: 16),
         Wrap(
@@ -210,7 +234,7 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
               key: const ValueKey('add-exempt-dates'),
               onPressed: busy ? null : dates,
               icon: const Icon(Icons.date_range_outlined),
-              label: const Text('Add period dates'),
+              label: Text(tr(context, 'Add period dates')),
             ),
             FilledButton.icon(
               key: const ValueKey('tracking-pause-toggle'),
@@ -225,7 +249,10 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
                     : Icons.play_circle_outline,
               ),
               label: Text(
-                ongoing == null ? 'Pause tracking' : 'Resume tracking',
+                tr(
+                  context,
+                  ongoing == null ? 'Pause tracking' : 'Resume tracking',
+                ),
               ),
             ),
           ],
@@ -233,9 +260,12 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
         const SizedBox(height: 12),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          title: const Text('Silence prayer alerts for exempt prayers'),
-          subtitle: const Text(
-            'Daily check-ins also ignore exempt prayers. Your reminder preferences are kept for when tracking resumes.',
+          title: Text(tr(context, 'Silence prayer alerts for exempt prayers')),
+          subtitle: Text(
+            tr(
+              context,
+              'Daily check-ins also ignore exempt prayers. Your reminder preferences are kept for when tracking resumes.',
+            ),
           ),
           value: j.mutePrayerAlertsWhenExempt,
           onChanged: busy
@@ -244,7 +274,7 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
         ),
         const Divider(height: 28),
         if (j.trackingPauses.isEmpty)
-          const Text('No exempt date ranges or ongoing pause.'),
+          Text(tr(context, 'No exempt date ranges or ongoing pause.')),
         for (final p in j.trackingPauses.reversed)
           Card(
             child: Padding(
@@ -252,14 +282,14 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label(p)),
+                  Text(tr(context, label(p))),
                   Wrap(
                     spacing: 8,
                     children: [
                       if (p.through == null)
                         TextButton(
                           onPressed: busy ? null : () => resume(p),
-                          child: const Text('Resume'),
+                          child: Text(tr(context, 'Resume')),
                         ),
                       TextButton(
                         onPressed: busy
@@ -272,7 +302,7 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
                                   await change((j) => j.removePause(p.id));
                                 }
                               },
-                        child: const Text('Remove'),
+                        child: Text(tr(context, 'Remove')),
                       ),
                     ],
                   ),

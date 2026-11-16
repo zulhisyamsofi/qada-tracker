@@ -5,6 +5,8 @@ enum Prayer { subuh, zohor, asar, maghrib, isyak }
 
 enum PrayerStatus { unrecorded, performed, missed, exempt }
 
+enum AppLanguage { en, ms }
+
 enum AppTheme { system, light, dark }
 
 extension PrayerLabel on Prayer {
@@ -115,6 +117,7 @@ class Journal {
     Map<Prayer, int>? starting,
     List<QadaEntry>? replacements,
     this.theme = AppTheme.system,
+    this.language = AppLanguage.en,
     this.reminderEnabled = false,
     this.reminderMinutes = 23 * 60,
     List<TrackingPause>? trackingPauses,
@@ -138,6 +141,7 @@ class Journal {
   final Map<Prayer, int> starting;
   final List<QadaEntry> replacements;
   final AppTheme theme;
+  final AppLanguage language;
   final bool reminderEnabled;
 
   /// Minute of the phone's local calendar day for the daily check-in.
@@ -174,6 +178,7 @@ class Journal {
     Map<Prayer, int>? starting,
     List<QadaEntry>? replacements,
     AppTheme? theme,
+    AppLanguage? language,
     bool? reminderEnabled,
     int? reminderMinutes,
     List<TrackingPause>? trackingPauses,
@@ -186,6 +191,7 @@ class Journal {
     starting: starting ?? this.starting,
     replacements: replacements ?? this.replacements,
     theme: theme ?? this.theme,
+    language: language ?? this.language,
     reminderEnabled: reminderEnabled ?? this.reminderEnabled,
     reminderMinutes: reminderMinutes ?? this.reminderMinutes,
     trackingPauses: trackingPauses ?? this.trackingPauses,
@@ -363,6 +369,7 @@ class Journal {
     'version': 2,
     'startDate': dateKey(startDate),
     'theme': theme.name,
+    'language': language.name,
     'reminderEnabled': reminderEnabled,
     'reminderMinutes': reminderMinutes,
     'trackingPauses': trackingPauses.map((p) => p.toJson()).toList(),
@@ -463,6 +470,9 @@ class Journal {
         starting: starting,
         replacements: replacements,
         theme: AppTheme.values.byName(root['theme'] as String),
+        language: AppLanguage.values.byName(
+          (root['language'] ?? 'en') as String,
+        ),
         reminderEnabled: (root['reminderEnabled'] ?? false) as bool,
         reminderMinutes: (root['reminderMinutes'] ?? 23 * 60) as int,
         trackingPauses: [
