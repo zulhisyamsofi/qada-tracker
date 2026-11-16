@@ -32,6 +32,7 @@ Each feature edition is represented by a separate commit and annotated tag. The 
 | v1.23.0 | Exempt prayers and tracking pause | 119 / 60 | [v1.23.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.23.0) |
 | v1.24.0 | Focused History navigation | 125 / 60 | [v1.24.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.24.0) |
 | v1.25.0 | Walkthrough scrollbar spacing | 125 / 60 | [v1.25.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.25.0) |
+| v1.26.0 | Consistent navigation rounding | 125 / 60 | [v1.26.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.26.0) |
 
 Every version passed formatting, static analysis, its Flutter tests, and an Android debug APK build. Versions with native test suites also passed those checks. Native widget tests use Robolectric. Actual launcher placement, GPS, notification delivery, reboot/Doze behavior, and OEM battery restrictions remain unverified on a physical phone.
 

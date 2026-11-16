@@ -226,7 +226,7 @@ class GlassNavigationBar extends StatelessWidget {
                     padding: const EdgeInsets.all(5),
                     child: InkWell(
                       onTap: () => onDestinationSelected(index),
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(31),
                       child: AnimatedContainer(
                         duration: MediaQuery.disableAnimationsOf(context)
                             ? Duration.zero
@@ -240,7 +240,7 @@ class GlassNavigationBar extends StatelessWidget {
                           color: index == selectedIndex
                               ? accent
                               : Colors.transparent,
-                          borderRadius: BorderRadius.circular(26),
+                          borderRadius: BorderRadius.circular(31),
                           border: Border.all(
                             color: index == selectedIndex
                                 ? Colors.white.withValues(alpha: .35)

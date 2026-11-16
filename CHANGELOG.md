@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.26.0 — Consistent navigation rounding
+
+Aligns navigation destination corners with the surrounding rounded bar and its inset. Keeps all existing navigation and prayer behavior.
+
 ## v1.25.0 — Walkthrough scrollbar spacing
 
 Reserves a dedicated gutter between the walkthrough scrollbar and its title, description, hints, and notification-setup controls. Text wraps within the content area while the scrollbar stays separate. Keeps the existing tour navigation and checks clearance across all steps, enlarged text, both themes, and rotation.
