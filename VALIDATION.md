@@ -1,3 +1,23 @@
+# Validation record — v1.28.0
+
+Removes the repeated Starts at subtitle while retaining one parenthesized prayer time and the start-time guard. Removes individual Mark exempt menu actions while preserving existing exemptions and date-range management.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.28.0-arm64-v8a.apk` (21.6 MB).
+- **Universal fallback:** `qada-tracker-v1.28.0.apk` (61.0 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **125 Flutter tests**, **60 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified; no Android device is connected. No database schema, journal/backup version, qada calculation, permission, or API change is introduced. Existing journal/backup version 2 remains supported.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.28.0-arm64-v8a.apk` (21,550,762 bytes): `34ef0dc05c1ca94b013c0f38ed12ab532bc21f59ed4499c021e4c69219722fda`.
+- `qada-tracker-v1.28.0-armeabi-v7a.apk` (19,177,246 bytes): `427411d82888cc9845bea54ecd58bc6f7774a336f4807b9425f3ebe64343d6fa`.
+- `qada-tracker-v1.28.0-x86_64.apk` (23,030,286 bytes): `c31e9598f25563c431821240ad4831323497ed64b5d6dca62e5b7b0ded86d4d4`.
+- `qada-tracker-v1.28.0.apk` (61,041,746 bytes): `966f2d921358373ce393ed398364d285e62fd8d40b2bc85962549ba26d3f72aa`.
+
+---
+
 # Validation record — v1.27.0
 
 Orders tabs Today, Qada, History, Progress and updates the History badge and walkthrough targets to match.

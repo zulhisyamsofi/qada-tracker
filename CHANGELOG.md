@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.28.0 — Simpler prayer cards
+
+Removes the repeated Starts at subtitle while retaining one parenthesized prayer time and the start-time guard. Removes individual Mark exempt menu actions while preserving existing exemptions and date-range management.
+
 ## v1.27.0 — Qada before History
 
 Orders tabs Today, Qada, History, Progress and updates the History badge and walkthrough targets to match.

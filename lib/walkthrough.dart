@@ -39,7 +39,7 @@ const walkthroughSteps = [
     Icons.check_box_outlined,
     'Record a prayer on Today',
     'Tap a prayer’s checkbox after performing it. Tap again to return it to Unrecorded. You can record today’s prayers once their prayer time has started.',
-    'Use the three-dot menu beside a prayer to confirm a miss. An unticked prayer is unrecorded, never automatically missed. Use Mark exempt for a prayer you confirm is not required; manage exempt date ranges and pauses in Settings.',
+    'Use the three-dot menu beside a prayer to confirm a miss. An unticked prayer is unrecorded, never automatically missed. Manage exempt date ranges and pauses in Settings.',
   ),
   WalkthroughStep(
     0,

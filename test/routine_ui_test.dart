@@ -312,46 +312,22 @@ void main() {
       }
     },
   );
-  testWidgets(
-    'individual exemption is available in History and replacement conflicts leave the journal unchanged',
-    (tester) async {
-      phone(tester);
-      final db = JournalDatabase(NativeDatabase.memory());
-      final reminders = RoutineReminders();
-      final yesterday = DateTime(2026, 11, 13);
-      final original = Journal(startDate: yesterday)
-          .setStatuses(yesterday, {Prayer.subuh: PrayerStatus.missed}, today)
-          .complete(Prayer.subuh, 1, today, 'qada');
-      await db.save(original);
-      try {
-        await tester.pumpWidget(app(db, reminders, () => today));
-        await tester.pumpAndSettle();
-        await tap(tester, find.text('History').last);
-        await tester.tap(find.byKey(const ValueKey('history-date-2026-11-13')));
-        await tester.pumpAndSettle();
-        await tap(tester, find.byTooltip('Update Subuh'));
-        await tester.tap(find.text('Mark exempt'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Confirm'));
-        await tester.pumpAndSettle();
-        expect((await db.load(today)).toJson(), original.toJson());
-        expect(find.textContaining('negative'), findsOneWidget);
-        await tester.pump(const Duration(seconds: 5));
-        await tester.pumpAndSettle();
-        await tap(tester, find.byTooltip('Update Zohor'));
-        await tester.tap(find.text('Mark exempt'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Confirm'));
-        await tester.pumpAndSettle();
-        expect(
-          (await db.load(today)).status(yesterday, Prayer.zohor),
-          PrayerStatus.exempt,
-        );
-        expect((await db.load(today)).outstanding, 0);
-      } finally {
-        await tester.pumpWidget(const SizedBox());
-        await db.close();
-      }
-    },
-  );
+  testWidgets('individual exemption is absent from prayer menus', (
+    tester,
+  ) async {
+    phone(tester);
+    final db = JournalDatabase(NativeDatabase.memory());
+    await db.save(Journal(startDate: dayOnly(today)));
+    try {
+      await tester.pumpWidget(app(db, RoutineReminders(), () => today));
+      await tester.pumpAndSettle();
+      await tap(tester, find.byTooltip('Update Subuh'));
+      expect(find.text('Mark exempt'), findsNothing);
+      expect(find.text('Mark missed'), findsOneWidget);
+      expect((await db.load(today)).records, isEmpty);
+    } finally {
+      await tester.pumpWidget(const SizedBox());
+      await db.close();
+    }
+  });
 }

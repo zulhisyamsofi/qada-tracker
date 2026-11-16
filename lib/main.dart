@@ -585,7 +585,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       PrayerStatus.exempt => (Icons.pause_circle_outline, 'Exempt · no qada'),
       PrayerStatus.unrecorded => (
         early ? Icons.schedule : Icons.radio_button_unchecked,
-        early ? 'Starts at ${time.time} · Unrecorded' : 'Unrecorded',
+        'Unrecorded',
       ),
     };
     final theme = Theme.of(context);
@@ -725,7 +725,9 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                 await act(() => controller.statuses(date, {p: status}));
               },
               itemBuilder: (_) => [
-                for (final s in PrayerStatus.values)
+                for (final s in PrayerStatus.values.where(
+                  (s) => s != PrayerStatus.exempt,
+                ))
                   PopupMenuItem(
                     value: s,
                     child: Text(switch (s) {

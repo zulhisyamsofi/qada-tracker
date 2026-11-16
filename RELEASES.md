@@ -34,6 +34,7 @@ Each feature edition is represented by a separate commit and annotated tag. The 
 | v1.25.0 | Walkthrough scrollbar spacing | 125 / 60 | [v1.25.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.25.0) |
 | v1.26.0 | Consistent navigation rounding | 125 / 60 | [v1.26.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.26.0) |
 | v1.27.0 | Qada before History | 125 / 60 | [v1.27.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.27.0) |
+| v1.28.0 | Simpler prayer cards | 125 / 60 | [v1.28.0](https://github.com/zulhisyamsofi/qada-tracker/releases/tag/v1.28.0) |
 
 Every version passed formatting, static analysis, its Flutter tests, and an Android debug APK build. Versions with native test suites also passed those checks. Native widget tests use Robolectric. Actual launcher placement, GPS, notification delivery, reboot/Doze behavior, and OEM battery restrictions remain unverified on a physical phone.
 
