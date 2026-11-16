@@ -1,5 +1,7 @@
 # Validation record — v1.25.0
 
+Publication completed: v1.25.0 has a separate fix commit, annotated tag, and private GitHub release marked latest. [The upload workflow](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43785210046) passed. All four APK digests/sizes and the checksum file were independently verified before publication; the temporary private transfer branch was deleted. The ARM64 download is **21,550,758 bytes (21.6 MB)** and retains the existing app ID and signing certificate.
+
 Reserves a dedicated gutter between the walkthrough scrollbar and its title, description, hints, and notification-setup controls. Text wraps within the content area while the scrollbar stays separate. Keeps the existing tour navigation and checks clearance across all steps, enlarged text, both themes, and rotation.
 
 Downloads:
