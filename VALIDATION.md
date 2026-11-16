@@ -1,3 +1,20 @@
+# Validation record — v1.32.0
+
+Language options have rounded borders, theme-aware surfaces, and a selected checkmark; option heights accommodate enlarged text. Records displays five non-collapsible prayer balances with boxed counts, spaces the review button from replacement history, and marks calendar dates only when all five prayers are performed or have dated qada completions. Today checks a confirmed miss into a dated qada completion, preserving its original miss and balance accounting, without inline Complete/Undo qada buttons. English/Malay walkthrough copy explains this flow.
+
+Formatting and static analysis passed. **134 Flutter tests** and **63 Android JVM tests** passed; Android debug APK compilation and optimized universal/per-architecture release builds passed. All four release APKs have verified versions, architectures, matching signatures, and SHA-256 checksums, without a debug flag or Dart debug kernel. Regressions cover completion persistence after restart, prayer-start restrictions, four-second dismissal of both success/action and error snackbars, balance rows, review spacing, mixed performed/qada calendar checks, exclusion of exempt/unresolved dates, marker removal on undo, and styled Language options in both themes and at enlarged text on a narrow screen. Earlier layout tests now scroll to calendar/review controls before interacting.
+
+Flutter 3.38 makes snackbars with actions persistent by default. All transient messages explicitly use a four-second duration and `persist: false`; new messages clear queued predecessors. Platform accessibility behavior remains supported. Screenshots were inspected for the Language menu, balance rows, and calendar completion markers in light/dark themes. No Android device is attached, so on-device runtime validation is unavailable. Release packaging uses version 1.32.0 (build 33). The app ID, signing certificate, journal/backup format 3, SQLite schema 2, API, and permissions are unchanged. The ARM64 APK is 22.3 MB; the universal fallback is 63.4 MB. Install the same processor variant over the existing version to preserve records. Earlier release records below describe their own artifacts.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name.
+
+- `qada-tracker-v1.32.0-arm64-v8a.apk` (22,271,974 bytes): `8070d9ec507cb4875b407cebc1b78e5a66b4a62a52737239d30f08b73cdc8d44`.
+- `qada-tracker-v1.32.0-armeabi-v7a.apk` (20,078,682 bytes): `7a7940b9083539f93358a841e0e105ed0a19c6a1cd6536843527ecf3636688b6`.
+- `qada-tracker-v1.32.0-x86_64.apk` (23,751,498 bytes): `9641aa4949bc31da45c38e20774cfde6805469410092fd04f45823cd6301562f`.
+- `qada-tracker-v1.32.0.apk` (63,384,978 bytes): `e4a66cbcb4fb12b0e3c5ca2e3d30a1c0cad6d726f4e6e9d3c0ef4aad41c37cd9`.
+
+---
+
 # Validation record — v1.31.0
 
 Combines Qada and History into Records, with Today and Progress as the other tabs. Complete qada on a missed prayer saves a one-unit replacement linked to that exact date. Shows Qada completed, provides Undo, and supports transactional correction to Performed. A missed-prayer list and replacement history sit alongside the calendar and review flow. Removes starting-balance input and generic +1/quantity controls. Existing starting balances remain read-only; older replacements can be explicitly linked without a second deduction. Widgets display linked completions and send corrections to the app. Includes all UI and English/Malay changes.

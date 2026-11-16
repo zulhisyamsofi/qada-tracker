@@ -101,6 +101,11 @@ void main() {
     expect(find.text('0 of 5 prayers recorded today'), findsOneWidget);
     await tester.tap(find.text('Records').last);
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('1 day needs review'),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('1 day needs review'), findsOneWidget);
     now = DateTime(2026, 11, 17);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);

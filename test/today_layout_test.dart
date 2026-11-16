@@ -132,6 +132,11 @@ void main() {
             expect((await db.load(now)).outstanding, 0);
             await tester.tap(find.text('Records').last);
             await tester.pumpAndSettle();
+            await tester.scrollUntilVisible(
+              find.byType(HistoryCalendar),
+              180,
+              scrollable: find.byType(Scrollable).first,
+            );
             expect(find.text('3 days need review'), findsOneWidget);
             expect(
               tester
@@ -252,6 +257,8 @@ void main() {
         await tester.pumpAndSettle();
         for (final p in Prayer.values) {
           await tester.scrollUntilVisible(prayerCheckbox(p), 120);
+          await tester.ensureVisible(prayerCheckbox(p));
+          await tester.pumpAndSettle();
           expect(
             tester.getSize(prayerCheckbox(p)).shortestSide,
             greaterThanOrEqualTo(48),

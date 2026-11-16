@@ -45,6 +45,35 @@ void main() {
       );
     },
   );
+  testWidgets('language options fit a narrow screen with enlarged Malay text', (
+    t,
+  ) async {
+    t.view.physicalSize = const Size(320, 720);
+    t.view.devicePixelRatio = 1;
+    t.platformDispatcher.textScaleFactorTestValue = 1.8;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+    final db = JournalDatabase(NativeDatabase.memory());
+    await db.save(Journal(startDate: now, language: AppLanguage.ms));
+    try {
+      await t.pumpWidget(app(db));
+      await t.pumpAndSettle();
+      await tap(t, find.byTooltip('Tetapan'));
+      await tap(t, find.byKey(const ValueKey('app-language')));
+      expect(find.text('English').last.hitTestable(), findsOneWidget);
+      expect(find.text('Bahasa Melayu').last.hitTestable(), findsOneWidget);
+      await capture(t, 'language-options-narrow-large-text');
+      expect(t.takeException(), isNull);
+      await t.tap(find.text('English').last);
+      await t.pumpAndSettle();
+      expect((await db.load(now)).language, AppLanguage.en);
+      expect(t.takeException(), isNull);
+    } finally {
+      await t.pumpWidget(const SizedBox());
+      await db.close();
+    }
+  });
   for (final mode in [AppTheme.light, AppTheme.dark]) {
     testWidgets(
       'language switch translates navigation and dialogs and persists ${mode.name}',
@@ -83,6 +112,18 @@ void main() {
           expect(find.textContaining('Starts at'), findsNothing);
           await tap(t, find.byTooltip('Settings'));
           await tap(t, find.byKey(const ValueKey('app-language')));
+          final dropdown = t.widget<DropdownButton<AppLanguage>>(
+            find.byWidgetPredicate((w) => w is DropdownButton<AppLanguage>),
+          );
+          expect(dropdown.borderRadius, BorderRadius.circular(22));
+          expect(
+            dropdown.dropdownColor,
+            Theme.of(
+              t.element(find.byKey(const ValueKey('app-language'))),
+            ).colorScheme.surfaceContainerHigh,
+          );
+          expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+          await capture(t, 'language-options-${mode.name}');
           await t.tap(find.text('Bahasa Melayu').last);
           await t.pumpAndSettle();
           expect((await db.load(now)).language, AppLanguage.ms);

@@ -13,6 +13,7 @@ class HistoryCalendar extends StatefulWidget {
     required this.unrecordedDays,
     required this.onDateChanged,
     this.exemptDays = const {},
+    this.completedDays = const {},
     this.onTodaySelected,
     this.showSelection = true,
     super.key,
@@ -20,6 +21,7 @@ class HistoryCalendar extends StatefulWidget {
   final DateTime selectedDate, today;
   final Set<DateTime> unrecordedDays;
   final Set<DateTime> exemptDays;
+  final Set<DateTime> completedDays;
   final ValueChanged<DateTime> onDateChanged;
   final VoidCallback? onTodaySelected;
   final bool showSelection;
@@ -82,6 +84,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
     final pending =
         date.isBefore(widget.today) && widget.unrecordedDays.contains(date);
     final exempt = widget.exemptDays.contains(date);
+    final completed = widget.completedDays.contains(date);
     final red = reviewIndicatorColor(context);
     final text = !enabled
         ? theme.colorScheme.onSurface.withValues(alpha: .35)
@@ -96,7 +99,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
     return Semantics(
       label:
           '${DateFormat.yMMMMEEEEd(Localizations.localeOf(context).languageCode).format(date)}${isToday ? ', today' : ''}${isToday && widget.onTodaySelected != null ? ', opens Today' : ''}'
-          '${pending ? ', has unrecorded prayers, needs review' : ''}${exempt ? ', exempt, no prayers required' : ''}',
+          '${completed ? tr(context, ', all five prayers completed') : ''}${pending ? ', has unrecorded prayers, needs review' : ''}${exempt ? ', exempt, no prayers required' : ''}',
       button: true,
       enabled: enabled,
       selected: selected,
@@ -133,17 +136,44 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
                             )
                           : null,
                     ),
-                    child: Center(
-                      child: Text(
-                        tr(context, '${date.day}'),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: text,
-                          fontWeight: pending || selected
-                              ? FontWeight.w800
-                              : FontWeight.w600,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Center(
+                          child: Text(
+                            tr(context, '${date.day}'),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: text,
+                              fontWeight: pending || selected
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (completed)
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: DecoratedBox(
+                              key: ValueKey(
+                                'history-completed-${dateKey(date)}',
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(1),
+                                child: Icon(
+                                  Icons.check_rounded,
+                                  size: 12,
+                                  color: theme.colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),

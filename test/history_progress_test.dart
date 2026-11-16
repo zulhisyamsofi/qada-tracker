@@ -80,7 +80,16 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text('Records').last);
         await tester.pumpAndSettle();
-        await tester.tap(find.text('12').first);
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('history-date-2026-11-12')),
+          180,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('history-date-2026-11-12')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('history-date-2026-11-12')));
         await tester.pumpAndSettle();
         expect(
           tester
@@ -128,7 +137,16 @@ void main() {
         await tester.tap(find.text('Records').last);
         await tester.pumpAndSettle();
         expect(find.text('1 day needs review'), findsOneWidget);
-        await tester.tap(find.text('12').first);
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('history-date-2026-11-12')),
+          180,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('history-date-2026-11-12')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('history-date-2026-11-12')));
         await tester.pumpAndSettle();
         expect(
           tester

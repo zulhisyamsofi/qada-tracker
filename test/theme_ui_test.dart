@@ -146,7 +146,18 @@ void main() {
         expect(find.text('Qada Tracker'), findsNothing);
         await capture(tester, '${tab.toLowerCase()}-${mode.name}');
         if (tab == 'Records') {
-          await tester.tap(find.text('12').first);
+          await tester.scrollUntilVisible(
+            find.byKey(const ValueKey('history-date-2026-11-12')),
+            180,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.ensureVisible(
+            find.byKey(const ValueKey('history-date-2026-11-12')),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find.byKey(const ValueKey('history-date-2026-11-12')),
+          );
           await tester.pumpAndSettle();
           await capture(tester, 'history-backfill-${mode.name}');
         }

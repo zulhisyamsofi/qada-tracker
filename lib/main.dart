@@ -164,6 +164,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         messenger.clearSnackBars();
         messenger.showSnackBar(
           SnackBar(
+            persist: false,
+            duration: const Duration(seconds: 4),
             content: Text(
               tr(context, error.toString().replaceFirst('Bad state: ', '')),
             ),
@@ -703,13 +705,18 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                     ? (_) => undoLinkedReplacement(replacement)
                     : status == PrayerStatus.exempt
                     ? null
-                    : (checked) => act(
-                        () => controller.statuses(date, {
-                          p: checked!
-                              ? PrayerStatus.performed
-                              : PrayerStatus.unrecorded,
-                        }),
-                      ),
+                    : (checked) =>
+                          isToday &&
+                              status == PrayerStatus.missed &&
+                              checked == true
+                          ? completeDatedPrayer(date, p)
+                          : act(
+                              () => controller.statuses(date, {
+                                p: checked!
+                                    ? PrayerStatus.performed
+                                    : PrayerStatus.unrecorded,
+                              }),
+                            ),
               ),
             ),
             Expanded(
@@ -753,7 +760,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                       ),
                     ],
                   ),
-                  if (status == PrayerStatus.missed)
+                  if (!isToday && status == PrayerStatus.missed)
                     TextButton.icon(
                       key: ValueKey('complete-qada-${dateKey(date)}-${p.name}'),
                       onPressed: replaced
@@ -958,6 +965,16 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             today: today,
             unrecordedDays: unrecordedDays,
             exemptDays: j.days(today).where(j.fullyExempt).toSet(),
+            completedDays: j
+                .days(today)
+                .where(
+                  (day) => Prayer.values.every(
+                    (p) =>
+                        j.status(day, p) == PrayerStatus.performed ||
+                        j.replacementFor(day, p) != null,
+                  ),
+                )
+                .toSet(),
             onDateChanged: (date) {
               if (date.isBefore(today)) setState(() => selectedDay = date);
             },
@@ -997,6 +1014,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             label: Text(tr(context, 'Review unrecorded days')),
           ),
         ],
+        const SizedBox(height: 20),
         replacementHistory(j),
       ],
     );
@@ -1175,15 +1193,20 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       if (choice == 'new') {
         final id = await controller.completeMiss(day, prayer);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(tr(context, 'Qada completed')),
-            action: SnackBarAction(
-              label: tr(context, 'Undo'),
-              onPressed: () => act(() => controller.change((j) => j.undo(id))),
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              persist: false,
+              duration: const Duration(seconds: 4),
+              content: Text(tr(context, 'Qada completed')),
+              action: SnackBarAction(
+                label: tr(context, 'Undo'),
+                onPressed: () =>
+                    act(() => controller.change((j) => j.undo(id))),
+              ),
             ),
-          ),
-        );
+          );
       } else {
         await controller.linkReplacement(day, prayer, choice);
       }
@@ -1233,24 +1256,54 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     );
   }
 
-  Widget qadaSummary(Journal j) => GlassCard(
-    child: ExpansionTile(
-      title: Text(tr(context, 'Outstanding qada')),
-      subtitle: Text(
-        tr(
-          context,
-          'Preserved older balances + confirmed misses − completed replacements. Unrecorded prayers are excluded.',
+  Widget qadaSummary(Journal j) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(top: 8, bottom: 12),
+        child: Text(
+          tr(context, 'Outstanding qada'),
+          style: Theme.of(context).textTheme.titleLarge,
         ),
       ),
-      trailing: Text(
-        '${j.outstanding}',
-        style: Theme.of(context).textTheme.headlineSmall,
-      ),
-      children: [
-        for (final p in Prayer.values)
-          ListTile(title: Text(p.label), trailing: Text('${j.balance(p)}')),
-      ],
-    ),
+      for (final p in Prayer.values)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  p.label,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+              Container(
+                key: ValueKey('qada-balance-${p.name}'),
+                constraints: const BoxConstraints(minWidth: 56, minHeight: 44),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primaryContainer.withValues(alpha: .5),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  '${j.balance(p)}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
+      const SizedBox(height: 16),
+    ],
   );
 
   Widget replacementHistory(Journal j) => GlassCard(
@@ -1413,16 +1466,69 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                   initialValue: j.language,
                   decoration: InputDecoration(
                     labelText: tr(context, 'Language / Bahasa'),
+                    prefixIcon: const Icon(Icons.language_rounded),
+                    filled: true,
+                    fillColor: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest
+                        .withValues(alpha: .45),
                   ),
+                  isExpanded: true,
+                  itemHeight: null,
+                  borderRadius: BorderRadius.circular(22),
+                  dropdownColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHigh,
+                  icon: const Icon(Icons.expand_more_rounded),
+                  selectedItemBuilder: (context) => [
+                    for (final language in AppLanguage.values)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          language == AppLanguage.en
+                              ? 'English'
+                              : 'Bahasa Melayu',
+                        ),
+                      ),
+                  ],
                   items: [
-                    DropdownMenuItem(
-                      value: AppLanguage.en,
-                      child: Text(tr(context, 'English')),
-                    ),
-                    DropdownMenuItem(
-                      value: AppLanguage.ms,
-                      child: Text(tr(context, 'Bahasa Melayu')),
-                    ),
+                    for (final language in AppLanguage.values)
+                      DropdownMenuItem(
+                        value: language,
+                        child: Container(
+                          width: double.infinity,
+                          constraints: const BoxConstraints(minHeight: 58),
+                          margin: const EdgeInsets.symmetric(vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: language == j.language
+                                ? Theme.of(context).colorScheme.primaryContainer
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outlineVariant,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  language == AppLanguage.en
+                                      ? 'English'
+                                      : 'Bahasa Melayu',
+                                ),
+                              ),
+                              if (language == j.language)
+                                const Icon(Icons.check_rounded, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
                   onChanged: (language) {
                     if (language != null) {
@@ -1565,13 +1671,17 @@ class _JournalHomeState extends ConsumerState<JournalHome>
             ref.read(journalProvider).requireValue.export(),
           );
       if (saved && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              tr(context, 'Backup exported. Keep it somewhere safe.'),
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              persist: false,
+              duration: const Duration(seconds: 4),
+              content: Text(
+                tr(context, 'Backup exported. Keep it somewhere safe.'),
+              ),
             ),
-          ),
-        );
+          );
       }
     });
     if (mounted) setState(() => fileBusy = false);
@@ -1595,9 +1705,15 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       await controller.restore(validated);
       if (mounted) {
         setState(() => selectedDay = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr(context, 'Backup restored.'))),
-        );
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              persist: false,
+              duration: const Duration(seconds: 4),
+              content: Text(tr(context, 'Backup restored.')),
+            ),
+          );
       }
     });
     if (mounted) setState(() => fileBusy = false);

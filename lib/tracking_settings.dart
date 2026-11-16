@@ -23,13 +23,17 @@ class _TrackingSettingsState extends ConsumerState<TrackingSettings> {
       await ref.read(reminderServiceProvider).syncPrayerTimes();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              tr(context, error.toString().replaceFirst('Bad state: ', '')),
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              persist: false,
+              duration: const Duration(seconds: 4),
+              content: Text(
+                tr(context, error.toString().replaceFirst('Bad state: ', '')),
+              ),
             ),
-          ),
-        );
+          );
       }
     } finally {
       if (mounted) setState(() => busy = false);

@@ -279,8 +279,8 @@ const malay = <String, String>{
       'Rekod lima solat harian, semak hari terdahulu dan rekod penggantian qada. Panduan ringkas ini menunjukkan tempat untuk ditekan.',
   'Use the four tabs at the bottom to move around. The tour never changes your prayer records.':
       'Gunakan empat tab di bawah untuk navigasi. Panduan ini tidak mengubah rekod solat anda.',
-  'Tap a prayer’s checkbox after performing it. Tap again to return it to Unrecorded. You can record today’s prayers once their prayer time has started.':
-      'Tekan kotak solat selepas menunaikannya. Tekan sekali lagi untuk kembali ke Belum direkod. Solat hari ini boleh direkod selepas masuk waktunya.',
+  'Tap a prayer’s checkbox after performing it. Tap again to return it to Unrecorded. You can record today’s prayers once their prayer time has started. For a missed prayer, check its box after completing qada; it will show Qada completed.':
+      'Tekan kotak solat selepas menunaikannya. Tekan sekali lagi untuk kembali ke Belum direkod. Solat hari ini boleh direkod selepas masuk waktunya. Untuk solat tertinggal, tandakan kotaknya selepas menunaikan qada; label akan berubah kepada Qada selesai.',
   'Get an alert at each of the five prayer times. Choose the place whose timetable you want to follow.':
       'Terima peringatan pada setiap lima waktu solat. Pilih lokasi jadual waktu yang ingin diikuti.',
   'Available on Android.': 'Tersedia pada Android.',
@@ -446,4 +446,5 @@ const malay = <String, String>{
       "Pautan semakan di atas kalendar Rekod membuka solat terdahulu yang belum direkod. Semak satu solat atau sahkan baki solat serentak. Tarikh sebelum mula merekod yang tidak diubah tidak mewujudkan hutang.",
   "Tap the gear for language, appearance, the home-screen widget, and the Notifications group, including a daily check-in at your chosen time if any required prayer is still unrecorded.":
       "Tekan ikon tetapan untuk bahasa, paparan, widget dan pemberitahuan, termasuk peringatan harian pada waktu pilihan jika ada solat wajib belum direkod.",
+  ', all five prayers completed': ', kelima-lima solat selesai',
 };

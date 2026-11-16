@@ -21,18 +21,22 @@ class _PrayerTimesSettingsState extends ConsumerState<PrayerTimesSettings> {
       await work();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              tr(
-                context,
-                error is FormatException
-                    ? error.message
-                    : 'Could not complete this action. Choose a place or try again.',
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              persist: false,
+              duration: const Duration(seconds: 4),
+              content: Text(
+                tr(
+                  context,
+                  error is FormatException
+                      ? error.message
+                      : 'Could not complete this action. Choose a place or try again.',
+                ),
               ),
             ),
-          ),
-        );
+          );
       }
     } finally {
       if (mounted) {

@@ -97,6 +97,13 @@ void main() {
           isNull,
         ); // Untouched pre-start date.
         expect(tester.widget<InkWell>(date('2026-11-15')).onTap, isNull);
+        await tester.scrollUntilVisible(
+          date('2026-11-13'),
+          180,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.ensureVisible(date('2026-11-13'));
+        await tester.pumpAndSettle();
         await tester.tap(date('2026-11-13'));
         await tester.pumpAndSettle();
         expect(

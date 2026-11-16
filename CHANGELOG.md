@@ -2,6 +2,12 @@
 
 Each version tag identifies one feature edition.
 
+## v1.32.0 — Records and Today refinements
+
+Styles Language options with rounded borders and a selected checkmark in both themes. Records shows five always-visible prayer balances beneath a plain Outstanding qada heading, with only counts boxed and no combined total or expansion. Adds space before Replacement history and calendar checkmarks for dates whose five prayers are performed or have dated qada completions.
+
+Today completes a missed prayer’s qada through its checkbox, showing Qada completed without inline Complete/Undo qada buttons. Preserves dated replacement accounting and prayer-start validation. Transient messages explicitly expire after four seconds, including those with an Undo action, and newer messages clear the queue. Updates English/Malay walkthrough guidance.
+
 ## v1.31.0 — Unified Records and dated qada
 
 Combines Qada and History into Records, with Today and Progress as the other tabs. Complete qada on a missed prayer saves a one-unit replacement linked to that exact date. Shows Qada completed, provides Undo, and supports transactional correction to Performed. A missed-prayer list and replacement history sit alongside the calendar and review flow. Removes starting-balance input and generic +1/quantity controls. Existing starting balances remain read-only; older replacements can be explicitly linked without a second deduction. Widgets display linked completions and send corrections to the app. Includes all UI and English/Malay changes.

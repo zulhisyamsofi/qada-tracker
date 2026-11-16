@@ -111,6 +111,11 @@ void main() {
         await tester.pumpWidget(app(db, () => now));
         await tester.pumpAndSettle();
         await tap(tester, find.text('Records').last);
+        await tester.scrollUntilVisible(
+          find.text('Your prayer history will appear here tomorrow.'),
+          180,
+          scrollable: find.byType(Scrollable).first,
+        );
         expect(
           find.text('Your prayer history will appear here tomorrow.'),
           findsOneWidget,

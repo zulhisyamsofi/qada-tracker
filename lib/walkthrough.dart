@@ -39,7 +39,7 @@ const walkthroughSteps = [
     'prayer',
     Icons.check_box_outlined,
     'Record a prayer on Today',
-    'Tap a prayer’s checkbox after performing it. Tap again to return it to Unrecorded. You can record today’s prayers once their prayer time has started.',
+    'Tap a prayer’s checkbox after performing it. Tap again to return it to Unrecorded. You can record today’s prayers once their prayer time has started. For a missed prayer, check its box after completing qada; it will show Qada completed.',
     'Use the three-dot menu beside a prayer to confirm a miss. An unticked prayer is unrecorded, never automatically missed. Manage menstrual period dates and tracking pauses in Settings.',
   ),
   WalkthroughStep(

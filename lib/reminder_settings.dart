@@ -22,18 +22,22 @@ class _ReminderSettingsState extends ConsumerState<ReminderSettings> {
       await work();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              tr(
-                context,
-                error is FormatException
-                    ? error.message
-                    : 'Unable to update notification settings. Please try again.',
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              persist: false,
+              duration: const Duration(seconds: 4),
+              content: Text(
+                tr(
+                  context,
+                  error is FormatException
+                      ? error.message
+                      : 'Unable to update notification settings. Please try again.',
+                ),
               ),
             ),
-          ),
-        );
+          );
       }
     } finally {
       if (mounted) {

@@ -83,7 +83,15 @@ void main() {
           expect(appearance(now, Prayer.subuh).borderColor, done.borderColor);
           await tester.tap(find.text('Records').last);
           await tester.pumpAndSettle();
-          await tester.tap(find.text('13').first);
+          final date = find.byKey(const ValueKey('history-date-2026-11-13'));
+          await tester.scrollUntilVisible(
+            date,
+            180,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.ensureVisible(date);
+          await tester.pumpAndSettle();
+          await tester.tap(date);
           await tester.pumpAndSettle();
           await tester.scrollUntilVisible(
             card(yesterday, Prayer.asar),
