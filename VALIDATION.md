@@ -1,3 +1,25 @@
+# Validation record — v1.25.0
+
+Reserves a dedicated gutter between the walkthrough scrollbar and its title, description, hints, and notification-setup controls. Text wraps within the content area while the scrollbar stays separate. Keeps the existing tour navigation and checks clearance across all steps, enlarged text, both themes, and rotation.
+
+Downloads:
+- **Realme GT Master / most current Android phones:** `qada-tracker-v1.25.0-arm64-v8a.apk` (21.6 MB).
+- **Universal fallback:** `qada-tracker-v1.25.0.apk` (61.0 MB).
+- Other assets target 32-bit ARM phones and x86-64 emulators. Choose one APK and keep the same processor variant for later updates. The app ID and signing certificate match previous releases, preserving the journal on an in-place update.
+
+Validation: formatting, static analysis, **125 Flutter tests**, **60 Android JVM tests**, debug compilation, and optimized universal/per-architecture release builds passed. All four APKs have verified signatures, correct versions/architectures, and no debug flag or debug Dart kernel. `SHA256SUMS` covers all downloads. Physical launcher placement, notification timing, and OEM background behavior remain unverified; no Android device is connected. No database schema, backup format, prayer status, qada calculation, permission, dependency, or API change is introduced. Journal/backup version 2, SQLite schema 2, and calendar-cache format 1 remain unchanged.
+
+Walkthrough content now reserves 20 dp at the trailing edge beside a 6 dp scrollbar. Existing tour tests measure text clearance from the scrollbar corridor across all steps, normal and enlarged text, both themes, and landscape rotation. The focused walkthrough/notification-consent run passed 16 tests; normal and narrow rendered previews were inspected. Buttons remain outside the scrolling content. No physical Android device is connected; no new emulator validation was performed.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name. Earlier records and checksums below describe their own checkpoints.
+
+- `qada-tracker-v1.25.0-arm64-v8a.apk` (21,550,758 bytes): `782bd1881fb6b05b0f624eb0bccf52f093d247544e0a7655044544152973a6df`.
+- `qada-tracker-v1.25.0-armeabi-v7a.apk` (19,177,242 bytes): `55b68a23e2021e2f8680b5ed6e14e7c0356376e38e8980d2ac249103521877f3`.
+- `qada-tracker-v1.25.0-x86_64.apk` (23,030,286 bytes): `d663d2f6efd5e535157c299dd450cc00be25b9fbc6bb1f9c0b6a0fb1760c629c`.
+- `qada-tracker-v1.25.0.apk` (61,041,746 bytes): `3e665115056ac67090fcd5cf5b5d8c7f611a0eeb45a3bfc48fd5715bc7d810a1`.
+
+---
+
 # Validation record — v1.24.0
 
 Publication completed: v1.24.0 has a separate feature commit, annotated tag, and private GitHub release marked latest. [The upload workflow](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43740478374) passed. All four APK digests/sizes and the checksum file were independently verified before publication; the temporary private transfer branch was removed. The ARM64 download is **21,550,762 bytes (21.6 MB)**, with the existing app ID and signing certificate for in-place updates.

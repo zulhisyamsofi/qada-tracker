@@ -16,7 +16,7 @@ Reproduce all four optimized APKs and their checksums with `./scripts/build-rele
 
 New installations open an eight-step guided tour that highlights real controls and visits all four tabs. It explains recording/clearing prayers, confirming misses, place selection and prayer alerts, historical edits and review, qada replacements and undo, progress, and Settings. Next, Back, and Skip tour are always available; the tour blocks taps on prayer records. Finishing or skipping saves the preference so the guide stays dismissed on subsequent launches. Its prayer-reminder step preselects notifications for new Android users, lets them choose a place, and requests Android permission only after Enable & continue. Skipping, turning the switch off, or declining permission keeps new users’ alerts off; replay respects an existing opt-out. An interrupted unfinished tour starts again next time.
 
-Existing journals are not interrupted after updating. Use **Settings → App walkthrough** to replay the guide at any time. The guide follows light/dark appearance and reduced motion, and its instructions scroll when large text or a small screen needs more space. It introduces no new permissions or network services.
+Existing journals are not interrupted after updating. Use **Settings → App walkthrough** to replay the guide at any time. The guide follows light/dark appearance and reduced motion, and its instructions scroll when large text or a small screen needs more space. Scrollable text and setup controls reserve a separate gutter beside the scrollbar. It introduces no new permissions or network services.
 
 ## Daily use
 

@@ -42,6 +42,28 @@ void phone(WidgetTester tester, {bool narrow = false}) {
   addTearDown(tester.view.resetDevicePixelRatio);
 }
 
+void expectScrollbarClearance(WidgetTester tester) {
+  final finder = find.byKey(const ValueKey('walkthrough-scrollbar'));
+  final scrollbar = tester.widget<Scrollbar>(finder);
+  final bounds = tester.getRect(finder);
+  // Use the larger desktop default when the theme does not set a margin.
+  final margin =
+      ScrollbarTheme.of(tester.element(finder)).crossAxisMargin ?? 4.0;
+  final rtl = Directionality.of(tester.element(finder)) == TextDirection.rtl;
+  for (final text
+      in find.descendant(of: finder, matching: find.byType(Text)).evaluate()) {
+    final rect = tester.getRect(find.byWidget(text.widget));
+    final clearance = rtl
+        ? rect.left - bounds.left - margin - scrollbar.thickness!
+        : bounds.right - margin - scrollbar.thickness! - rect.right;
+    expect(
+      clearance,
+      greaterThanOrEqualTo(7.99),
+      reason: 'Walkthrough text must stay clear of the scrollbar.',
+    );
+  }
+}
+
 void main() {
   setUpAll(fonts);
   testWidgets(
@@ -55,6 +77,7 @@ void main() {
         await tester.pumpWidget(app(db));
         await tester.pumpAndSettle();
         expect(find.text(walkthroughSteps.first.title), findsOneWidget);
+        expectScrollbarClearance(tester);
         expect((await db.load(now)).walkthroughSeen, isFalse);
         await capture(tester, 'walkthrough-welcome');
         await press(tester, 'Next');
@@ -72,6 +95,7 @@ void main() {
         for (var i = 1; i < walkthroughSteps.length; i++) {
           await press(tester, 'Next');
           expect(find.text(walkthroughSteps[i].title), findsOneWidget);
+          expectScrollbarClearance(tester);
           final bar = tester.widget<AppBar>(find.byType(AppBar));
           expect(
             find.descendant(
@@ -235,6 +259,7 @@ void main() {
         for (var i = 0; i < walkthroughSteps.length; i++) {
           expect(tester.takeException(), isNull);
           expect(find.text(walkthroughSteps[i].title), findsOneWidget);
+          expectScrollbarClearance(tester);
           if (i == 1) {
             await capture(
               tester,
@@ -243,6 +268,7 @@ void main() {
             tester.view.physicalSize = const Size(720, 320);
             await tester.pumpAndSettle();
             expect(tester.takeException(), isNull);
+            expectScrollbarClearance(tester);
             tester.view.physicalSize = const Size(320, 720);
             await tester.pumpAndSettle();
           }

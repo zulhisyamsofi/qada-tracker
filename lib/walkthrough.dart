@@ -453,11 +453,16 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                             Flexible(
                               flex: 3,
                               child: Scrollbar(
+                                key: const ValueKey('walkthrough-scrollbar'),
                                 controller: contentScroll,
                                 thumbVisibility: true,
+                                thickness: 6,
                                 child: SingleChildScrollView(
                                   controller: contentScroll,
                                   key: ValueKey(index),
+                                  padding: const EdgeInsetsDirectional.only(
+                                    end: 20,
+                                  ),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,

@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## v1.25.0 — Walkthrough scrollbar spacing
+
+Reserves a dedicated gutter between the walkthrough scrollbar and its title, description, hints, and notification-setup controls. Text wraps within the content area while the scrollbar stays separate. Keeps the existing tour navigation and checks clearance across all steps, enlarged text, both themes, and rotation.
+
 ## v1.24.0 — Focused History navigation
 
 Keeps current-day prayer editing on Today. History defaults to yesterday and supports earlier-date review and corrections; choosing today from its calendar or date picker opens Today. The first tracking day shows a helper message with a Go to Today action while earlier dates remain available for optional backfill. Review badges, exempt dates, rollover handling, and the separate qada replacement ledger are retained.
