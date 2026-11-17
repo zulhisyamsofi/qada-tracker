@@ -46,7 +46,7 @@ void main() {
           isA<StateError>().having(
             (e) => e.message,
             'message',
-            contains('Asar starts at 16:00'),
+            contains('Asar starts at 4:00 PM'),
           ),
         ),
       );

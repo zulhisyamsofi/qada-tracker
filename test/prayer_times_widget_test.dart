@@ -44,16 +44,19 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Times'), findsNothing);
       for (final label in [
-        'Subuh (05:48)',
-        'Zohor (13:00)',
-        'Asar (16:22)',
-        'Maghrib (18:58)',
-        'Isyak (20:11)',
+        'Subuh (5:48 AM)',
+        'Zohor (1:00 PM)',
+        'Asar (4:22 PM)',
+        'Maghrib (6:58 PM)',
+        'Isyak (8:11 PM)',
       ]) {
         await tester.scrollUntilVisible(find.text(label), 120);
         expect(find.text(label), findsOneWidget);
       }
-      await tester.drag(find.byType(ListView), const Offset(0, 1000));
+      await tester.drag(
+        find.byKey(const ValueKey('today-prayers')),
+        const Offset(0, 1000),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
@@ -196,7 +199,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       find.text(
-        'Zohor starts at 13:00 (Asia/Kuala_Lumpur). You can mark it performed then.',
+        'Zohor starts at 1:00 PM (Asia/Kuala_Lumpur). You can mark it performed then.',
       ),
       findsOneWidget,
     );
@@ -217,7 +220,10 @@ void main() {
     );
     // No reopen is necessary; the write rechecks the real clock at the boundary.
     now = DateTime.utc(2026, 11, 13, 5);
-    await tester.drag(find.byType(ListView), const Offset(0, 1000));
+    await tester.drag(
+      find.byKey(const ValueKey('today-prayers')),
+      const Offset(0, 1000),
+    );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(zohor, 150);
     await tester.pumpAndSettle();

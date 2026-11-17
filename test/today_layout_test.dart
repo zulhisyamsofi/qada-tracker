@@ -140,7 +140,7 @@ void main() {
             final badge = tester.widget<Badge>(
               find.byKey(const ValueKey('history-review-badge')),
             );
-            expect((badge.label! as Text).data, '15');
+            expect((badge.label! as Text).data, '0');
             expect(tester.takeException(), isNull);
           } finally {
             await tester.pumpWidget(const SizedBox());

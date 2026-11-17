@@ -83,14 +83,14 @@ void main() {
       try {
         await t.pumpWidget(app(db));
         await t.pumpAndSettle();
-        expectCount(t, 4);
+        expectCount(t, 2);
         await t.tap(find.text('History').last);
         await t.pumpAndSettle();
         final pending = find.byKey(
           const ValueKey('history-pending-2026-11-13'),
         );
         expect(
-          find.descendant(of: pending, matching: find.text('3')),
+          find.descendant(of: pending, matching: find.text('2')),
           findsOneWidget,
         );
         expect(
@@ -101,11 +101,11 @@ void main() {
         expect(find.text('Review unrecorded days'), findsNothing);
         await capture(t, 'history-pending-prayer-counts');
         await tapMark(t, Prayer.asar);
-        expectCount(t, 3);
-        await tapMark(t, Prayer.subuh);
         expectCount(t, 2);
-        await tapMark(t, Prayer.zohor);
+        await tapMark(t, Prayer.subuh);
         expectCount(t, 1);
+        await tapMark(t, Prayer.zohor);
+        expectCount(t, 0);
         expect((await db.load(now)).outstanding, 0);
         await openDate(t, yesterday);
         expect(
@@ -118,7 +118,7 @@ void main() {
           t,
           Prayer.zohor,
         ); // Selected Done clears both the miss and replacement.
-        expectCount(t, 2);
+        expectCount(t, 0);
         expect(
           (await db.load(now)).status(yesterday, Prayer.zohor),
           PrayerStatus.unrecorded,
@@ -126,7 +126,7 @@ void main() {
         expect((await db.load(now)).balance(Prayer.zohor), 0);
         await openDate(t, previous);
         await tapMark(t, Prayer.isyak);
-        expectCount(t, 1);
+        expectCount(t, 0);
         await openDate(t, yesterday);
         await tapMark(t, Prayer.zohor);
         expectCount(t, 0);
@@ -152,7 +152,7 @@ void main() {
         await t.pumpAndSettle();
         await openDate(t, earlier);
         await tapMark(t, Prayer.subuh);
-        expectCount(t, 4);
+        expectCount(t, 0);
         for (final p in Prayer.values.skip(1)) {
           await tapMark(t, p);
         }
@@ -186,16 +186,16 @@ void main() {
         clock = DateTime(2026, 12, 1);
         await t.pump(const Duration(seconds: 2));
         await t.pumpAndSettle();
-        expectCount(t, 4);
+        expectCount(t, 0);
         clock = DateTime(2026, 12, 4);
         t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
         t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
         await t.pumpAndSettle();
-        expectCount(t, 19);
+        expectCount(t, 0);
         await t.pumpWidget(const SizedBox());
         await t.pumpWidget(app(db, clock: () => clock));
         await t.pumpAndSettle();
-        expectCount(t, 19);
+        expectCount(t, 0);
         expect((await db.load(clock)).outstanding, 0);
         await t.tap(find.text('History').last);
         await t.pumpAndSettle();
@@ -205,7 +205,7 @@ void main() {
         );
         expect(
           find.byKey(const ValueKey('history-pending-2026-12-03')),
-          findsOneWidget,
+          findsNothing,
         );
         expect(t.takeException(), isNull);
       } finally {
@@ -310,7 +310,14 @@ void main() {
 
         final db = JournalDatabase(NativeDatabase.memory());
         final start = DateTime(2020, 1, 1);
-        await db.save(Journal(startDate: start, theme: mode));
+        var journal = Journal(startDate: start, theme: mode);
+        for (var i = 1; i <= 201; i++) {
+          final day = DateTime(now.year, now.month, now.day - i);
+          journal = journal.setStatuses(day, {
+            for (final p in Prayer.values) p: PrayerStatus.missed,
+          }, now);
+        }
+        await db.save(journal);
         try {
           await tester.pumpWidget(app(db));
           await tester.pumpAndSettle();
@@ -320,7 +327,9 @@ void main() {
           expectCount(tester, expected);
           expect(expected, greaterThan(999));
           expect(
-            find.bySemanticsLabel('History, $expected prayers need attention'),
+            find.bySemanticsLabel(
+              'History, $expected missed prayers awaiting qada',
+            ),
             findsOneWidget,
           );
           await capture(tester, 'history-badge-narrow-${mode.name}');
@@ -337,7 +346,7 @@ void main() {
           );
           expect(
             find.bySemanticsLabel(
-              RegExp('November 13, 2026.*5 prayers need attention'),
+              RegExp('November 13, 2026.*5 missed prayers awaiting qada'),
             ),
             findsOneWidget,
           );

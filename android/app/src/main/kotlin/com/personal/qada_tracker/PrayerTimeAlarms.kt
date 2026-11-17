@@ -19,6 +19,10 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 internal object PrayerTimeAlarms {
     const val OPEN = "open_prayer_times"
@@ -126,8 +130,11 @@ internal object PrayerTimeAlarms {
         }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         @Suppress("DEPRECATION")
         val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(context, CHANNEL) else Notification.Builder(context)
+        val displayTime = SimpleDateFormat("h:mm a", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone(calendar!!.timezone)
+        }.format(Date(slot.at))
         builder.setSmallIcon(R.drawable.notification_icon).setContentTitle(if (config.journal?.optString("language") == "ms") "Waktu ${PrayerTimePolicy.labels[index]}" else "Time for ${PrayerTimePolicy.labels[index]}")
-            .setContentText("${config.label} · ${slot.time} (${calendar!!.timezone})")
+            .setContentText("${config.label} · ${displayTime} (${calendar!!.timezone})")
             .setContentIntent(open).setAutoCancel(true).setWhen(at)
         if (Build.VERSION.SDK_INT >= 26) builder.setTimeoutAfter(30 * 60 * 1000L)
         try {

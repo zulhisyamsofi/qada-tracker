@@ -6,6 +6,7 @@ import 'package:qada_tracker/database.dart';
 import 'package:qada_tracker/model.dart';
 import 'package:qada_tracker/ui/history_calendar.dart';
 import 'package:qada_tracker/ui/settings_group.dart';
+import 'package:qada_tracker/ui/glass.dart';
 import 'support/prayer_actions.dart';
 import 'ui_refinements_test.dart' show app, now, phone, scrollTo, tap;
 import 'theme_ui_test.dart' show fonts, capture;
@@ -33,9 +34,18 @@ void main() {
         await tap(t, find.text('Qada').last);
         await tap(t, find.byKey(const ValueKey('qada-balance-subuh')));
         expect(find.text('Subuh · baki qada'), findsOneWidget);
-        final dateLabel = find.text(DateFormat.yMMMd('ms').format(missed));
-        expect(t.getSize(dateLabel).width, greaterThan(130));
+        final dateLabel = find.text(
+          DateFormat('d MMM yyyy', 'ms').format(missed),
+        );
+        expect(t.getSize(dateLabel).width, greaterThan(80));
         expect(t.getSize(dateLabel).height, lessThan(70));
+        final openButton = find.byKey(
+          const ValueKey('open-miss-2026-11-15-subuh'),
+        );
+        expect(
+          (t.getCenter(dateLabel).dy - t.getCenter(openButton).dy).abs(),
+          lessThan(2),
+        );
         expect(
           find
               .byKey(const ValueKey('open-miss-2026-11-15-subuh'))
@@ -56,6 +66,74 @@ void main() {
       }
     },
   );
+  for (final currentDay in [false, true]) {
+    testWidgets(
+      'Open date scrolls and focuses Isyak on a small ${currentDay ? 'Today' : 'History'} screen',
+      (t) async {
+        phone(t);
+        t.view.physicalSize = const Size(320, 568);
+        final db = JournalDatabase(NativeDatabase.memory());
+        final day = currentDay ? dayOnly(now) : DateTime(2026, 10, 29);
+        await db.save(
+          Journal(startDate: day).setStatuses(day, {
+            for (final p in Prayer.values)
+              p: p == Prayer.isyak
+                  ? PrayerStatus.missed
+                  : PrayerStatus.performed,
+          }, now),
+        );
+        try {
+          await t.pumpWidget(app(db));
+          await t.pumpAndSettle();
+          await tap(t, find.text('Qada').last);
+          await tap(t, find.byKey(const ValueKey('qada-balance-isyak')));
+          await tap(t, find.byKey(ValueKey('open-miss-${dateKey(day)}-isyak')));
+          final card = find.byKey(
+            ValueKey('prayer-card-${dateKey(day)}-isyak'),
+          );
+          final viewport = t.getRect(
+            find.byKey(ValueKey(currentDay ? 'today-prayers' : 'history-page')),
+          );
+          final bounds = t.getRect(card);
+          expect(bounds.top, greaterThanOrEqualTo(viewport.top - 1));
+          expect(bounds.bottom, lessThanOrEqualTo(viewport.bottom + 1));
+          expect(t.widget<GlassCard>(card).borderWidth, 3);
+          expect(
+            t
+                .widget<OutlinedButton>(doneButton(Prayer.isyak, day))
+                .focusNode!
+                .hasFocus,
+            isTrue,
+          );
+          expect((await db.load(now)).replacements, isEmpty);
+          expect(
+            (await db.load(now)).status(day, Prayer.isyak),
+            PrayerStatus.missed,
+          );
+          if (!currentDay) {
+            expect(
+              t
+                  .widget<HistoryCalendar>(find.byType(HistoryCalendar))
+                  .selectedDate,
+              day,
+            );
+          }
+          final done = t.getRect(doneButton(Prayer.isyak, day));
+          final missed = t.getRect(missedButton(Prayer.isyak, day));
+          expect(done.center.dy, closeTo(missed.center.dy, 1));
+          expect(missed.right, closeTo(bounds.right - 12, 1));
+          await capture(
+            t,
+            currentDay ? 'focused-today-isyak' : 'focused-history-isyak',
+          );
+          expect(t.takeException(), isNull);
+        } finally {
+          await t.pumpWidget(const SizedBox());
+          await db.close();
+        }
+      },
+    );
+  }
   for (final theme in [AppTheme.light, AppTheme.dark]) {
     testWidgets(
       'Done and Missed toggle immediately and keep linked qada coherent ${theme.name}',

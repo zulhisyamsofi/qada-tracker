@@ -101,7 +101,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
     return Semantics(
       label:
           '${DateFormat.yMMMMEEEEd(Localizations.localeOf(context).languageCode).format(date)}${isToday ? ', today' : ''}${isToday && widget.onTodaySelected != null ? ', opens Today' : ''}'
-          '${completed ? tr(context, ', all five prayers completed') : ''}${pending ? ', ${tr(context, '$pendingCount prayers need attention')}' : ''}${exempt ? ', exempt, no prayers required' : ''}',
+          '${completed ? tr(context, ', all five prayers completed') : ''}${pending ? ', ${tr(context, '$pendingCount missed prayers awaiting qada')}' : ''}${exempt ? ', exempt, no prayers required' : ''}',
       button: true,
       enabled: enabled,
       selected: selected,
@@ -354,7 +354,7 @@ class _HistoryCalendarState extends State<HistoryCalendar> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    tr(context, 'Missed or unrecorded prayers on past dates'),
+                    tr(context, 'Missed prayers awaiting qada on past dates'),
                     style: theme.textTheme.bodySmall,
                   ),
                 ),

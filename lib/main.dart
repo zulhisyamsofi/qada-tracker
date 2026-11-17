@@ -19,6 +19,7 @@ import 'ui/app_theme.dart';
 import 'ui/glass.dart';
 import 'home_widget.dart';
 import 'prayer_recording_policy.dart';
+import 'prayer_time_format.dart';
 import 'walkthrough.dart';
 import 'ui/history_calendar.dart';
 import 'ui/settings_group.dart';
@@ -81,6 +82,13 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   bool fileBusy = false;
   final updatingPrayers = <String>{};
   final historyScroll = ScrollController();
+  final todayScroll = ScrollController();
+  final prayerKeys = List.generate(5, (_) => GlobalKey());
+  final prayerFocus = List.generate(
+    5,
+    (i) => FocusNode(debugLabel: 'prayer-$i-done'),
+  );
+  ({String day, Prayer prayer})? focusedPrayer;
   final historyCalendarKey = GlobalKey();
   bool walkthroughChecked = false;
   bool walkthroughOpen = false;
@@ -151,6 +159,10 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     midnight?.cancel();
     prayerClock?.cancel();
     historyScroll.dispose();
+    todayScroll.dispose();
+    for (final focus in prayerFocus) {
+      focus.dispose();
+    }
     reminders.onOpenToday = null;
     reminders.onOpenPrayerTimes = null;
     homeWidget.onJournalChanged = null;
@@ -376,7 +388,10 @@ class _JournalHomeState extends ConsumerState<JournalHome>
               0,
               (sum, count) => sum + count,
             ),
-            onDestinationSelected: (index) => setState(() => tab = index),
+            onDestinationSelected: (index) => setState(() {
+              tab = index;
+              focusedPrayer = null;
+            }),
           ),
         ),
       ),
@@ -460,129 +475,132 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         null;
     return RefreshIndicator(
       onRefresh: () => ref.read(prayerTimesProvider.notifier).refresh(),
-      child: ListView(
+      child: SingleChildScrollView(
+        controller: todayScroll,
         key: const ValueKey('today-prayers'),
         physics: const AlwaysScrollableScrollPhysics(),
-        cacheExtent: 2000,
         padding: const EdgeInsets.all(20),
-        children: [
-          GlassCard(
-            frosted: true,
-            color: Theme.of(context).colorScheme.primaryContainer,
-            radius: 30,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tr(
-                            context,
-                            required == 0
-                                ? 'No prayers to record today'
-                                : '$count of $required prayers recorded today',
-                          ),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            height: 1.25,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          tr(
-                            context,
-                            required == 0
-                                ? 'Today is exempt. Your previous records are preserved.'
-                                : 'A small moment to reflect and keep track.',
-                          ),
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  SizedBox(
-                    width: 72,
-                    height: 72,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox.expand(
-                          child: CircularProgressIndicator(
-                            value: required == 0 ? 0 : count / required,
-                            strokeWidth: 7,
-                            strokeCap: StrokeCap.round,
-                            backgroundColor: Theme.of(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            GlassCard(
+              frosted: true,
+              color: Theme.of(context).colorScheme.primaryContainer,
+              radius: 30,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            tr(
                               context,
-                            ).colorScheme.primary.withValues(alpha: .14),
-                            semanticsLabel: tr(
-                              context,
-                              'Daily prayer progress',
+                              required == 0
+                                  ? 'No prayers to record today'
+                                  : '$count of $required prayers recorded today',
                             ),
-                            semanticsValue: tr(
-                              context,
-                              '$count of $required required prayers performed',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              height: 1.25,
                             ),
                           ),
-                        ),
-                        Text(
-                          tr(
-                            context,
-                            required == 0 ? 'Exempt' : '$count/$required',
+                          const SizedBox(height: 8),
+                          Text(
+                            tr(
+                              context,
+                              required == 0
+                                  ? 'Today is exempt. Your previous records are preserved.'
+                                  : 'A small moment to reflect and keep track.',
+                            ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(fontSize: 13),
                           ),
-                          style: TextStyle(
-                            fontSize: required == 0 ? 14 : 22,
-                            fontWeight: FontWeight.w800,
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    SizedBox(
+                      width: 72,
+                      height: 72,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox.expand(
+                            child: CircularProgressIndicator(
+                              value: required == 0 ? 0 : count / required,
+                              strokeWidth: 7,
+                              strokeCap: StrokeCap.round,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: .14),
+                              semanticsLabel: tr(
+                                context,
+                                'Daily prayer progress',
+                              ),
+                              semanticsValue: tr(
+                                context,
+                                '$count of $required required prayers performed',
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                          Text(
+                            tr(
+                              context,
+                              required == 0 ? 'Exempt' : '$count/$required',
+                            ),
+                            style: TextStyle(
+                              fontSize: required == 0 ? 14 : 22,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (exempt > 0)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                children: [
-                  Text(
-                    tr(
-                      context,
-                      '$exempt ${exempt == 1 ? 'prayer' : 'prayers'} exempt today',
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: trackingSettings,
-                    child: Text(tr(context, 'Manage exemptions')),
-                  ),
-                ],
-              ),
-            ),
-          if (!valid && required > 0)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Text(
-                tr(
-                  context,
-                  data.isLoading
-                      ? 'Loading prayer times…'
-                      : 'Times unavailable · pull down to retry',
+                  ],
                 ),
-                style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
-          for (final p in Prayer.values) prayerCard(j, today, p),
-        ],
+            if (exempt > 0)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  children: [
+                    Text(
+                      tr(
+                        context,
+                        '$exempt ${exempt == 1 ? 'prayer' : 'prayers'} exempt today',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: trackingSettings,
+                      child: Text(tr(context, 'Manage exemptions')),
+                    ),
+                  ],
+                ),
+              ),
+            if (!valid && required > 0)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  tr(
+                    context,
+                    data.isLoading
+                        ? 'Loading prayer times…'
+                        : 'Times unavailable · pull down to retry',
+                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            for (final p in Prayer.values) prayerCard(j, today, p),
+          ],
+        ),
       ),
     );
   }
@@ -664,147 +682,156 @@ class _JournalHomeState extends ConsumerState<JournalHome>
         : missed
         ? red
         : theme.colorScheme.onSurface;
-    return GlassCard(
-      key: ValueKey('prayer-card-${dateKey(date)}-${p.name}'),
-      margin: const EdgeInsets.only(bottom: 10),
-      borderColor: performed
-          ? green
-          : missed
-          ? red
-          : needsReview
-          ? amber
-          : null,
-      borderWidth: missed
-          ? 2.2
-          : performed || needsReview
-          ? 1.8
-          : null,
-      color: performed
-          ? (dark ? const Color(0xff123c2d) : const Color(0xffe3f5e9))
-          : missed
-          ? (dark ? const Color(0xff4b2625) : const Color(0xffffe9e6))
-          : needsReview
-          ? (dark ? const Color(0xff3b3020) : const Color(0xfffff2dc))
-          : null,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final details = Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tr(
-                    context,
-                    '${p.label}${isToday ? ' (${time?.time ?? '--:--'})' : ''}',
-                  ),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: performed ? FontWeight.w600 : FontWeight.w800,
-                    color: titleColor,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      needsReview ? Icons.pending_actions_rounded : icon,
-                      size: 14,
-                      color: statusColor,
+    final highlighted = focusedPrayer == (day: dateKey(date), prayer: p);
+    return KeyedSubtree(
+      key: prayerKeys[p.index],
+      child: GlassCard(
+        key: ValueKey('prayer-card-${dateKey(date)}-${p.name}'),
+        margin: const EdgeInsets.only(bottom: 10),
+        borderColor: performed
+            ? green
+            : missed
+            ? red
+            : needsReview
+            ? amber
+            : null,
+        borderWidth: highlighted
+            ? 3
+            : missed
+            ? 2.2
+            : performed || needsReview
+            ? 1.8
+            : null,
+        color: performed
+            ? (dark ? const Color(0xff123c2d) : const Color(0xffe3f5e9))
+            : missed
+            ? (dark ? const Color(0xff4b2625) : const Color(0xffffe9e6))
+            : needsReview
+            ? (dark ? const Color(0xff3b3020) : const Color(0xfffff2dc))
+            : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final details = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tr(
+                      context,
+                      '${p.label}${isToday ? ' (${time == null ? '--:--' : formatPrayerTime(time.time)})' : ''}',
                     ),
-                    const SizedBox(width: 5),
-                    Flexible(
-                      child: Text(
-                        tr(
-                          context,
-                          needsReview ? 'Unrecorded · needs review' : label,
-                        ),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: statusColor,
-                          fontWeight: missed || needsReview
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            );
-            Widget button(bool done) {
-              final selected = done ? performed : missed;
-              final tint = done ? green : red;
-              return Semantics(
-                selected: selected,
-                label: tr(context, '${p.label}: ${done ? 'Done' : 'Missed'}'),
-                child: OutlinedButton(
-                  key: ValueKey(
-                    '${done ? 'done' : 'missed'}-${dateKey(date)}-${p.name}',
-                  ),
-                  onPressed:
-                      updatingPrayers.contains('${dateKey(date)}/${p.name}')
-                      ? null
-                      : () => choosePrayerAction(date, p, done),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: tint,
-                    backgroundColor: selected
-                        ? tint.withValues(alpha: dark ? .20 : .14)
-                        : tint.withValues(alpha: .04),
-                    side: BorderSide(
-                      color: tint.withValues(alpha: selected ? 1 : .65),
-                      width: selected ? 1.8 : 1,
-                    ),
-                    minimumSize: const Size(72, 48),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 10,
-                    ),
-                    textStyle: theme.textTheme.labelLarge?.copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: performed ? FontWeight.w600 : FontWeight.w800,
+                      color: titleColor,
                     ),
                   ),
-                  child: Text(tr(context, done ? 'Done' : 'Missed')),
-                ),
-              );
-            }
-
-            final stacked =
-                constraints.maxWidth < 300 ||
-                MediaQuery.textScalerOf(context).scale(14) > 18;
-            final buttons = Row(
-              mainAxisSize: stacked ? MainAxisSize.max : MainAxisSize.min,
-              children: [
-                if (stacked) Expanded(child: button(true)) else button(true),
-                const SizedBox(width: 8),
-                if (stacked) Expanded(child: button(false)) else button(false),
-              ],
-            );
-            return Column(
-              key: isToday && p == Prayer.subuh
-                  ? walkthroughTargets['prayer']
-                  : null,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (stacked) ...[
-                  details,
-                  const SizedBox(height: 12),
-                  buttons,
-                ] else
+                  const SizedBox(height: 4),
                   Row(
                     children: [
-                      Expanded(child: details),
-                      const SizedBox(width: 10),
-                      buttons,
+                      Icon(
+                        needsReview ? Icons.pending_actions_rounded : icon,
+                        size: 14,
+                        color: statusColor,
+                      ),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          tr(
+                            context,
+                            needsReview ? 'Unrecorded · needs review' : label,
+                          ),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: statusColor,
+                            fontWeight: missed || needsReview
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-              ],
-            );
-          },
+                ],
+              );
+              Widget button(bool done) {
+                final selected = done ? performed : missed;
+                final tint = done ? green : red;
+                return Semantics(
+                  selected: selected,
+                  liveRegion: highlighted,
+                  label: tr(context, '${p.label}: ${done ? 'Done' : 'Missed'}'),
+                  child: OutlinedButton(
+                    focusNode: done ? prayerFocus[p.index] : null,
+                    key: ValueKey(
+                      '${done ? 'done' : 'missed'}-${dateKey(date)}-${p.name}',
+                    ),
+                    onPressed:
+                        updatingPrayers.contains('${dateKey(date)}/${p.name}')
+                        ? null
+                        : () => choosePrayerAction(date, p, done),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: tint,
+                      backgroundColor: selected
+                          ? tint.withValues(alpha: dark ? .20 : .14)
+                          : tint.withValues(alpha: .04),
+                      side: BorderSide(
+                        color: tint.withValues(alpha: selected ? 1 : .65),
+                        width: selected ? 1.8 : 1,
+                      ),
+                      minimumSize: const Size(60, 48),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 8,
+                      ),
+                      textStyle: theme.textTheme.labelLarge?.copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(tr(context, done ? 'Done' : 'Missed')),
+                  ),
+                );
+              }
+
+              final stacked = MediaQuery.textScalerOf(context).scale(14) > 20;
+              final buttons = Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  button(true),
+                  const SizedBox(width: 6),
+                  button(false),
+                ],
+              );
+              return Column(
+                key: isToday && p == Prayer.subuh
+                    ? walkthroughTargets['prayer']
+                    : null,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (stacked) ...[
+                    details,
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: buttons,
+                    ),
+                  ] else
+                    Row(
+                      children: [
+                        Expanded(child: details),
+                        const SizedBox(width: 10),
+                        buttons,
+                      ],
+                    ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -817,7 +844,7 @@ class _JournalHomeState extends ConsumerState<JournalHome>
   ) async {
     final key = '${dateKey(day)}/${prayer.name}';
     if (!updatingPrayers.add(key)) return;
-    setState(() {});
+    setState(() => focusedPrayer = null);
     try {
       final journal = ref.read(journalProvider).requireValue;
       if (done &&
@@ -862,101 +889,109 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       tab = 0;
       selectedDay = null;
     });
-    return ListView(
+    return SingleChildScrollView(
       key: const ValueKey('history-page'),
       controller: historyScroll,
       padding: const EdgeInsets.all(20),
-      children: [
-        heading(
-          'Your prayer journal',
-          'Tracking since ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(j.startDate)}',
-        ),
-        if (firstDay)
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          heading(
+            'Your prayer journal',
+            'Tracking since ${DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(j.startDate)}',
+          ),
+          if (firstDay)
+            GlassCard(
+              key: const ValueKey('history-first-day'),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.history_rounded),
+                    const SizedBox(height: 12),
+                    Text(
+                      tr(
+                        context,
+                        'Your prayer history will appear here tomorrow.',
+                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      tr(
+                        context,
+                        'Record today’s prayers on Today. You can select an earlier date to add older records.',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: openToday,
+                      child: Text(tr(context, 'Go to Today')),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           GlassCard(
-            key: const ValueKey('history-first-day'),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.history_rounded),
-                  const SizedBox(height: 12),
-                  Text(
-                    tr(
-                      context,
-                      'Your prayer history will appear here tomorrow.',
+            key: historyCalendarKey,
+            child: HistoryCalendar(
+              selectedDate: firstDay ? today : selected,
+              showSelection: !firstDay,
+              today: today,
+              pendingPrayerCounts: pendingCounts,
+              exemptDays: j.days(today).where(j.fullyExempt).toSet(),
+              completedDays: j
+                  .days(today)
+                  .where(
+                    (day) => Prayer.values.every(
+                      (p) =>
+                          j.status(day, p) == PrayerStatus.performed ||
+                          j.replacementFor(day, p) != null,
                     ),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    tr(
-                      context,
-                      'Record today’s prayers on Today. You can select an earlier date to add older records.',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton(
-                    onPressed: openToday,
-                    child: Text(tr(context, 'Go to Today')),
-                  ),
-                ],
-              ),
+                  )
+                  .toSet(),
+              onDateChanged: (date) {
+                if (date.isBefore(today)) {
+                  setState(() {
+                    selectedDay = date;
+                    focusedPrayer = null;
+                  });
+                }
+              },
+              onTodaySelected: openToday,
             ),
           ),
-        GlassCard(
-          key: historyCalendarKey,
-          child: HistoryCalendar(
-            selectedDate: firstDay ? today : selected,
-            showSelection: !firstDay,
-            today: today,
-            pendingPrayerCounts: pendingCounts,
-            exemptDays: j.days(today).where(j.fullyExempt).toSet(),
-            completedDays: j
-                .days(today)
-                .where(
-                  (day) => Prayer.values.every(
-                    (p) =>
-                        j.status(day, p) == PrayerStatus.performed ||
-                        j.replacementFor(day, p) != null,
-                  ),
-                )
-                .toSet(),
-            onDateChanged: (date) {
-              if (date.isBefore(today)) setState(() => selectedDay = date);
-            },
-            onTodaySelected: openToday,
-          ),
-        ),
-        if (!firstDay) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              tr(
-                context,
-                DateFormat(
-                  'EEEE, d MMMM',
-                  Localizations.localeOf(context).languageCode,
-                ).format(selected),
-              ),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          if (selected.isBefore(j.startDate))
+          if (!firstDay) ...[
             Padding(
-              padding: EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
                 tr(
                   context,
-                  'Optional history before tracking began. Saving a prayer adds '
-                  'this day only; other earlier dates stay outside your totals.',
+                  DateFormat(
+                    'EEEE, d MMMM',
+                    Localizations.localeOf(context).languageCode,
+                  ).format(selected),
                 ),
-                style: TextStyle(fontSize: 12),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
-          for (final p in Prayer.values) prayerCard(j, selected, p),
+            if (selected.isBefore(j.startDate))
+              Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: Text(
+                  tr(
+                    context,
+                    'Optional history before tracking began. Saving a prayer adds '
+                    'this day only; other earlier dates stay outside your totals.',
+                  ),
+                  style: TextStyle(fontSize: 12),
+                ),
+              ),
+            for (final p in Prayer.values) prayerCard(j, selected, p),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -1115,6 +1150,12 @@ class _JournalHomeState extends ConsumerState<JournalHome>
       context: context,
       builder: (context) => AlertDialog(
         scrollable: true,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+        ),
         title: Text(tr(context, '${prayer.label} · outstanding qada')),
         content: SizedBox(
           width: double.maxFinite,
@@ -1153,43 +1194,52 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: LayoutBuilder(
                           builder: (context, constraints) {
+                            final compact =
+                                constraints.maxWidth < 300 ||
+                                MediaQuery.textScalerOf(context).scale(16) > 21;
                             final label = Text(
-                              DateFormat.yMMMd(
-                                Localizations.localeOf(context).languageCode,
-                              ).format(day),
-                              style: Theme.of(context).textTheme.bodyLarge
+                              (compact
+                                      ? DateFormat(
+                                          'd MMM yyyy',
+                                          Localizations.localeOf(
+                                            context,
+                                          ).languageCode,
+                                        )
+                                      : DateFormat.yMMMd(
+                                          Localizations.localeOf(
+                                            context,
+                                          ).languageCode,
+                                        ))
+                                  .format(day),
+                              style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(fontWeight: FontWeight.w700),
                             );
-                            final open = TextButton.icon(
-                              key: ValueKey(
-                                'open-miss-${dateKey(day)}-${prayer.name}',
+                            final open = ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: constraints.maxWidth * .48,
                               ),
-                              onPressed: () => Navigator.pop(context, day),
-                              icon: const Icon(
-                                Icons.calendar_month_outlined,
-                                size: 18,
-                              ),
-                              label: Text(tr(context, 'Open date')),
-                            );
-                            if (constraints.maxWidth < 260 ||
-                                MediaQuery.textScalerOf(context).scale(16) >
-                                    21) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  label,
-                                  const SizedBox(height: 8),
-                                  Align(
-                                    alignment: AlignmentDirectional.centerEnd,
-                                    child: open,
+                              child: TextButton(
+                                key: ValueKey(
+                                  'open-miss-${dateKey(day)}-${prayer.name}',
+                                ),
+                                onPressed: () => Navigator.pop(context, day),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
                                   ),
-                                ],
-                              );
-                            }
+                                  minimumSize: const Size(64, 48),
+                                ),
+                                child: Text(
+                                  tr(context, 'Open date'),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            );
                             return Row(
                               children: [
                                 Expanded(child: label),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 8),
                                 open,
                               ],
                             );
@@ -1214,13 +1264,25 @@ class _JournalHomeState extends ConsumerState<JournalHome>
     setState(() {
       selectedDay = date == today ? null : date;
       tab = date == today ? 0 : 2;
+      focusedPrayer = (day: dateKey(date), prayer: prayer);
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final calendar = historyCalendarKey.currentContext;
-      if (mounted && tab == 2 && calendar != null) {
-        Scrollable.ensureVisible(calendar, alignment: 0);
-      }
-    });
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted || focusedPrayer != (day: dateKey(date), prayer: prayer)) {
+      return;
+    }
+    final target = prayerKeys[prayer.index].currentContext;
+    if (target == null || !target.mounted) return;
+    await Scrollable.ensureVisible(
+      target,
+      alignment: .18,
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
+    if (mounted && focusedPrayer == (day: dateKey(date), prayer: prayer)) {
+      prayerFocus[prayer.index].requestFocus();
+    }
   }
 
   Widget qadaSummary(Journal j) => Column(

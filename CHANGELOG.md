@@ -2,6 +2,12 @@
 
 Each version tag identifies one feature edition.
 
+## v1.34.0 — Compact prayer rows and focused qada navigation
+
+Displays prayer times and prayer-start messages in 12-hour AM/PM format, including Android prayer alerts. Stored timetables and alarm instants remain unchanged. Compacts prayer cards with right-aligned Done/Missed actions and preserved state colours. Qada date entries keep their date and Open date action in one horizontal row, including narrow/enlarged-text layouts. Opening a date scrolls to, highlights, and focuses that exact prayer on History or Today.
+
+Calendar and History badges now count confirmed past misses awaiting dated qada only. Unrecorded prayers remain editable and excluded from qada totals but add no badge. The walkthrough is centered with more space, a larger available content area, and preserved scrollbar clearance. English/Malay guidance reflects the badge change. Settings layout is unchanged.
+
 ## v1.33.0 — History, Qada, and prayer actions
 
 Navigation is Today, Qada, History, Settings. Progress and replacement history live in Qada. History has per-date red counts of past unrecorded prayers and unreplaced misses; its navigation badge sums prayers instead of days. Completed qada and exemptions are excluded. Each qada balance opens a newest-first missed-date list linking to the exact History date. Removes History’s missed-prayer list and all review prompts/bulk-review buttons.

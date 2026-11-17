@@ -142,7 +142,7 @@ void main() {
                       .label!
                   as Text)
               .data,
-          '4',
+          '1',
         );
         await tester.scrollUntilVisible(
           find.byKey(const ValueKey('history-date-2026-11-12')),

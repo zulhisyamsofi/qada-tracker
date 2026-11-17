@@ -64,7 +64,7 @@ const walkthroughSteps = [
     'nav-2',
     Icons.calendar_month_outlined,
     'Review your History',
-    'Past dates show a red badge counting missed or unrecorded prayers. The History badge adds these prayer counts together. A checkmark means all five prayers are performed or qada completed.',
+    'Past dates show a red badge counting missed prayers awaiting qada. The History badge adds these counts together. Unrecorded prayers do not add a badge. A checkmark means all five prayers are performed or qada completed.',
     'Select a date to edit its prayers using Done and Missed. Completed qada is excluded from pending counts. Tap today’s calendar date to return to Today.',
   ),
   WalkthroughStep(
@@ -377,9 +377,7 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
   Widget build(BuildContext context) {
     final step = walkthroughSteps[index];
     final theme = Theme.of(context);
-    final top =
-        focus != null &&
-        focus!.center.dy > MediaQuery.sizeOf(context).height / 2;
+    final roomy = MediaQuery.sizeOf(context).height >= 600;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -409,18 +407,17 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
             ),
             SafeArea(
               child: Align(
-                alignment: top ? Alignment.topCenter : Alignment.bottomCenter,
+                alignment: Alignment.center,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxWidth: 500,
-                      maxHeight: MediaQuery.sizeOf(context).height < 500
-                          ? MediaQuery.sizeOf(context).height -
-                                MediaQuery.paddingOf(context).vertical -
-                                32
-                          : MediaQuery.sizeOf(context).height *
-                                (step.notificationSetup ? .74 : .54),
+                      maxWidth: 560,
+                      maxHeight:
+                          (MediaQuery.sizeOf(context).height -
+                                  MediaQuery.paddingOf(context).vertical -
+                                  32)
+                              .clamp(0.0, 760.0),
                     ),
                     child: Material(
                       color: theme.colorScheme.surface,
@@ -430,7 +427,8 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: Padding(
-                        padding: const EdgeInsets.all(20),
+                        key: const ValueKey('walkthrough-panel'),
+                        padding: EdgeInsets.all(roomy ? 24 : 16),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -459,7 +457,7 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                               borderRadius: BorderRadius.circular(8),
                               minHeight: 4,
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: roomy ? 24 : 12),
                             Flexible(
                               flex: 3,
                               child: Scrollbar(
@@ -477,17 +475,21 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Icon(
-                                        step.icon,
-                                        size: 28,
-                                        color: theme.colorScheme.primary,
+                                      Align(
+                                        alignment: Alignment.center,
+                                        child: Icon(
+                                          step.icon,
+                                          size: roomy ? 40 : 28,
+                                          color: theme.colorScheme.primary,
+                                        ),
                                       ),
-                                      const SizedBox(height: 8),
+                                      SizedBox(height: roomy ? 16 : 8),
                                       Semantics(
                                         liveRegion: true,
                                         header: true,
                                         child: Text(
                                           tr(context, step.title),
+                                          textAlign: TextAlign.center,
                                           style: theme.textTheme.titleLarge
                                               ?.copyWith(
                                                 fontWeight: FontWeight.w800,
@@ -495,7 +497,12 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                                         ),
                                       ),
                                       const SizedBox(height: 10),
-                                      Text(tr(context, step.body)),
+                                      Text(
+                                        tr(context, step.body),
+                                        textAlign: TextAlign.center,
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(height: 1.5),
+                                      ),
                                       if (step.notificationSetup)
                                         notificationControls(),
                                       const SizedBox(height: 12),
@@ -539,7 +546,7 @@ class _AppWalkthroughState extends ConsumerState<AppWalkthrough> {
                                   ),
                                 ),
                               ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: roomy ? 24 : 12),
                             navigationButtons(step),
                           ],
                         ),

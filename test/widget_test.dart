@@ -98,7 +98,7 @@ void main() {
                   .label!
               as Text)
           .data,
-      '4',
+      '0',
     );
     now = DateTime(2026, 11, 17);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
@@ -112,7 +112,7 @@ void main() {
                   .label!
               as Text)
           .data,
-      '19',
+      '0',
     );
     expect(
       (await db.load(now)).status(DateTime(2026, 11, 13), Prayer.subuh),

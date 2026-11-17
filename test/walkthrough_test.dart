@@ -44,6 +44,10 @@ void phone(WidgetTester tester, {bool narrow = false}) {
 }
 
 void expectScrollbarClearance(WidgetTester tester) {
+  final panel = tester.getRect(find.byKey(const ValueKey('walkthrough-panel')));
+  final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+  expect(panel.center.dx, closeTo(screen.width / 2, 1));
+  expect(panel.center.dy, closeTo(screen.height / 2, 1));
   final finder = find.byKey(const ValueKey('walkthrough-scrollbar'));
   final scrollbar = tester.widget<Scrollbar>(finder);
   final bounds = tester.getRect(finder);

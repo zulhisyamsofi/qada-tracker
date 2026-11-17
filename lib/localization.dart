@@ -56,11 +56,12 @@ const malay = <String, String>{
   "Replace this journal with a saved backup.":
       "Gantikan jurnal ini dengan sandaran yang disimpan.",
   "Notification status": "Status pemberitahuan",
-  "History, {value} prayers need attention":
-      "Sejarah, {value} solat memerlukan perhatian",
-  "{value} prayers need attention": "{value} solat memerlukan perhatian",
-  "Missed or unrecorded prayers on past dates":
-      "Solat tertinggal atau belum direkod pada tarikh terdahulu",
+  "History, {value} missed prayers awaiting qada":
+      "Sejarah, {value} solat tertinggal menunggu qada",
+  "{value} missed prayers awaiting qada":
+      "{value} solat tertinggal menunggu qada",
+  "Missed prayers awaiting qada on past dates":
+      "Solat tertinggal yang belum diqada pada tarikh terdahulu",
   "{value}: Done": "{value}: Selesai",
   "{value}: Missed": "{value}: Tertinggal",
   "{value} · outstanding qada": "{value} · baki qada",
@@ -84,13 +85,13 @@ const malay = <String, String>{
       "Buka Tetapan → Waktu solat & lokasi untuk memilih tempat di Malaysia atau lokasi peranti. Waktu solat dipaparkan pada Hari Ini.",
   "Language, dark mode, prayer tracking, reminders, backups, and help are grouped in Settings.":
       "Bahasa, mod gelap, rekod solat, peringatan, sandaran dan bantuan dikelompokkan dalam Tetapan.",
-  "Past dates show a red badge counting missed or unrecorded prayers. The History badge adds these prayer counts together. A checkmark means all five prayers are performed or qada completed.":
-      "Tarikh terdahulu memaparkan lencana merah yang mengira solat tertinggal atau belum direkod. Lencana Sejarah menjumlahkan semua solat ini. Tanda semak bermakna kelima-lima solat telah ditunaikan atau qada selesai.",
+  "Past dates show a red badge counting missed prayers awaiting qada. The History badge adds these counts together. Unrecorded prayers do not add a badge. A checkmark means all five prayers are performed or qada completed.":
+      "Tarikh terdahulu memaparkan lencana merah yang mengira solat tertinggal menunggu qada. Lencana Sejarah menjumlahkan kiraan ini. Solat belum direkod tidak menambah lencana. Tanda semak bermakna kelima-lima solat telah ditunaikan atau qada selesai.",
   "Select a date to edit its prayers using Done and Missed. Completed qada is excluded from pending counts. Tap today’s calendar date to return to Today.":
       "Pilih tarikh untuk mengemas kini solat menggunakan Selesai dan Tertinggal. Qada selesai tidak termasuk dalam kiraan tertunggak. Tekan tarikh hari ini untuk kembali ke Hari Ini.",
   "Tap a prayer’s outstanding balance to see its missed dates, newest first. Open a date in History and choose Done after completing its qada.":
       "Tekan baki qada solat untuk melihat tarikh tertinggal, yang terbaharu dahulu. Buka tarikh dalam Sejarah dan pilih Selesai selepas menunaikan qada.",
-  "Qada also contains replacement history and weekly and monthly progress. Unrecorded prayers need attention but never add qada debt.":
+  "Qada also contains replacement history and weekly and monthly progress. Unrecorded missed prayers awaiting qada but never add qada debt.":
       "Qada juga mengandungi sejarah qada dan kemajuan mingguan serta bulanan. Solat belum direkod memerlukan perhatian tetapi tidak menambah hutang qada.",
   "Settings contains language, dark mode, location, menstrual-period dates, reminder controls, manual backups, and the app walkthrough.":
       "Tetapan mengandungi bahasa, mod gelap, lokasi, tarikh haid, kawalan peringatan, sandaran manual dan panduan aplikasi.",

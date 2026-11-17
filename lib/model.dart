@@ -469,7 +469,7 @@ class Journal {
       .reversed
       .toList();
 
-  /// Past prayers still requiring a record or a dated replacement.
+  /// Confirmed past misses without dated qada completions.
   Map<DateTime, int> pendingPrayerCounts(DateTime now) {
     final settled = {
       for (final entry in replacements)
@@ -481,9 +481,8 @@ class Journal {
         if (day.isBefore(dayOnly(now)))
           day: Prayer.values.where((p) {
             final value = status(day, p);
-            return value == PrayerStatus.unrecorded ||
-                value == PrayerStatus.missed &&
-                    !settled.contains('${dateKey(day)}/${p.name}');
+            return value == PrayerStatus.missed &&
+                !settled.contains('${dateKey(day)}/${p.name}');
           }).length,
     }..removeWhere((day, count) => count == 0);
   }

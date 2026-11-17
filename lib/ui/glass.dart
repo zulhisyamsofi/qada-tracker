@@ -217,7 +217,7 @@ class GlassNavigationBar extends StatelessWidget {
               label: tr(
                 context,
                 index == 2 && pendingPrayerCount > 0
-                    ? 'History, $pendingPrayerCount prayers need attention'
+                    ? 'History, $pendingPrayerCount missed prayers awaiting qada'
                     : labels[index],
               ),
               onTap: () => onDestinationSelected(index),
@@ -226,7 +226,7 @@ class GlassNavigationBar extends StatelessWidget {
                   message: tr(
                     context,
                     index == 2 && pendingPrayerCount > 0
-                        ? 'History, $pendingPrayerCount prayers need attention'
+                        ? 'History, $pendingPrayerCount missed prayers awaiting qada'
                         : labels[index],
                   ),
                   child: Padding(

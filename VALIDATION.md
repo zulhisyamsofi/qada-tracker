@@ -1,3 +1,28 @@
+# Validation record — v1.34.0
+
+Prayer labels, start-time guard messages, and Android prayer notifications use 12-hour AM/PM presentation. Canonical 24-hour timetable strings, timezone validation, and absolute start/alarm instants are unchanged. Tests cover midnight/noon and early/exact start boundaries; native notification assertions verify AM/PM output on Android APIs 33 and 35.
+
+Prayer cards use compact typography and spacing with right-aligned Done/Missed controls, preserving their colours and 48-pixel minimum touch targets. The fixed five-prayer views render their targets together so Open date can reliably scroll to any selected prayer. Opening a dated miss selects the correct History month/date (or Today), scrolls its card into view, applies a visible border highlight, and focuses its Done button without recording an action. Regressions include Isyak at the bottom of 320 × 568 Today and History views.
+
+Each qada date and its Open date action share one horizontal row. The dialog keeps readable, unambiguous month names on narrow/enlarged Malay layouts. Calendar and History badges count confirmed past misses without a linked qada completion; unrecorded, performed, exempt, and completed-qada prayers add no badge. No journal or backup data is rewritten for this derived-count change.
+
+The walkthrough is centered with a larger available content area, roomier padding, and centered introductory text. Scrollbar clearance, all seven steps, notification consent, enlarged text, both themes, and rotation remain covered. Screenshots were inspected for prayer rows, single-row date entries, focused prayers, and the tour. The Settings layout is unchanged.
+
+Validation passed: formatting, static analysis with no issues, **147 Flutter tests**, **63 Android JVM tests**, and Android debug APK compilation. Optimized universal/per-architecture release builds also passed; all four APKs have verified versions, architectures, signatures, and SHA-256 checksums, with no debug flag or Dart debug kernel. Native notification tests check AM/PM content while retaining alarm payload, successor scheduling, permissions, and suppression checks.
+
+Release packaging uses version 1.34.0 (build 35). The app ID, signing certificate, SQLite schema 2, and journal/backup format 3 are unchanged. Earlier release records below describe their own artifacts. Physical-device validation is unavailable without an attached Android device.
+
+Downloads: **22.2 MB ARM64** for the Realme GT Master and most current Android phones; **63.1 MB universal** fallback. Choose one APK and keep the same processor variant for updates. Install over the current app to preserve records.
+
+Signing certificate SHA-256: `ccb3ba84ae54baeaa960c1f87f1f7a7f88c5a9604c49945dd3be8f734422d837`. R8 retains the persisted WorkManager entry-point name.
+
+- `qada-tracker-v1.34.0-arm64-v8a.apk` (22,207,162 bytes): `2f4709a29f77041921f6dbaa104c2db4ee1e5a3f7761595bf595344449627ba1`.
+- `qada-tracker-v1.34.0-armeabi-v7a.apk` (19,981,106 bytes): `fcbf19e7ef711a492b5a87bde69e321a63d3b1da08e6a5bef00a87d1526a1440`.
+- `qada-tracker-v1.34.0-x86_64.apk` (23,621,154 bytes): `a013b0d21042d8843ae85a5f465994e964ed410f76bd7354a13efd49d271ae16`.
+- `qada-tracker-v1.34.0.apk` (63,090,790 bytes): `fde7775b64de00eb8ee36945d5128de04ead9e83ddfa9a96205f1625c5751e67`.
+
+---
+
 # Validation record — v1.33.0
 
 Navigation is Today, Qada, History, Settings. Qada contains outstanding balances, replacement history, and Progress. History contains the calendar and editable date records, with no missed-prayer list or review/bulk-review prompts. Past-date badges count unrecorded prayers plus misses without a linked qada completion; the navigation badge sums these prayers. Today, performed prayers, exemptions, and linked qada completions are excluded from pending counts. Derived counts require no database or backup migration.

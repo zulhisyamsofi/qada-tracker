@@ -1,4 +1,5 @@
 import 'model.dart';
+import 'prayer_time_format.dart';
 import 'prayer_times_models.dart';
 
 /// A dated journal uses the phone's calendar day. Timetable entries use that
@@ -43,7 +44,7 @@ abstract final class PrayerRecordingPolicy {
       }
       if (now.isBefore(time.at)) {
         throw StateError(
-          '${prayer.label} starts at ${time.time} (${calendar!.timezone}). '
+          '${prayer.label} starts at ${formatPrayerTime(time.time)} (${calendar!.timezone}). '
           'You can mark it performed then.',
         );
       }

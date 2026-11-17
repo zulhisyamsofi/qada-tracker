@@ -83,6 +83,8 @@ class PrayerNotificationTest {
         val manager=context.getSystemService(NotificationManager::class.java)
         val posted=manager.activeNotifications.single { it.id==10002 }.notification
         assertEquals("Time for Zohor",posted.extras.getString(Notification.EXTRA_TITLE))
+        assertTrue(posted.extras.getString(Notification.EXTRA_TEXT)!!.contains("1:00 PM"))
+        assertFalse(posted.extras.getString(Notification.EXTRA_TEXT)!!.contains("13:00"))
         assertTrue(shadowOf(posted.contentIntent).savedIntent.getBooleanExtra(PrayerTimeAlarms.OPEN,false))
         assertEquals(at(15,13),prayerIntent("zohor").getLongExtra("at",0))
         PrayerTimeAlarms.deliver(context,intent,time)
