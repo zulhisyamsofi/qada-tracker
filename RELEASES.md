@@ -78,3 +78,5 @@ v1.24.0 is published and marked latest. History defaults to yesterday, supports 
 ## Walkthrough spacing publication — v1.25.0
 
 v1.25.0 is published and marked latest. The walkthrough reserves a separate scrollbar gutter for its title, description, hints, and setup controls. Existing tour tests verify clearance across all steps, both themes, enlarged text, and rotation. [The uploader workflow](https://github.com/zulhisyamsofi/qada-tracker/actions/runs/43785210046) passed; all four optimized APKs and the checksum file were independently verified, and the temporary private transfer branch was removed. The ARM64 APK is 21.6 MB with the existing signer. All 125 Flutter and 60 Android tests, formatting, analysis, and debug/optimized builds passed. No data-format change is introduced.
+
+For v1.35.0, GitHub rejected asset uploads with HTTP 401 although code, tag, and release publication succeeded. Its release notes provide checksums and a temporary 72-hour unlisted ARM64 APK download. Rebuild permanent assets with `scripts/build-release.sh` if needed.
