@@ -2,6 +2,14 @@
 
 Each version tag identifies one feature edition.
 
+## v1.35.0 — Stable prayer updates and start-time checks
+
+Ordinary prayer updates keep the loaded timetable instead of briefly showing a loading message and moving Today’s list. Prayer card typography and status lines keep their dimensions stable when Done is selected, including narrow screens and scrolled positions. Real place changes, manual refresh, midnight, and resume still refresh prayer times.
+
+### Prevent early Missed marks
+
+New Missed marks for today now require a valid matching timetable and a reached prayer start time, using the shared transactional validation that already protects Done. Early attempts show an English/Malay start-time message and change neither the record nor its qada balance. Reopening a dated qada completion into a current-day miss follows the same rule. Clearing marks, editing past dates, keeping existing confirmations, and confirmed restores remain available.
+
 ## v1.34.0 — Compact prayer rows and focused qada navigation
 
 Displays prayer times and prayer-start messages in 12-hour AM/PM format, including Android prayer alerts. Stored timetables and alarm instants remain unchanged. Compacts prayer cards with right-aligned Done/Missed actions and preserved state colours. Qada date entries keep their date and Open date action in one horizontal row, including narrow/enlarged-text layouts. Opening a date scrolls to, highlights, and focuses that exact prayer on History or Today.

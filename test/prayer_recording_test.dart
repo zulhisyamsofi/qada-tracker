@@ -65,6 +65,76 @@ void main() {
     },
   );
   test(
+    'new misses are blocked before start and allowed at and after start',
+    () {
+      final missed = journal.setStatuses(day, {
+        Prayer.asar: PrayerStatus.missed,
+      }, day);
+      for (final original in [journal, performed]) {
+        expect(
+          () => PrayerRecordingPolicy.validate(
+            original,
+            missed,
+            calendar,
+            DateTime.utc(2026, 11, 13, 15, 59, 59, 999),
+          ),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              'Asar starts at 4:00 PM (UTC). You can mark it missed then.',
+            ),
+          ),
+        );
+        for (final now in [
+          DateTime.utc(2026, 11, 13, 16),
+          DateTime.utc(2026, 11, 13, 17),
+        ]) {
+          PrayerRecordingPolicy.validate(original, missed, calendar, now);
+        }
+      }
+    },
+  );
+  test(
+    'existing misses can be kept or cleared without a timetable; reopening qada is guarded',
+    () {
+      final missed = journal.setStatuses(day, {
+        Prayer.asar: PrayerStatus.missed,
+      }, day);
+      PrayerRecordingPolicy.validate(
+        missed,
+        missed.copy(theme: AppTheme.dark),
+        null,
+        day,
+      );
+      PrayerRecordingPolicy.validate(missed, journal, null, day);
+      final completed = missed.completeMiss(day, Prayer.asar, day, 'linked');
+      expect(
+        () => PrayerRecordingPolicy.validate(
+          completed,
+          completed.undo('linked'),
+          calendar,
+          day,
+        ),
+        throwsStateError,
+      );
+      PrayerRecordingPolicy.validate(
+        completed,
+        completed.undo('linked'),
+        calendar,
+        DateTime.utc(2026, 11, 13, 16),
+      );
+      PrayerRecordingPolicy.validate(
+        completed,
+        completed.undo('linked').setStatuses(day, {
+          Prayer.asar: PrayerStatus.unrecorded,
+        }, day),
+        null,
+        day,
+      );
+    },
+  );
+  test(
     'missing, wrong-place and wrong-date timetables cannot permit a mark',
     () {
       final wrong = PrayerCalendar(
@@ -80,26 +150,31 @@ void main() {
         entries: calendar.entries.where((e) => e.date != dateKey(day)).toList(),
       );
       for (final saved in [null, wrong, old]) {
-        expect(
-          () => PrayerRecordingPolicy.validate(
-            journal,
-            performed,
-            saved,
-            DateTime.utc(2026, 11, 13, 23),
-          ),
-          throwsA(
-            isA<StateError>().having(
-              (e) => e.message,
-              'message',
-              contains('Refresh today’s prayer times'),
+        for (final next in [
+          performed,
+          journal.setStatuses(day, {Prayer.asar: PrayerStatus.missed}, day),
+        ]) {
+          expect(
+            () => PrayerRecordingPolicy.validate(
+              journal,
+              next,
+              saved,
+              DateTime.utc(2026, 11, 13, 23),
             ),
-          ),
-        );
+            throwsA(
+              isA<StateError>().having(
+                (e) => e.message,
+                'message',
+                contains('Refresh today’s prayer times'),
+              ),
+            ),
+          );
+        }
       }
     },
   );
   test(
-    'past records, missed/unrecorded changes and existing performed records remain editable',
+    'past records, clearing marks and existing confirmations remain editable',
     () {
       PrayerRecordingPolicy.validate(
         journal,
@@ -111,7 +186,9 @@ void main() {
       );
       PrayerRecordingPolicy.validate(
         journal,
-        journal.setStatuses(day, {Prayer.asar: PrayerStatus.missed}, day),
+        journal.setStatuses(DateTime(2026, 11, 12), {
+          Prayer.asar: PrayerStatus.missed,
+        }, day),
         null,
         day,
       );
@@ -186,7 +263,21 @@ void main() {
           (await db.load(now)).status(day, Prayer.subuh),
           PrayerStatus.unrecorded,
         );
+        await expectLater(
+          c.statuses(day, {
+            Prayer.subuh: PrayerStatus.missed,
+            Prayer.asar: PrayerStatus.missed,
+          }),
+          throwsStateError,
+        );
+        expect(
+          (await db.load(now)).status(day, Prayer.subuh),
+          PrayerStatus.unrecorded,
+        );
+        expect((await db.load(now)).outstanding, 0);
         now = DateTime.utc(2026, 11, 13, 16);
+        await c.statuses(day, {Prayer.asar: PrayerStatus.missed});
+        expect((await db.load(now)).balance(Prayer.asar), 1);
         await c.statuses(day, {Prayer.asar: PrayerStatus.performed});
         await c.change(
           (j) => j.copy(
@@ -222,63 +313,64 @@ void main() {
     },
   );
 
-  test(
-    'a concurrent calendar refresh retries validation against the new time',
-    () async {
-      final now = DateTime.utc(2026, 11, 13, 16);
-      final db = JournalDatabase(NativeDatabase.memory());
-      await db.save(journal);
-      await db.saveCalendar(calendar, now);
-      final refreshed = PrayerCalendar(
-        sourceKey: calendar.sourceKey,
-        timezone: 'UTC',
-        fetchedAt: now,
-        entries: calendar.entries
-            .map(
-              (e) => e.date == dateKey(day) && e.prayer == 'asar'
-                  ? PrayerTime(
-                      prayer: e.prayer,
-                      at: DateTime.utc(2026, 11, 13, 17),
-                      date: e.date,
-                      time: '17:00',
-                    )
-                  : e,
-            )
-            .toList(),
-      );
-      final encoded = jsonEncode(refreshed.toJson()).replaceAll("'", "''");
-      await db.customStatement(
-        '''CREATE TRIGGER refresh_calendar BEFORE UPDATE ON journal
+  for (final status in [PrayerStatus.performed, PrayerStatus.missed]) {
+    test(
+      'a concurrent calendar refresh revalidates ${status.name} against the new time',
+      () async {
+        final now = DateTime.utc(2026, 11, 13, 16);
+        final db = JournalDatabase(NativeDatabase.memory());
+        await db.save(journal);
+        await db.saveCalendar(calendar, now);
+        final refreshed = PrayerCalendar(
+          sourceKey: calendar.sourceKey,
+          timezone: 'UTC',
+          fetchedAt: now,
+          entries: calendar.entries
+              .map(
+                (e) => e.date == dateKey(day) && e.prayer == 'asar'
+                    ? PrayerTime(
+                        prayer: e.prayer,
+                        at: DateTime.utc(2026, 11, 13, 17),
+                        date: e.date,
+                        time: '17:00',
+                      )
+                    : e,
+              )
+              .toList(),
+        );
+        final encoded = jsonEncode(refreshed.toJson()).replaceAll("'", "''");
+        await db.customStatement(
+          '''CREATE TRIGGER refresh_calendar BEFORE UPDATE ON journal
       WHEN json_extract((SELECT document FROM prayer_calendar WHERE id = 1), '\$.fetchedAt') = ${calendar.fetchedAt.millisecondsSinceEpoch}
       BEGIN UPDATE prayer_calendar SET document = '$encoded' WHERE id = 1; SELECT RAISE(IGNORE); END''',
-      );
-      try {
-        await expectLater(
-          db.change(
-            now,
-            (j) =>
-                j.setStatuses(day, {Prayer.asar: PrayerStatus.performed}, now),
-            validate: (before, after, saved) =>
-                PrayerRecordingPolicy.validate(before, after, saved, now),
-          ),
-          throwsStateError,
         );
-        expect(
-          (await db.load(now)).status(day, Prayer.asar),
-          PrayerStatus.unrecorded,
-        );
-        expect(
-          PrayerRecordingPolicy.timeFor(
-            await db.loadCalendar(),
-            calendar.sourceKey,
-            day,
-            Prayer.asar,
-          )!.time,
-          '17:00',
-        );
-      } finally {
-        await db.close();
-      }
-    },
-  );
+        try {
+          await expectLater(
+            db.change(
+              now,
+              (j) => j.setStatuses(day, {Prayer.asar: status}, now),
+              validate: (before, after, saved) =>
+                  PrayerRecordingPolicy.validate(before, after, saved, now),
+            ),
+            throwsStateError,
+          );
+          expect(
+            (await db.load(now)).status(day, Prayer.asar),
+            PrayerStatus.unrecorded,
+          );
+          expect(
+            PrayerRecordingPolicy.timeFor(
+              await db.loadCalendar(),
+              calendar.sourceKey,
+              day,
+              Prayer.asar,
+            )!.time,
+            '17:00',
+          );
+        } finally {
+          await db.close();
+        }
+      },
+    );
+  }
 }

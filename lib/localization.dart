@@ -393,6 +393,10 @@ const malay = <String, String>{
       "Masukkan bilangan bulat bukan negatif bagi setiap solat (maksimum 1 bilion).",
   "This change would make {value} negative. Undo the corresponding qada replacement first.":
       "Perubahan ini akan menjadikan baki {value} negatif. Batalkan penggantian qada yang berkenaan dahulu.",
+  "{value} starts at {value} ({value}). You can mark it missed then.":
+      "Waktu {value} bermula pada {value} ({value}). Anda boleh menandakan tertinggal selepas itu.",
+  "Refresh today’s prayer times for {value} before marking {value} missed.":
+      "Muat semula waktu solat hari ini untuk {value} sebelum menandakan {value} tertinggal.",
   "{value} starts at {value} ({value}). You can mark it performed then.":
       "Waktu {value} bermula pada {value} ({value}). Anda boleh menandakan ditunaikan selepas itu.",
   "Refresh today’s prayer times for {value} before marking {value} performed.":

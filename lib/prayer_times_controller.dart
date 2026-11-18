@@ -31,10 +31,15 @@ final prayerTimesProvider =
 class PrayerTimesController extends AsyncNotifier<PrayerTimesData> {
   @override
   Future<PrayerTimesData> build() async {
-    final settings = await ref.watch(
-      journalProvider.selectAsync((j) => j.prayerTimes),
+    // SQLite writes decode new settings objects even when the source is unchanged.
+    // Prayer marks and notification preferences must not reload the timetable.
+    await ref.watch(
+      journalProvider.selectAsync((j) => j.prayerTimes.place.key),
     );
-    return _load(settings, force: false);
+    return _load(
+      ref.read(journalProvider).requireValue.prayerTimes,
+      force: false,
+    );
   }
 
   Future<PrayerTimesData> _load(

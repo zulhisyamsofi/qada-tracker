@@ -723,7 +723,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                     ),
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: performed ? FontWeight.w600 : FontWeight.w800,
+                      // Stable typography prevents the row shrinking after Done.
+                      fontWeight: FontWeight.w800,
                       color: titleColor,
                     ),
                   ),
@@ -742,6 +743,8 @@ class _JournalHomeState extends ConsumerState<JournalHome>
                             context,
                             needsReview ? 'Unrecorded · needs review' : label,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 11,
                             color: statusColor,

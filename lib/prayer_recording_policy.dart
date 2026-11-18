@@ -30,22 +30,27 @@ abstract final class PrayerRecordingPolicy {
       final newLinkedCompletion =
           after.replacementFor(now, prayer) != null &&
           before.replacementFor(now, prayer) == null;
-      if (!newLinkedCompletion &&
-          (after.status(now, prayer) != PrayerStatus.performed ||
-              before.status(now, prayer) == PrayerStatus.performed)) {
-        continue;
-      }
+      final newPerformed =
+          after.status(now, prayer) == PrayerStatus.performed &&
+          before.status(now, prayer) != PrayerStatus.performed;
+      final newMissed =
+          after.status(now, prayer) == PrayerStatus.missed &&
+          after.replacementFor(now, prayer) == null &&
+          (before.status(now, prayer) != PrayerStatus.missed ||
+              before.replacementFor(now, prayer) != null);
+      if (!newLinkedCompletion && !newPerformed && !newMissed) continue;
+      final action = newMissed ? 'missed' : 'performed';
       final time = timeFor(calendar, after.prayerTimes.place.key, now, prayer);
       if (time == null) {
         throw StateError(
           'Refresh today’s prayer times for ${after.prayerTimes.place.label} '
-          'before marking ${prayer.label} performed.',
+          'before marking ${prayer.label} $action.',
         );
       }
       if (now.isBefore(time.at)) {
         throw StateError(
           '${prayer.label} starts at ${formatPrayerTime(time.time)} (${calendar!.timezone}). '
-          'You can mark it performed then.',
+          'You can mark it $action then.',
         );
       }
     }

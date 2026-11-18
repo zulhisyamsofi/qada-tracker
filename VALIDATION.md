@@ -1,3 +1,25 @@
+# Validation record — v1.35.0
+
+Saving a prayer decoded a new settings object and unnecessarily restarted the timetable provider. It now watches the selected place’s stable source key, so prayer marks and unrelated preferences preserve the loaded timetable. Real place changes, manual refresh, midnight rollover, and resume retain their refresh paths. Card title weight and single-line status text keep prayer rows from shrinking after Done on narrow screens; completed colours and dimmed text remain.
+
+Regression tests hold calendar reads pending and tap Done for all five prayers on 390 × 844 and 320 × 640 layouts. Every sampled frame keeps the same timetable, card positions/heights, and scroll offset, without a loading message or additional timetable reads/API calls. Provider tests also cover clearing, misses, dated qada, reminder preferences, reload/restore, and genuine place changes.
+
+Verification passed: formatting, static analysis with no issues, **155 Flutter tests**, and Android debug APK compilation. No Android device is attached, so physical-device runtime verification is unavailable. Native code, settings layout, schema, and backup format are unchanged. All **63 Android JVM tests** passed. Optimized universal and split APK builds passed; all four APKs have verified package IDs, version codes, matching signing certificates, SHA-256 checksums, and no debuggable flag. The recommended ARM64 download is 22.2 MB. Release packaging uses version 1.35.0 (build 36). The start-time guard below is included in this release.
+
+---
+
+# Validation record — Missed start-time guard (included in v1.35.0)
+
+The shared recording policy now validates new current-day misses as well as performed marks and dated qada completions. A new miss, or reopening a linked qada completion into a miss today, needs the selected place’s complete matching timetable and an absolute start instant no later than the current clock. Rejections leave the journal and balance unchanged and use action-specific English/Malay feedback. Existing confirmations and backup restores are preserved; clearing marks and past-date corrections do not need a timetable.
+
+Coverage verifies before/exactly-at/after start boundaries, performed-to-missed corrections, missing/wrong-place/wrong-date timetables, atomic rejection of mixed past-start/future-start updates, queue recovery and clock revalidation, and concurrent timetable refresh for both action types. Widget tests in English and Malay reject an early Zohor Missed tap, permit it at its scheduled start without reopening, clear the mark after a clock correction/cache loss while offline, and reject a new miss without the timetable.
+
+Verification passed: formatting, static analysis with no issues, **152 Flutter tests**, and Android debug APK compilation. Android native code is unchanged by this fix. Physical-device validation is unavailable without an attached device.
+
+No database schema, backup format, settings UI, notification scheduling, or existing records are rewritten. Included in v1.35.0. Earlier release records below describe their own artifacts.
+
+---
+
 # Validation record — v1.34.0
 
 Prayer labels, start-time guard messages, and Android prayer notifications use 12-hour AM/PM presentation. Canonical 24-hour timetable strings, timezone validation, and absolute start/alarm instants are unchanged. Tests cover midnight/noon and early/exact start boundaries; native notification assertions verify AM/PM output on Android APIs 33 and 35.

@@ -7,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:http/http.dart' as http;
 import 'package:qada_tracker/controller.dart';
 import 'package:qada_tracker/database.dart';
+import 'package:qada_tracker/model.dart';
 import 'package:qada_tracker/prayer_times_api.dart';
 import 'package:qada_tracker/prayer_times_controller.dart';
 import 'package:qada_tracker/prayer_times_models.dart';
@@ -76,6 +77,48 @@ void main() {
       final fallback = container.read(prayerTimesProvider).requireValue;
       expect(fallback.warning, isNotNull);
       expect(fallback.calendar.toJson(), initial.calendar.toJson());
+    },
+  );
+  test(
+    'journal saves and reminder preferences preserve the loaded timetable without loading states',
+    () async {
+      final initial = await container.read(prayerTimesProvider.future);
+      final states = <AsyncValue<PrayerTimesData>>[];
+      final observer = container.listen(
+        prayerTimesProvider,
+        (_, next) => states.add(next),
+      );
+      try {
+        final journal = container.read(journalProvider.notifier);
+        await journal.statuses(now, {Prayer.subuh: PrayerStatus.performed});
+        await container.pump();
+        await journal.statuses(now, {Prayer.subuh: PrayerStatus.unrecorded});
+        await container.pump();
+        await journal.statuses(now, {Prayer.subuh: PrayerStatus.missed});
+        await container.pump();
+        await journal.completeMiss(now, Prayer.subuh);
+        await container.pump();
+        await journal.change(
+          (j) => j.copy(
+            theme: AppTheme.dark,
+            language: AppLanguage.ms,
+            prayerTimes: j.prayerTimes.copy(
+              notifications: true,
+              notificationMask: 17,
+            ),
+          ),
+        );
+        await container.pump();
+        await journal.reload();
+        await container.pump();
+        await journal.restore(container.read(journalProvider).requireValue);
+        await container.pump();
+        expect(states, isEmpty);
+        expect(container.read(prayerTimesProvider).requireValue, same(initial));
+        expect(api.requests, 1);
+      } finally {
+        observer.close();
+      }
     },
   );
   test('fresh cache avoids another API request', () async {
