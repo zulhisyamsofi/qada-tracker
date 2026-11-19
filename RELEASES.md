@@ -1,6 +1,6 @@
-# Private Android releases
+# Android release history
 
-The repository and its GitHub releases remain private. Release assets require GitHub sign-in with repository access. Versions through v1.11.0 use personal-installation debug APKs; v1.12.0 onward use optimized release-mode APKs. These are private installations, not Play Store publications.
+These releases were originally prepared in a private repository for personal installation. Asset access follows the repository’s current visibility. Versions through v1.11.0 use personal-installation debug APKs; v1.12.0 onward use optimized release-mode APKs. These are private installations, not Play Store publications.
 
 Each feature edition is represented by a separate commit and annotated tag. The existing v1.0.0 commit is retained as the baseline. Flutter source snapshots for v1.1.0–v1.4.0 were recovered from the original debug APKs; native integration and tests were separated from the accumulated additions. All versions were checked and rebuilt for this publication. The v1.5.0 app code matches the completed integrated-times implementation.
 

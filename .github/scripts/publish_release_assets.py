@@ -28,7 +28,10 @@ def main():
     repo = os.environ["GH_REPO"]
     if repo != "zulhisyamsofi/qada-tracker":
         raise ValueError("This publisher is scoped to the Qada Tracker repository.")
-    entries = json.loads(os.environ.get("QADA_RELEASE_MANIFEST") or Path(".github/release-assets.json").read_text())
+    manifest = os.environ.get("QADA_RELEASE_MANIFEST")
+    if not manifest:
+        raise ValueError("Supply a fresh verified release manifest explicitly.")
+    entries = json.loads(manifest)
     if not isinstance(entries, list) or not entries:
         raise ValueError("Expected a nonempty list of checked feature editions.")
     tags = [e["tag"] for e in entries]

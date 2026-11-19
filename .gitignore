@@ -13,3 +13,26 @@ android/key.properties
 *.keystore
 .idea/
 *.iml
+
+# Local credentials and personal data (sample API fixtures stay versioned)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.log
+*.apk
+*.aab
+*.hprof
+/backups/
+/private/
+/attachments/
+qada-tracker-*.json

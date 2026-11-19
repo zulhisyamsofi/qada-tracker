@@ -4,16 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       manifest:
-        description: 'Checked draft assets as JSON; blank uses the bootstrap manifest'
-        required: false
+        description: 'Checked draft assets as JSON with current URLs, hashes, and source commits'
+        required: true
         type: string
       assets_ref:
         description: 'Optional checked private asset commit SHA'
         required: false
         type: string
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: qada-release-assets
@@ -21,6 +20,8 @@ concurrency:
 
 jobs:
   upload:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
