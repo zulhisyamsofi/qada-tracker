@@ -2,7 +2,7 @@
 
 A personal Android prayer journal built with **Flutter, Dart, Riverpod, SQLite/Drift, and Kotlin**. It tracks daily prayers, keeps editable history, and records dated qada (replacement-prayer) completions.
 
-This repository is prepared as a software engineering portfolio for code review and local evaluation. The app is a personal project, with no Play Store release, accounts, backend, advertising, analytics, or cloud sync. Android is the validated target; iOS is not implemented or validated.
+The app is a personal project, with no Play Store release, accounts, backend, advertising, analytics, or cloud sync. Android is the validated target; iOS is not implemented or validated.
 
 ## Preview
 
