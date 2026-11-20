@@ -21,3 +21,7 @@ Manual backups are unencrypted JSON containing records and settings, including e
 Uninstalling normally removes app-private data. Exported backups remain wherever the user saved them and must be deleted separately. No developer server holds a copy to delete or recover.
 
 Repository tests and current portfolio screenshots use synthetic journal records and sample prayer timetables. Never attach real journals, backup JSON, sensitive screenshots, or device logs to public issues.
+
+## Portfolio browser demo
+
+The separate web entry point uses synthetic records and a fixed sample calendar, with no real prayer-time API or device-location lookup. Edits persist only in that browser/origin via IndexedDB; Reset demo replaces them with sample data. The static hosting provider receives ordinary page/asset requests and associated network metadata. Browser storage and exports are not encrypted by the app. Do not import real personal backups into the public demonstration. Android notification and widget features are not implemented in the demo.

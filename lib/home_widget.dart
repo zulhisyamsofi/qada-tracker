@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'storage/platform_native.dart'
+    if (dart.library.js_interop) 'storage/platform_web.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class HomeWidgetService {
   HomeWidgetService({MethodChannel? channel, bool? supported})
     : channel = channel ?? const MethodChannel('qada_tracker/home_widget'),
-      supported = supported ?? Platform.isAndroid {
+      supported = supported ?? androidSupported {
     if (this.supported) {
       this.channel.setMethodCallHandler((call) async {
         if (call.method == 'journalChanged') await onJournalChanged?.call();

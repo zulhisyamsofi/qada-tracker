@@ -1,10 +1,9 @@
-import 'dart:io';
 import 'dart:convert';
 import 'prayer_times_models.dart';
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
+import 'storage/open_native.dart'
+    if (dart.library.js_interop) 'storage/open_web.dart'
+    as storage;
 import 'model.dart';
 
 // One versioned journal document is committed atomically. The domain model
@@ -12,12 +11,7 @@ import 'model.dart';
 class JournalDatabase extends GeneratedDatabase {
   JournalDatabase(super.executor);
   static Future<JournalDatabase> open() async {
-    final directory = await getApplicationSupportDirectory();
-    return JournalDatabase(
-      NativeDatabase.createInBackground(
-        File(path.join(directory.path, 'journal.sqlite')),
-      ),
-    );
+    return JournalDatabase(await storage.openExecutor());
   }
 
   @override

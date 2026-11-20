@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'storage/platform_native.dart'
+    if (dart.library.js_interop) 'storage/platform_web.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,7 +27,7 @@ class ReminderAccess {
 class ReminderService {
   ReminderService({MethodChannel? channel, bool? supported})
     : channel = channel ?? const MethodChannel('qada_tracker/reminders'),
-      supported = supported ?? Platform.isAndroid {
+      supported = supported ?? androidSupported {
     if (this.supported) {
       this.channel.setMethodCallHandler((call) async {
         if (call.method == 'openToday') onOpenToday?.call();

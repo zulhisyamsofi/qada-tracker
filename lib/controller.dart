@@ -96,10 +96,11 @@ class JournalController extends AsyncNotifier<Journal> {
   Future<String> complete(Prayer p, int count) async {
     // An Undo action must identify this entry even after earlier entries are
     // deleted or the phone clock changes.
+    // Dart web uses 32-bit shifts: `1 << 32` wraps to zero there.
     final random = Random.secure();
     final id = List.generate(
       4,
-      (_) => random.nextInt(1 << 32).toRadixString(16).padLeft(8, '0'),
+      (_) => random.nextInt(0x100000000).toRadixString(16).padLeft(8, '0'),
     ).join();
     await change((j) => j.complete(p, count, ref.read(clockProvider)(), id));
     return id;
@@ -107,7 +108,7 @@ class JournalController extends AsyncNotifier<Journal> {
 
   Future<String> completeMiss(DateTime day, Prayer prayer) async {
     final id =
-        '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}';
+        '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(0x100000000)}';
     await change(
       (j) => j.completeMiss(day, prayer, ref.read(clockProvider)(), id),
     );
@@ -123,7 +124,7 @@ class JournalController extends AsyncNotifier<Journal> {
       day,
       prayer,
       id,
-      '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}',
+      '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(0x100000000)}',
     ),
   );
   // Restores preserve already confirmed records; they are not new check-ins.

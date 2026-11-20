@@ -35,7 +35,8 @@ void main() {
 }
 
 class QadaApp extends ConsumerWidget {
-  const QadaApp({super.key});
+  const QadaApp({this.frame, super.key});
+  final Widget Function(BuildContext, Widget)? frame;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final journal = ref.watch(journalProvider).asData?.value;
@@ -61,7 +62,9 @@ class QadaApp extends ConsumerWidget {
         AppTheme.light => ThemeMode.light,
         AppTheme.dark => ThemeMode.dark,
       },
-      home: const JournalHome(),
+      home: frame == null
+          ? const JournalHome()
+          : Builder(builder: (context) => frame!(context, const JournalHome())),
     );
   }
 }

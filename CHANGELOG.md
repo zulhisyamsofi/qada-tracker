@@ -2,6 +2,10 @@
 
 Each version tag identifies one feature edition.
 
+## Unreleased — Browser portfolio demo
+
+Adds a static Flutter web demonstration sharing the Android screens and domain logic. It uses separate IndexedDB-backed SQLite storage, synthetic records, fixed sample times, a visible demo banner, and Reset demo. Android notifications/widgets remain unavailable on the browser. Native database initialization and platform detection are conditionally imported so Android keeps its existing storage and service behavior. Uses JavaScript-safe replacement ID bounds and retires stale Undo messages when resetting the demo. Includes build/hosting instructions and a zipped static site; no live deployment is claimed.
+
 ## v1.35.0 — Stable prayer updates and start-time checks
 
 Ordinary prayer updates keep the loaded timetable instead of briefly showing a loading message and moving Today’s list. Prayer card typography and status lines keep their dimensions stable when Done is selected, including narrow screens and scrolled positions. Real place changes, manual refresh, midnight, and resume still refresh prayer times.
